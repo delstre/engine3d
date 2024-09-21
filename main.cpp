@@ -26,6 +26,8 @@
 
 #include <sys/resource.h>
 
+#include <map>
+
 bool showImGui = true;
 
 GLfloat logGPUMemoryUsage() {
@@ -238,22 +240,29 @@ int main(int argc, char** argv) {
     Renderer::ModelManager mdlManager(&shaderProgram, &camManager);
     //mdlManager.isWireFrame = true;
 
-    //for (int i = 0; i<4; i++) {
-        //for (int j = 0; j<4; j++) {
-            //for (int t = 0; t<4; t++) {
-                //Renderer::Cube c(glm::vec3(i*2, t*2, j*2), "dirt.jpg");
-                //mdlManager.AddModel(c);
-            //}
-        //}
-    //}
 
     Renderer::ResourceManager resManager;
     resManager.CreateTexture("dirt.jpg");
+    resManager.CreateTexture("grass.png");
 
     Renderer::Cube c(glm::vec3(0, 0, 0), resManager.GetTexture("dirt.jpg"));
     mdlManager.AddModel(c);
 
+    for (int i = 0; i<32; i++) {
+        for (int j = 0; j<32; j++) {
+            for (int t = 0; t<32; t++) {
+                Renderer::Cube c(glm::vec3(i*2, t*2, j*2), resManager.GetTexture("dirt.jpg"));
+                mdlManager.AddModel(c);
+            }
+        }
+    }
+
     //Game::Map gameMap(&mdlManager, 8, 8, 8);
+
+    struct block_properties {
+        float x, y, z;
+        GLuint texture;
+    } proper;
 
     float deltaTime, lastFrame;
     while (!glfwWindowShouldClose(window)) {
@@ -291,6 +300,113 @@ int main(int argc, char** argv) {
         glGetQueryObjectui64v(query, GL_QUERY_RESULT, &elapsed_time);
 
 
+        std::vector<GLuint> only_up = {
+                // Front face
+            //0, 1, 2,
+            //2, 3, 0,
+            //// Right face
+            //1, 5, 6,
+            //6, 2, 1,
+            //// Back face
+            //7, 6, 5,
+            //5, 4, 7,
+            //// Left face
+            //4, 0, 3,
+            //3, 7, 4,
+            //// Bottom face
+            //4, 5, 1,
+            //1, 0, 4,
+            //// Top face
+            3, 2, 6,
+            6, 7, 3
+        };
+
+        std::vector<GLuint> up = {
+                // Front face
+            0, 1, 2,
+            2, 3, 0,
+            //// Right face
+            1, 5, 6,
+            6, 2, 1,
+            //// Back face
+            7, 6, 5,
+            5, 4, 7,
+            //// Left face
+            4, 0, 3,
+            3, 7, 4,
+            //// Bottom face
+            //4, 5, 1,
+            //1, 0, 4,
+            //// Top face
+            3, 2, 6,
+            6, 7, 3
+        };
+
+        std::vector<GLuint> bottom = {
+                // Front face
+            0, 1, 2,
+            2, 3, 0,
+            //// Right face
+            1, 5, 6,
+            6, 2, 1,
+            //// Back face
+            7, 6, 5,
+            5, 4, 7,
+            //// Left face
+            4, 0, 3,
+            3, 7, 4,
+            //// Bottom face
+            4, 5, 1,
+            1, 0, 4,
+            //// Top face
+            //3, 2, 6,
+            //6, 7, 3
+        };
+
+        std::vector<GLuint> only_bottom = {
+                // Front face
+            //0, 1, 2,
+            //2, 3, 0,
+            //// Right face
+            //1, 5, 6,
+            //6, 2, 1,
+            //// Back face
+            //7, 6, 5,
+            //5, 4, 7,
+            //// Left face
+            //4, 0, 3,
+            //3, 7, 4,
+            //// Bottom face
+            4, 5, 1,
+            1, 0, 4,
+            //// Top face
+            //3, 2, 6,
+            //6, 7, 3
+        };
+
+        std::vector<GLuint> all = {
+            // Front face
+            0, 1, 2,
+            2, 3, 0,
+            // Right face
+            1, 5, 6,
+            6, 2, 1,
+            // Back face
+            7, 6, 5,
+            5, 4, 7,
+            // Left face
+            4, 0, 3,
+            3, 7, 4,
+            // Bottom face
+            4, 5, 1,
+            1, 0, 4,
+            // Top face
+            3, 2, 6,
+            6, 7, 3
+        };
+
+        GLuint vao = 0;
+
         if (showImGui) {
             ImGui_ImplOpenGL3_NewFrame();
             ImGui_ImplGlfw_NewFrame();
@@ -313,24 +429,84 @@ int main(int argc, char** argv) {
             ImGui::Text("y: %d", pos.y);
             ImGui::Text("z: %f", pos.z);
 
-            if (ImGui::CollapsingHeader("Models Manipulation", mdlManager.vecModels.size())) {
+            if (ImGui::CollapsingHeader("Test")) {
+                if (ImGui::Button("only_up")) {
+                    mdlManager.UpdateArrayBuffer(vao, only_up);
+                }
+
+                if (ImGui::Button("up")) {
+                    mdlManager.UpdateArrayBuffer(vao, up);
+                }
+
+                if (ImGui::Button("bottom")) {
+                    mdlManager.UpdateArrayBuffer(vao, bottom);
+                }
+
+                if (ImGui::Button("only_bottom")) {
+                    mdlManager.UpdateArrayBuffer(vao, only_bottom);
+                }
+
+                if (ImGui::Button("all")) {
+                    mdlManager.UpdateArrayBuffer(vao, all);
+                }
+            }
+
+            if (ImGui::CollapsingHeader("Models Manipulation")) {
                 ImGui::Text("Models %d", mdlManager.vecModels.size());
-                if (ImGui::Button("New Model")) {
-                    mdlManager.AddModel(Renderer::Cube(glm::vec3(0.0, 0.0, 0.0), resManager.GetTexture("dirt.jpg")));
+                if (ImGui::CollapsingHeader("New Model")) {
+                    if (ImGui::SliderFloat("x", &proper.x, -100.0f, 100.0f)) {
+                        proper.x =  roundf(proper.x / 2) * 2;
+                    }
+                    if (ImGui::SliderFloat("y", &proper.y, -100.0f, 100.0f)) {
+                        proper.y =  roundf(proper.y / 2) * 2;
+                    }
+                    if (ImGui::SliderFloat("z", &proper.z, -100.0f, 100.0f)) {
+                        proper.z =  roundf(proper.z / 2) * 2;
+                    }
+
+                    for (const auto& pair : resManager.textures) {
+                        GLuint i = pair.second;
+                        if (ImGui::ImageButton(pair.first.c_str(), (void*)(intptr_t)i, ImVec2(64, 64))) {
+                            proper.texture = i;
+                        }
+                    }
+
+                    if (ImGui::Button("Create")) {
+                        mdlManager.AddModel(Renderer::Cube(glm::vec3(proper.x, proper.y, proper.z), proper.texture));
+                    }
                 }
 
                 for (size_t i = 0; i < mdlManager.vecModels.size(); i++) {
-                    Renderer::Cube& mdl = mdlManager.vecModels[i];
+                    if (ImGui::CollapsingHeader(formatString("Model ID: %i", i).c_str())) {
+                        Renderer::Cube& mdl = mdlManager.vecModels[i];
 
-                    ImGui::PushID(i);
-                    ImGui::Text("ModelID: %d", i);
-                    if (ImGui::Button("Delete Model")) {
-                        mdlManager.RemoveModel(i);
+                        ImGui::PushID(i);
+                        ImGui::Text("TextureID: %d", mdl.texture);
+
+                        if (ImGui::Button("Delete Model")) {
+                            mdlManager.RemoveModel(i);
+                        }
+                        if (ImGui::SliderFloat("x", &mdl.position.x, -100.0f, 100.0f)) {
+                            mdl.position.x =  roundf(mdl.position.x / 2) * 2;
+                        }
+                        if (ImGui::SliderFloat("y", &mdl.position.y, -100.0f, 100.0f)) {
+                            mdl.position.y =  roundf(mdl.position.y / 2) * 2;
+                        }
+                        if (ImGui::SliderFloat("z", &mdl.position.z, -100.0f, 100.0f)) {
+                            mdl.position.z =  roundf(mdl.position.z / 2) * 2;
+                        }
+                        ImGui::PopID();
                     }
-                    ImGui::SliderFloat("x", &mdl.position.x, -100.0f, 100.0f);
-                    ImGui::SliderFloat("y", &mdl.position.y, -100.0f, 100.0f);
-                    ImGui::SliderFloat("z", &mdl.position.z, -100.0f, 100.0f);
-                    ImGui::PopID();
+                }
+            }
+
+            if (ImGui::CollapsingHeader("Texture Manipulation")) {
+                ImGui::Text("Textures %d", resManager.textures.size());
+
+                for (const auto& pair : resManager.textures) {
+                    GLuint i = pair.second;
+                    ImGui::Text("TextureID: %d", i);
+                    ImGui::Image((void*)(intptr_t)i, ImVec2(64, 64));
                 }
             }
 

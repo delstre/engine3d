@@ -17,6 +17,10 @@ namespace Renderer {
             void Render();
             std::vector<Cube> vecModels;
 
+            glm::vec4* GetPlanes();
+            bool isCubeInFrustum(const glm::vec3& min, const glm::vec3& max);
+
+            void UpdateArrayBuffer(GLuint& buffer, const std::vector<GLuint> array);
             Camera* pCamera;
 
             bool isWireFrame = false;

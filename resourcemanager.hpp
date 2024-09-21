@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <GL/glew.h>
 
 namespace Renderer {
     class ResourceManager {

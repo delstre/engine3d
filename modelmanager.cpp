@@ -135,12 +135,20 @@ ModelManager::ModelManager(ShaderProgram* shaderProgram, Camera* camera) {
     pCamera = camera;
 }
 
+void ModelManager::UpdateArrayBuffer(GLuint& buffer, const std::vector<GLuint> array) {
+    //glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, array.size() * sizeof(GLuint), array.data(), GL_STATIC_DRAW);
+
+    std::cout << "UPDATE BUFFER" << std::endl;
+}
+
 void ModelManager::AddModel() {
     Cube mdl = Cube();
-    vecModels.insert(vecModels.begin(), mdl);
 }
 
 void ModelManager::AddModel(Cube mdl) {
+    mdl.vao = vbo;
     vecModels.insert(vecModels.begin(), mdl);
 }
 
@@ -148,22 +156,29 @@ void ModelManager::RemoveModel(int index) {
     vecModels.erase(vecModels.begin() + index);
 }
 
+glm::vec4* ModelManager::GetPlanes() {}
+
+bool ModelManager::isCubeInFrustum(const glm::vec3& min, const glm::vec3& max) {
+    return true; // Куб находится в фрустуме
+}
+
+
 void ModelManager::Render() {
     pShaderProgram->useProgram();
 
     for (Cube mdl : vecModels) {
-        if (mdl.IsActive()) {
+        //if (isCubeInFrustum(mdl.GetMin(), mdl.GetMax())) {
             glm::mat4 model = glm::translate(glm::mat4(1.0f), mdl.position);
-            model = glm::scale(model, glm::vec3(mdl.scale, mdl.scale, mdl.scale));
+            //model = glm::scale(model, glm::vec3(mdl.scale, mdl.scale, mdl.scale));
 
             pShaderProgram->setTexture("my_texture", mdl.texture);
             pShaderProgram->setMatrix4("model", model);
 
-            glBindVertexArray(vao); // Bind the VAO containing VBO and IBO configurations
+            glBindVertexArray(vbo); // Bind the VAO containing VBO and IBO configurations
             glPolygonMode(GL_FRONT_AND_BACK, isWireFrame ? GL_LINE : GL_FILL);
             glDrawElements(GL_TRIANGLES, elements.size(), GL_UNSIGNED_INT, 0);
 
             glBindVertexArray(0);   // Unbind the VAO
-        }
+        //}
     }
 }

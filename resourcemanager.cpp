@@ -1,12 +1,15 @@
-#include "resoucemanager.cpp"
+#include "resourcemanager.hpp"
+#include <GL/glew.h>
+#include <IL/il.h>
 
 #include <string>
+#include <iostream>
 
 using namespace Renderer;
 
 ResourceManager::ResourceManager() {}
 
-void ResourceManager::CreateTexture(std::string str) {
+void ResourceManager::CreateTexture(std::string filename) {
     GLuint textureID;
     glGenTextures(1, &textureID);
     glActiveTexture(GL_TEXTURE0);
@@ -24,10 +27,10 @@ void ResourceManager::CreateTexture(std::string str) {
     ilBindImage(imageID);
 
     // Загружаем изображение с использованием DevIL
-    if (!ilLoadImage(filename)) {
+    if (!ilLoadImage(filename.c_str())) {
         std::cerr << "Ошибка загрузки изображения: " << filename << std::endl;
         ilDeleteImages(1, &imageID);
-        return 0;
+        return;
     }
 
     // Преобразуем изображение в формат, совместимый с OpenGL
@@ -45,9 +48,9 @@ void ResourceManager::CreateTexture(std::string str) {
     // Удаляем ID изображения DevIL, поскольку он больше не нужен
     ilDeleteImages(1, &imageID);
 
-    textures[str] = textureID; 
+    textures[filename] = textureID; 
 }
 
-GLuint ResourceManager::GetTexture(const char* str) {
-    return textures[str];
+GLuint ResourceManager::GetTexture(std::string file) {
+    return textures[file];
 }

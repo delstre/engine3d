@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <glm/mat4x4.hpp>
 #include <string>
+#include <mutex>
 
 namespace Renderer {
     class ShaderProgram {
@@ -22,6 +23,8 @@ namespace Renderer {
 
             bool isCompiled() const { return m_IsCompiled; };
             bool useProgram() const;
+
+            std::mutex mutex;
         private:
             bool createShader(const std::string& name, const GLenum shaderType, GLuint& shaderID);
             bool m_IsCompiled = false;
