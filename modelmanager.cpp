@@ -45,17 +45,6 @@ ModelManager::ModelManager(ShaderProgram* shaderProgram, Camera* camera) {
         6, 7, 3
     };
 
-    colors = {
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-        1.0f, 1.0f, 1.0f,
-    };
-
     texture_points = {
         // Front face
         0.0f, 0.0f, 
@@ -94,6 +83,38 @@ ModelManager::ModelManager(ShaderProgram* shaderProgram, Camera* camera) {
         0.0f, 0.0f, // bottom left
     };
 
+    normals = {
+        // Передняя грань
+        0.0f, 0.0f,  1.0f,  // 4
+        0.0f, 0.0f,  1.0f,  // 5
+        0.0f, 0.0f,  1.0f,  // 6
+        0.0f, 0.0f,  1.0f,  // 7
+        // Правая грань
+        1.0f, 0.0f, 0.0f,   // 1
+        1.0f, 0.0f, 0.0f,   // 2
+        1.0f, 0.0f, 0.0f,   // 6
+        1.0f, 0.0f, 0.0f,    // 5
+         //// Задняя грань
+        0.0f, 0.0f, -1.0f,  // 0
+        0.0f, 0.0f, -1.0f,  // 1
+        0.0f, 0.0f, -1.0f,  // 2
+        0.0f, 0.0f, -1.0f,  // 3
+        // Левая грань
+        -1.0f, 0.0f, 0.0f,  // 0
+        -1.0f, 0.0f, 0.0f,  // 3
+        -1.0f, 0.0f, 0.0f,  // 7
+        -1.0f, 0.0f, 0.0f,  // 4
+        // Верхняя грань
+        0.0f,  1.0f, 0.0f,  // 3
+        0.0f,  1.0f, 0.0f,  // 2
+        0.0f,  1.0f, 0.0f,  // 6
+        0.0f,  1.0f, 0.0f,  // 7
+        //// Нижняя грань
+        0.0f, -1.0f, 0.0f,  // 0
+        0.0f, -1.0f, 0.0f,  // 1
+        0.0f, -1.0f, 0.0f,  // 5
+        0.0f, -1.0f, 0.0f,  // 4
+    };
 
     glGenVertexArrays(1, &vao); // Create a VAO to store state
     glBindVertexArray(vao);     // Bind the VAO
@@ -103,9 +124,9 @@ ModelManager::ModelManager(ShaderProgram* shaderProgram, Camera* camera) {
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(GLfloat), points.data(), GL_STATIC_DRAW);
 
-    glGenBuffers(1, &c_vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, c_vbo);
-    glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLfloat), colors.data(), GL_STATIC_DRAW);
+    glGenBuffers(1, &n_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, n_vbo);
+    glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(GLfloat), normals.data(), GL_STATIC_DRAW);
 
     glGenBuffers(1, &t_vbo);
     glBindBuffer(GL_ARRAY_BUFFER, t_vbo);
@@ -117,7 +138,7 @@ ModelManager::ModelManager(ShaderProgram* shaderProgram, Camera* camera) {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
 
     glEnableVertexAttribArray(1);
-    glBindBuffer(GL_ARRAY_BUFFER, c_vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, n_vbo);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
 
     glEnableVertexAttribArray(2);
@@ -130,15 +151,18 @@ ModelManager::ModelManager(ShaderProgram* shaderProgram, Camera* camera) {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, elements.size() * sizeof(GLuint), elements.data(), GL_STATIC_DRAW);
 
     // Unbind the VAO (optional, good practice)
-    glBindVertexArray(0);
+    //glBindVertexArray(0);
     pShaderProgram = shaderProgram;
     pCamera = camera;
+
+    glBindVertexArray(vbo); // Bind the VAO containing VBO and IBO configurations
+    glPointSize(10.0f);
+
 }
 
-void ModelManager::UpdateArrayBuffer(GLuint& buffer, const std::vector<GLuint> array) {
-    //glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, array.size() * sizeof(GLuint), array.data(), GL_STATIC_DRAW);
+void ModelManager::UpdateArrayBuffer() {
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(GLfloat), points.data(), GL_STATIC_DRAW);
 
     std::cout << "UPDATE BUFFER" << std::endl;
 }
@@ -168,17 +192,16 @@ void ModelManager::Render() {
 
     for (Cube mdl : vecModels) {
         //if (isCubeInFrustum(mdl.GetMin(), mdl.GetMax())) {
-            glm::mat4 model = glm::translate(glm::mat4(1.0f), mdl.position);
+            //glm::mat4 model = glm::translate(glm::mat4(1.0f), mdl.position);
             //model = glm::scale(model, glm::vec3(mdl.scale, mdl.scale, mdl.scale));
-
-            pShaderProgram->setTexture("my_texture", mdl.texture);
-            pShaderProgram->setMatrix4("model", model);
-
-            glBindVertexArray(vbo); // Bind the VAO containing VBO and IBO configurations
             glPolygonMode(GL_FRONT_AND_BACK, isWireFrame ? GL_LINE : GL_FILL);
+            pShaderProgram->setTexture("my_texture", mdl.texture);
+            pShaderProgram->setMatrix4("model", mdl.model);
+
+            //glBindVertexArray(vbo); // Bind the VAO containing VBO and IBO configurations
             glDrawElements(GL_TRIANGLES, elements.size(), GL_UNSIGNED_INT, 0);
 
-            glBindVertexArray(0);   // Unbind the VAO
+            //glBindVertexArray(0);   // Unbind the VAO
         //}
     }
 }

@@ -2,8 +2,6 @@
 #include <GL/glew.h>
 #include <iostream>
 
-#include <mutex>
-
 #include <glm/gtc/type_ptr.hpp>
 
 using namespace Renderer;
@@ -64,14 +62,16 @@ ShaderProgram& ShaderProgram::operator=(ShaderProgram&& shaderProgram) noexcept 
 }
 
 void ShaderProgram::setMatrix4(const std::string& name, const glm::mat4& matrix) {
-    std::lock_guard<std::mutex> lock(mutex);
     glUniformMatrix4fv(glGetUniformLocation(m_ID, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
 void ShaderProgram::setTexture(const std::string& name, const GLuint& texture) {
-    std::lock_guard<std::mutex> lock(mutex);
     glBindTexture(GL_TEXTURE_2D, texture);
     glUniform1i(glGetUniformLocation(m_ID, name.c_str()), 0);
+}
+
+void ShaderProgram::setSide(const std::string& name, const GLuint& side) {
+    glUniform1i(glGetUniformLocation(m_ID, name.c_str()), side);
 }
 
 bool ShaderProgram::useProgram() const {

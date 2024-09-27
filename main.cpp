@@ -28,6 +28,12 @@
 
 #include <map>
 
+#include <thread>
+#include <mutex>
+
+#include <fstream>
+
+
 bool showImGui = true;
 
 GLfloat logGPUMemoryUsage() {
@@ -106,6 +112,7 @@ void mousePosCallback(GLFWwindow* window, double xpos, double ypos) {
     io.MousePos = ImVec2(xpos, ypos);
 }
 
+bool mousePressed = false;
 void mouse_button_callback(GLFWwindow* window, int button, int action, int mods) {
     if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && !ImGui::GetIO().WantCaptureMouse) {
         mouseCapture = !mouseCapture;
@@ -115,6 +122,13 @@ void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
 
         glfwSetInputMode(window, GLFW_CURSOR, mouseCapture ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
     }
+
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        mousePressed = true; // Флаг нажатия мыши
+    } else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
+        mousePressed = false; // Флаг отпускания мыши
+    }
+
 
     if (action == GLFW_PRESS) {
         ImGui::GetIO().MouseDown[button] = true;
@@ -131,6 +145,49 @@ void glfwWindowSizeCallback(GLFWwindow* pWindow, int wid, int hei) {
 
 
 bool f2Pressed = false;
+
+const int GRID_SIZE = 32;
+
+std::mutex cubeMutex;
+void createCubes(int startX, int endX, int threadId, Renderer::ModelManager& mdlManager, Renderer::ResourceManager& resManager) {
+    for (int x = startX; x < endX; ++x) {
+        for (int y = 0; y < GRID_SIZE; ++y) {
+            for (int z = 0; z < GRID_SIZE; ++z) {
+                // Защита общего ресурса с помощью мьютекса
+                std::lock_guard<std::mutex> guard(cubeMutex);
+
+                Renderer::Cube c(glm::vec3(x*2, y*2, z*2), resManager.GetTexture(y % 2 == 1 ? "grass.png" : "dirt.jpg"));
+                mdlManager.AddModel(c);
+            }
+        }
+    }
+    std::cout << "Thread " << threadId << " finished.\n";
+}
+
+char* getcharsfromfile(const char* filename) {
+    std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
+
+    if (!file.is_open()) {
+        std::cerr << "failed open file!" << std::endl;
+        return nullptr;
+    }
+
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // Выделение памяти для строки
+    char* buffer = new char[size + 1]; // Добавляем 1 для нулевого символа (строка C-style)
+
+    // Чтение данных в буфер
+    if (file.read(buffer, size)) {
+        buffer[size] = '\0'; // Добавляем нулевой символ в конец
+    }
+
+    // Закрытие файла
+    file.close();
+
+    return buffer;
+}
 
 int main(int argc, char** argv) {
     if (!glfwInit()) {
@@ -192,47 +249,48 @@ int main(int argc, char** argv) {
     //glfwSetScrollCallback(window, scrollCallback);
     //glfwSetWindowSizeCallback(window, windowSizeCallback);
 
-    const char* vertex_shader = 
-        "#version 460\n"
-        "layout(location = 0) in vec3 vertex_position;"
-        "layout(location = 1) in vec3 vertex_color;"
-        "layout(location = 2) in vec2 vertex_uv;"
-        "out vec3 color;"
-        "out vec2 uv;"
-        "uniform mat4 model;"
-        "uniform mat4 view;"
-        "uniform mat4 projection;"
-        "void main() {"
-        "color = vertex_color;"
-        "uv = vertex_uv;"
-        "gl_Position = projection * view * model * vec4(vertex_position, 1.0);"
-        "}";
+    //const char* vertex_shader = 
+        //"#version 460\n"
+        //"layout(location = 0) in vec3 vertex_position;"
+        //"layout(location = 1) in vec3 vertex_color;"
+        //"layout(location = 2) in vec2 vertex_uv;"
+        //"out vec3 color;"
+        //"out vec2 uv;"
+        //"uniform mat4 model;"
+        //"uniform mat4 view;"
+        //"uniform mat4 projection;"
+        //"void main() {"
+        //"color = vertex_color;"
+        //"uv = vertex_uv;"
+        //"gl_Position = projection * view * model * vec4(vertex_position, 1.0);"
+        //"}";
 
-    const char* fragment_shader = 
-        "#version 460\n"
-        "in vec2 uv;"
-        "in vec3 color;"
-        "out vec4 frag_color;"
-        "uniform sampler2D my_texture;"
-        "void main() {"
-        "vec4 texColor = texture(my_texture, uv);"
-        "frag_color = texColor * vec4(color, 1.0);"
-        "}";
-
-    std::string vertexShader(vertex_shader);
-    std::string fragmentShader(fragment_shader);
-
-    Renderer::ShaderProgram shaderProgram(vertexShader, fragmentShader);
+    //const char* fragment_shader = 
+        //"#version 460\n"
+        //"in vec2 uv;"
+        //"in vec3 color;"
+        //"out vec4 frag_color;"
+        //"uniform sampler2D my_texture;"
+        //"void main() {"
+        //"vec4 texColor = texture(my_texture, uv);"
+        //"frag_color = texColor * vec4(color, 1.0);"
+        //"}";
+    Renderer::ShaderProgram shaderProgram(getcharsfromfile("shaders/cube.vert"), getcharsfromfile("shaders/cube.frag"));
+    Renderer::ShaderProgram debugProgram(getcharsfromfile("shaders/debug.vert"), getcharsfromfile("shaders/debug.frag"));
 
     if (!shaderProgram.isCompiled()) {
         std::cerr << "shader program error!" << std::endl;
     }
+    if (!debugProgram.isCompiled()) {
+        std::cerr << "debug program error!" << std::endl;
+    }
 
-    Renderer::Camera camManager(&shaderProgram, &g_windowSize);
+    Renderer::Camera camManager(&shaderProgram, &debugProgram, &g_windowSize);
     camManager.yaw = 0.0f;
     camManager.pitch = 0.0f;
     camManager.speed = 10.5f;
     camManager.sensitivity = 0.2f;
+    camManager.position = glm::vec3(0, 0, 0);
 
     glfwSetWindowUserPointer(window, &camManager);
     //camManager.position = glm::vec3(0.0, 3.0f, -7.0f);
@@ -245,17 +303,38 @@ int main(int argc, char** argv) {
     resManager.CreateTexture("dirt.jpg");
     resManager.CreateTexture("grass.png");
 
-    Renderer::Cube c(glm::vec3(0, 0, 0), resManager.GetTexture("dirt.jpg"));
+    //for (int i = 0; i<32; i++) {
+        //for (int j = 0; j<32; j++) {
+            //for (int t = 0; t<32; t++) {
+                //Renderer::Cube c(glm::vec3(i*2, t*2, j*2), resManager.GetTexture(j % 2 == 1 ? "grass.png" : "dirt.jpg"));
+                //mdlManager.AddModel(c);
+            //}
+        //}
+    //}
+    //
+    Renderer::Cube c(glm::vec3(0, 2, 0), resManager.GetTexture("dirt.jpg"));
     mdlManager.AddModel(c);
 
-    for (int i = 0; i<32; i++) {
-        for (int j = 0; j<32; j++) {
-            for (int t = 0; t<32; t++) {
-                Renderer::Cube c(glm::vec3(i*2, t*2, j*2), resManager.GetTexture("dirt.jpg"));
-                mdlManager.AddModel(c);
-            }
-        }
-    }
+    //const int numThreads = 4;
+
+    //int chunkSize = GRID_SIZE / numThreads;
+
+    //// Массив потоков
+    //std::thread threads[numThreads];
+
+    //// Запускаем потоки для создания кубов
+    //for (int i = 0; i < numThreads; ++i) {
+        //int startX = i * chunkSize;
+        //int endX = (i == numThreads - 1) ? GRID_SIZE : (i + 1) * chunkSize; // Последний поток может делать больше
+        //threads[i] = std::thread(createCubes, startX, endX, i + 1, std::ref(mdlManager), std::ref(resManager));
+    //}
+
+    //// Ожидаем завершения всех потоков
+    //for (int i = 0; i < numThreads; ++i) {
+        //threads[i].join();
+    //}
+
+    std::cout << mdlManager.vecModels.size() << " Models created." << std::endl;
 
     //Game::Map gameMap(&mdlManager, 8, 8, 8);
 
@@ -265,6 +344,9 @@ int main(int argc, char** argv) {
     } proper;
 
     float deltaTime, lastFrame;
+
+    int in;
+
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -286,6 +368,12 @@ int main(int argc, char** argv) {
         } else if (state == GLFW_RELEASE) {
             f2Pressed = false; // Reset when the key is released
         }
+
+        if (mousePressed) {
+            camManager.CheckRayIntersection(window, mdlManager);
+            mousePressed = false;
+        }
+
 
         GLuint query;
         glGenQueries(1, &query);
@@ -417,7 +505,7 @@ int main(int argc, char** argv) {
             ImGui::Text("Mouse capture: %b", ImGui::GetIO().WantCaptureMouse);
             ImGui::Text("GPU Usage %f", logGPUMemoryUsage());
             ImGui::Text("Memory Usage %d", logMemoryUsage().ru_maxrss);
-            ImGui::Text("Render Time %f", elapsed_time / 1e6);
+            //ImGui::Text("Render Time %f", elapsed_time / 1e6);
             ImGui::Text("FPS %f", fps);
             ImGui::Checkbox("Wireframe", &mdlManager.isWireFrame);
 
@@ -430,24 +518,41 @@ int main(int argc, char** argv) {
             ImGui::Text("z: %f", pos.z);
 
             if (ImGui::CollapsingHeader("Test")) {
-                if (ImGui::Button("only_up")) {
-                    mdlManager.UpdateArrayBuffer(vao, only_up);
+                ImGui::InputInt("Side", &in);
+
+                if (ImGui::Button("Setside")) {
+                    shaderProgram.setSide("side", in);
+                } 
+            }
+
+            if (ImGui::CollapsingHeader("Rays Manipulation")) {
+                ImGui::Text("Rays %d", camManager.rays.size());
+
+                for (size_t i = 0; i < camManager.rays.size(); i=i+2) {
+                    ImGui::PushID(i);
+                    ImGui::Text("start_x %f", camManager.rays[i].x);
+                    ImGui::Text("start_y %f", camManager.rays[i].y);
+                    ImGui::Text("start_z %f", camManager.rays[i].z);
+                    ImGui::Text("end_x %f", camManager.rays[i+1].x);
+                    ImGui::Text("end_y %f", camManager.rays[i+1].y);
+                    ImGui::Text("end_z %f", camManager.rays[i+1].z);
+                    ImGui::PopID();
+                }
+            }
+
+            if (ImGui::CollapsingHeader("Vertex Manipulation")) {
+                ImGui::Text("Vertex %d", mdlManager.points.size());
+
+                for (size_t i = 0; i < mdlManager.points.size(); i=i+2) {
+                    ImGui::PushID(i*2);
+                    ImGui::SliderFloat("x", &mdlManager.points[i], -10.0f, 10.0f);
+                    ImGui::SliderFloat("y", &mdlManager.points[i+1], -10.0f, 10.0f);
+                    ImGui::SliderFloat("z", &mdlManager.points[i+2], -10.0f, 10.0f);
+                    ImGui::PopID();
                 }
 
-                if (ImGui::Button("up")) {
-                    mdlManager.UpdateArrayBuffer(vao, up);
-                }
-
-                if (ImGui::Button("bottom")) {
-                    mdlManager.UpdateArrayBuffer(vao, bottom);
-                }
-
-                if (ImGui::Button("only_bottom")) {
-                    mdlManager.UpdateArrayBuffer(vao, only_bottom);
-                }
-
-                if (ImGui::Button("all")) {
-                    mdlManager.UpdateArrayBuffer(vao, all);
+                if (ImGui::Button("Update points")) {
+                    mdlManager.UpdateArrayBuffer();
                 }
             }
 
