@@ -36,7 +36,7 @@ Model::Model(std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector
     pShader->useProgram();
 }
 
-Model::Model(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector<GLfloat> texture_points) {
+Model::Model(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector<GLfloat> texture_points) : points(points), faces(faces), texture_points(texture_points) {
     pShader = shader;
 
     glGenVertexArrays(1, &vao);
@@ -69,7 +69,8 @@ Model::Model(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLu
 void Model::Render(const glm::mat4 mvp, const glm::mat4 position) {
     //glPolygonMode(GL_FRONT_AND_BACK, isWireFrame ? GL_LINE : GL_FILL);
     //pShader->setTexture("my_texture", mdl.texture);
-    pShader->setMatrix4("mvp", mvp * position);
+    pShader->setMatrix4("mvp", mvp);
+    pShader->setMatrix4("model", position);
 
     //glBindVertexArray(vbo); // Bind the VAO containing VBO and IBO configurations
     glDrawElements(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, 0);

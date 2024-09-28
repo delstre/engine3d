@@ -213,7 +213,7 @@ int main(int argc, char** argv) {
 
     Renderer::ModelManager models;
 
-    //Renderer::ShaderProgram shader = Renderer::ShaderProgram("shaders/model.vert", "shaders/model.frag");
+    Renderer::ShaderProgram* pShader = new Renderer::ShaderProgram("shaders/model.vert", "shaders/model.frag");
 
     std::vector<GLfloat> points = {
         -1.0f, -1.0f,  1.0f,
@@ -288,12 +288,10 @@ int main(int argc, char** argv) {
     Renderer::Model cube(points, faces, texture_points);
     models.AddModel("cube", &cube);
 
-
-    
-    int chunkCount = 8;
+    int chunkCount = 1;
     std::vector<Renderer::Object> objs[chunkCount];
 
-    int objCount = 16;
+    int objCount = 32;
 
     for (int k = 0; k<chunkCount; k++) {
         for (int i = 0; i<objCount; i++) {
@@ -343,8 +341,9 @@ int main(int argc, char** argv) {
         glBeginQuery(GL_TIME_ELAPSED, query);
 
         for (int i = 0; i<chunkCount; i++) {
-            for (Renderer::Object obj : objs[i]) {
-                obj.Render(camManager.mvp);
+            int size = objs[i].size();
+            for (int j = 0; j<size; j++) {
+                (objs[i])[j].Render(camManager.mvp);
             }
         }
 
