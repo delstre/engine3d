@@ -12,14 +12,14 @@
 #include <glm/vec2.hpp>
 #include <glm/mat4x4.hpp>
 
-#include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
-
 #include "camera.hpp"
 #include "model.hpp"
 #include "resourcemanager.hpp"
 #include "object.hpp"
+#include "line.hpp"
+
+#include "interface.hpp"
+#include "controller.hpp"
 
 #include <GL/glext.h>  // Заголовок для расширений OpenGL
 
@@ -27,47 +27,9 @@
 
 #include "modelmanager.hpp"
 
+#include <time.h>
+
 bool showImGui = true;
-
-GLfloat logGPUMemoryUsage() {
-    GLint totalMemory = 0;
-    GLint freeMemory = 0;
-
-    glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &totalMemory);
-    glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &freeMemory);
-
-    return (1 - ((float)freeMemory / (float)totalMemory)) * 100;
-}
-
-
-struct rusage logMemoryUsage() {
-    struct rusage usage;
-    getrusage(RUSAGE_SELF, &usage);
-    //"Memory usage: " << usage.ru_maxrss << " KB" << std::endl;
-    return usage;
-}
-
-static int frameCount = 0;
-static double lastTime = glfwGetTime();
-static double fps = 0;
-void logFPS() {
-    // Увеличиваем количество кадров
-    frameCount++;
-
-    // Получаем текущее время
-    double currentTime = glfwGetTime();
-    double elapsedTime = currentTime - lastTime;
-
-    // Если прошла 1 секунда
-    if (elapsedTime >= 0.01) {
-        // Вычисляем FPS
-        fps = frameCount / elapsedTime;
-
-        // Сбрасываем количество кадров и время
-        frameCount = 0;
-        lastTime = currentTime;
-    }
-}
 
 std::string formatString(const char* format, int value) {
     // Вычисляем необходимую длину буфера для форматированной строки
@@ -99,7 +61,6 @@ void mousePosCallback(GLFWwindow* window, double xpos, double ypos) {
         Renderer::Camera* camera = static_cast<Renderer::Camera*>(glfwGetWindowUserPointer(window));  // Получаем камеру
         camera->ProcessMouseMovement(-xoffset, yoffset);
     }
-
 
     ImGuiIO& io = ImGui::GetIO();
     io.MousePos = ImVec2(xpos, ypos);
@@ -139,8 +100,6 @@ void glfwWindowSizeCallback(GLFWwindow* pWindow, int wid, int hei) {
 
 bool f2Pressed = false;
 
-const int GRID_SIZE = 32;
-
 int main(int argc, char** argv) {
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -166,25 +125,10 @@ int main(int argc, char** argv) {
 
 
     // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsLight();
 
     glfwMakeContextCurrent(window);
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);
-    ImGui_ImplOpenGL3_Init("#version 330");
 
-    bool show_demo_window = true;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-
-    // context
+    Renderer::Interface interface(window);
 
     if (glewInit() != GLEW_OK) {
         std::cerr << "GLEW failed" << std::endl;
@@ -205,6 +149,8 @@ int main(int argc, char** argv) {
     camManager.sensitivity = 0.2f;
     camManager.position = glm::vec3(0, 0, 0);
 
+    interface.AddCameraInfo(&camManager);
+
     glfwSetWindowUserPointer(window, &camManager);
 
     Renderer::ResourceManager resManager;
@@ -212,8 +158,6 @@ int main(int argc, char** argv) {
     resManager.CreateTexture("grass.png");
 
     Renderer::ModelManager models;
-
-    Renderer::ShaderProgram* pShader = new Renderer::ShaderProgram("shaders/model.vert", "shaders/model.frag");
 
     std::vector<GLfloat> points = {
         -1.0f, -1.0f,  1.0f,
@@ -285,28 +229,41 @@ int main(int argc, char** argv) {
         0.0f, 0.0f, // bottom left
     };
 
-    Renderer::Model cube(points, faces, texture_points);
-    models.AddModel("cube", &cube);
+    models.AddModel("cube", new Renderer::Model(points, faces, texture_points));
 
-    int chunkCount = 1;
-    std::vector<Renderer::Object> objs[chunkCount];
+    std::vector<Renderer::Object> objs;
 
-    int objCount = 32;
+    clock_t start_time = clock();
 
-    for (int k = 0; k<chunkCount; k++) {
-        for (int i = 0; i<objCount; i++) {
-            for (int j = 0; j<objCount; j++) {
-                for (int t = 0; t<objCount; t++) {
-                    Renderer::Object c(models.GetModel("cube"), i*2, t*2, j*2);
-                    objs[k].insert(objs[k].begin(), c);
-                }
+    int cubes = 0;
+    int grid = 16;
+    for (int i = 0; i<grid; i++) {
+        for (int j = 0; j<grid; j++) {
+            for (int t = 0; t<grid; t++) {
+                Renderer::Object o(models.GetModel("cube"), i*2, t*2, j*2);
+                o.SetTexture(resManager.GetTexture("dirt.jpg"));
+                objs.push_back(o);
+                cubes++;
             }
         }
     }
 
+    interface.AddObjectsInfo(&objs);
+
+    clock_t end_time = clock();
+    double elapsed = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    std::cout << "Time taken by function: " << elapsed << " seconds" << std::endl;
+    std::cout << "Number of cubes: " << cubes << std::endl;
+
     float deltaTime, lastFrame;
 
     int in;
+
+    Engine::Controller controller(window);
+
+    controller.AddCallback(GLFW_KEY_F2, true, []() {
+
+    });
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -319,13 +276,11 @@ int main(int argc, char** argv) {
         camManager.Think();
         camManager.Control(window, deltaTime);
 
+        controller.ProcessInput();
+
         int state = glfwGetKey(window, GLFW_KEY_F2);
 
         if (state == GLFW_PRESS) {
-            if (!f2Pressed) { // If it wasn't pressed before
-                showImGui = !showImGui;  // Toggle the showImGui variable
-                f2Pressed = true;         // Mark as pressed
-            }
         } else if (state == GLFW_RELEASE) {
             f2Pressed = false; // Reset when the key is released
         }
@@ -340,11 +295,8 @@ int main(int argc, char** argv) {
         // Начало измерения
         glBeginQuery(GL_TIME_ELAPSED, query);
 
-        for (int i = 0; i<chunkCount; i++) {
-            int size = objs[i].size();
-            for (int j = 0; j<size; j++) {
-                (objs[i])[j].Render(camManager.mvp);
-            }
+        for (Renderer::Object obj : objs) {
+            obj.Render(camManager.mvp);
         }
 
         glEndQuery(GL_TIME_ELAPSED);
@@ -353,79 +305,10 @@ int main(int argc, char** argv) {
         GLuint64 elapsed_time;
         glGetQueryObjectui64v(query, GL_QUERY_RESULT, &elapsed_time);
 
-        if (showImGui) {
-            ImGui_ImplOpenGL3_NewFrame();
-            ImGui_ImplGlfw_NewFrame();
-            ImGui::NewFrame();
-
-            ImGui::Begin("Render Engine 0.1");
-
-            ImGui::Text("Mouse capture: %b", ImGui::GetIO().WantCaptureMouse);
-            ImGui::Text("GPU Usage %f", logGPUMemoryUsage());
-            ImGui::Text("Memory Usage %d", logMemoryUsage().ru_maxrss);
-            //ImGui::Text("Render Time %f", elapsed_time / 1e6);
-            ImGui::Text("FPS %f", fps);
-
-            double mouseX, mouseY;
-            glfwGetCursorPos(window, &mouseX, &mouseY);
-            glm::vec3 pos = camManager.getCursor3DPos(mouseX, mouseY);
-            ImGui::Text("Cursor Position");
-            ImGui::Text("x: %f", pos.x);
-            ImGui::Text("y: %d", pos.y);
-            ImGui::Text("z: %f", pos.z);
-
-            if (ImGui::CollapsingHeader("Test")) {
-                ImGui::InputInt("Side", &in);
-            }
-
-            if (ImGui::CollapsingHeader("Texture Manipulation")) {
-                ImGui::Text("Textures %d", resManager.textures.size());
-
-                for (const auto& pair : resManager.textures) {
-                    GLuint i = pair.second;
-                    ImGui::Text("TextureID: %d", i);
-                    ImGui::Image((void*)(intptr_t)i, ImVec2(64, 64));
-                }
-            }
-
-            ImGui::Text("Camera");
-            ImGui::SliderFloat("c_x", &camManager.position.x, -100.0f, 100.0f);
-            ImGui::SliderFloat("c_y", &camManager.position.y, -100.0f, 100.0f);
-            ImGui::SliderFloat("c_z", &camManager.position.z, -100.0f, 100.0f);
-
-            ImGui::Text("Eye Position");
-            ImGui::SliderFloat("e_x", &camManager.front.x, -100.0f, 100.0f);
-            ImGui::SliderFloat("e_y", &camManager.front.y, -100.0f, 100.0f);
-            ImGui::SliderFloat("e_z", &camManager.front.z, -100.0f, 100.0f);
-            ImGui::SliderFloat("e_yaw", &camManager.yaw, -180.0f, 180.0f);
-            ImGui::SliderFloat("e_pitch", &camManager.pitch, -180.0f, 180.0f);
-
-            ImGui::Text("Up Vector");
-            ImGui::SliderFloat("u_x", &camManager.up.x, -100.0f, 100.0f);
-            ImGui::SliderFloat("u_y", &camManager.up.y, -100.0f, 100.0f);
-            ImGui::SliderFloat("u_z", &camManager.up.z, -100.0f, 100.0f);
-
-            ImGui::Text("Right Vector");
-            ImGui::SliderFloat("r_x", &camManager.right.x, -100.0f, 100.0f);
-            ImGui::SliderFloat("r_y", &camManager.right.y, -100.0f, 100.0f);
-            ImGui::SliderFloat("r_z", &camManager.right.z, -100.0f, 100.0f);
-
-            ImGui::Text("World Up Vector");
-            ImGui::SliderFloat("w_x", &camManager.worldUp.x, -100.0f, 100.0f);
-            ImGui::SliderFloat("w_y", &camManager.worldUp.y, -100.0f, 100.0f);
-            ImGui::SliderFloat("w_z", &camManager.worldUp.z, -100.0f, 100.0f);
-
-            ImGui::End();
-
-            ImGui::Render();
-            ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        }
-
+        interface.Render(elapsed_time);
 
         glfwPollEvents();
         glfwSwapBuffers(window);
-
-        logFPS();
     }
 
     ImGui_ImplOpenGL3_Shutdown();

@@ -1,7 +1,5 @@
 #version 330
 
-in vec3 vertexpos;
-
 out vec4 frag_color;
 
 void main() {

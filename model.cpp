@@ -32,7 +32,6 @@ Model::Model(std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, faces.size() * sizeof(GLuint), faces.data(), GL_STATIC_DRAW);
 
-    glBindVertexArray(vbo);
     pShader->useProgram();
 }
 
@@ -62,17 +61,17 @@ Model::Model(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLu
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, faces.size() * sizeof(GLuint), faces.data(), GL_STATIC_DRAW);
 
-    glBindVertexArray(vbo);
-    pShader->useProgram();
 }
 
-void Model::Render(const glm::mat4 mvp, const glm::mat4 position) {
-    //glPolygonMode(GL_FRONT_AND_BACK, isWireFrame ? GL_LINE : GL_FILL);
+void Model::Render(const glm::mat4 mvp, const glm::mat4 position, const GLuint texture, bool wireframe) {
+    pShader->useProgram();
+    //glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
     //pShader->setTexture("my_texture", mdl.texture);
     pShader->setMatrix4("mvp", mvp);
     pShader->setMatrix4("model", position);
+    if (texture != 0)
+        pShader->setTexture("texture", texture);
 
-    //glBindVertexArray(vbo); // Bind the VAO containing VBO and IBO configurations
+    glBindVertexArray(vao); // Bind the VAO containing VBO and IBO configurations
     glDrawElements(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, 0);
-
 }

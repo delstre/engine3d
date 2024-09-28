@@ -16,7 +16,7 @@ CXX = g++
 
 EXE = souce
 IMGUI_DIR = thirdparty/imgui
-SOURCES = main.cpp shaderprogram.cpp object.cpp model.cpp modelmanager.cpp camera.cpp resourcemanager.cpp 
+SOURCES = main.cpp debug.cpp config.cpp shaderprogram.cpp controller.cpp interface.cpp line.cpp object.cpp model.cpp modelmanager.cpp camera.cpp resourcemanager.cpp 
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
 OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
@@ -25,6 +25,7 @@ LINUX_GL_LIBS = -lGL
 
 CXXFLAGS = -std=c++11 -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
 CXXFLAGS += -g -Wall -Wformat -lGL -lGLU -lGLEW -lglfw -lIL -lpthread -pthread
+CXXFLAGS += -ltbb -I/usr/include/tbb
 LIBS =
 
 ##---------------------------------------------------------------------

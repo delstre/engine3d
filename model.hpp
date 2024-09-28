@@ -26,6 +26,6 @@ namespace Renderer {
 
             ShaderProgram* pShader;
 
-            void Render(const glm::mat4 mvp, const glm::mat4 position);
+            void Render(const glm::mat4 mvp, const glm::mat4 position, const GLuint texture, bool wireframe);
     };
 }
