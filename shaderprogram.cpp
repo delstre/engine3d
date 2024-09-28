@@ -1,20 +1,21 @@
 #include "shaderprogram.hpp"
 #include <GL/glew.h>
 #include <iostream>
+#include <fstream>
 
 #include <glm/gtc/type_ptr.hpp>
 
 using namespace Renderer;
 
-ShaderProgram::ShaderProgram(const std::string& vertexShader, const std::string& fragmentShader) {
+ShaderProgram::ShaderProgram(const char* vertexShader, const char* fragmentShader) {
     GLuint vertexShaderID;
-    if (!createShader(vertexShader, GL_VERTEX_SHADER, vertexShaderID)) {
+    if (!createShader(readFromFile(vertexShader), GL_VERTEX_SHADER, vertexShaderID)) {
         std::cerr << "Vertex shader error\n" << std::endl;
         return;
     }
 
     GLuint fragmentShaderID;
-    if (!createShader(fragmentShader, GL_FRAGMENT_SHADER, fragmentShaderID)) {
+    if (!createShader(readFromFile(fragmentShader), GL_FRAGMENT_SHADER, fragmentShaderID)) {
         std::cerr << "Fragment shader error\n" << std::endl;
         glDeleteShader(vertexShaderID);
         return;
@@ -39,6 +40,11 @@ ShaderProgram::ShaderProgram(const std::string& vertexShader, const std::string&
     glDeleteShader(fragmentShaderID);
 }
 
+ShaderProgram::ShaderProgram() {
+    m_ID = 0;
+    m_IsCompiled = false;
+}
+
 ShaderProgram::~ShaderProgram() {
     glDeleteProgram(m_ID);
 }
@@ -59,6 +65,31 @@ ShaderProgram& ShaderProgram::operator=(ShaderProgram&& shaderProgram) noexcept 
     m_ID = 0; 
     m_IsCompiled = false;
     return *this;
+}
+
+char* ShaderProgram::readFromFile(const char* filename) {
+    std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
+
+    if (!file.is_open()) {
+        std::cerr << "failed open file!" << std::endl;
+        return nullptr;
+    }
+
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    // Выделение памяти для строки
+    char* buffer = new char[size + 1]; // Добавляем 1 для нулевого символа (строка C-style)
+
+    // Чтение данных в буфер
+    if (file.read(buffer, size)) {
+        buffer[size] = '\0'; // Добавляем нулевой символ в конец
+    }
+
+    // Закрытие файла
+    file.close();
+
+    return buffer;
 }
 
 void ShaderProgram::setMatrix4(const std::string& name, const glm::mat4& matrix) {

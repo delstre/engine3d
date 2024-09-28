@@ -1,7 +1,4 @@
 #include "camera.hpp"
-#include "shaderprogram.hpp"
-#include "modelmanager.hpp"
-#include "cube.hpp"
 
 #include <glm/vec2.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -15,28 +12,30 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 
+#include <vector>
+
 using namespace Renderer;
 
-Camera::Camera(ShaderProgram* shaderProgram, ShaderProgram* debugProgram, glm::ivec2* winSize) {
-    pShaderProgram = shaderProgram;
-    pDebugProgram = debugProgram;
-    pWinSize = winSize; 
-
-    glGenVertexArrays(1, &vao); // Create a VAO to store state
-    glBindVertexArray(vao);     // Bind the VAO
-
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-
-    glEnableVertexAttribArray(4);
-    glVertexAttribPointer(4, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(glm::vec3), nullptr);
-
-    glBindVertexArray(vbo); // Bind the VAO containing VBO and IBO configurations
+Camera::Camera(GLFWwindow* window) {
+    pWindow = window;
+    
+    UpdateWindowSize();
+    UpdateMVP();
 };
 
+void Camera::UpdateWindowSize() {
+    glfwGetWindowSize(pWindow, &wid, &hei);
+}
+
+void Camera::UpdateMVP() {
+    projection = glm::perspective(ReCalculateFOV(), 1.0f * wid / hei, 0.1f, 200.0f);
+    view = glm::lookAt(position, position + front, up);
+    mvp = projection * view;
+}
+
 float Camera::SpectAxis() {
-    float screen_width = pWinSize->x;
-    float screen_height = pWinSize->y;
+    float screen_width = wid;
+    float screen_height = hei; 
 
     float outputzoom = 1.0f;
     float aspectorigin = 16.0f / 9.0f;
@@ -178,7 +177,7 @@ glm::vec3 Camera::GetMouseRay(int mouseX, int mouseY, int windowWidth, int windo
 }
 
 // Проверка пересечения
-void Camera::CheckRayIntersection(GLFWwindow* window, ModelManager mdlManager) {
+void Camera::CheckRayIntersection(GLFWwindow* window) {
     double mouseX, mouseY;
     glfwGetCursorPos(window, &mouseX, &mouseY);
 
@@ -188,44 +187,11 @@ void Camera::CheckRayIntersection(GLFWwindow* window, ModelManager mdlManager) {
     glm::vec3 origin = position; // Позиция камеры
     glm::vec3 direction = GetMouseRay(mouseX, mouseY, width, height, projection, view);
     
-    for (Renderer::Cube c : mdlManager.vecModels) {
-        CreateRay(origin + direction, direction, 10);
-        pShaderProgram->setSide("side", GetIntersectedFace(origin, direction, c.GetMin(), c.GetMax()));
-    }
+    // code for objects
 }
 
-void Camera::CreateRay(const glm::vec3& origin, const glm::vec3& direction, float length) {
-    rays.insert(rays.begin(), origin + direction * length);
-    rays.insert(rays.begin(), origin);
-
-    //glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, rays.size() * sizeof(glm::vec3), rays.data(), GL_STATIC_DRAW);
-}
-
-void Camera::RenderRays() {
-    for (const auto& ray : rays) {
-        pDebugProgram->setMatrix4("model", glm::translate(glm::mat4(1.0f), ray));
-        glLineWidth(2.f);
-        glDrawArrays(GL_LINES, 0, rays.size());
-        glDrawArrays(GL_POINTS, 0, rays.size());
-    }
-}
-
-void Camera::Render() {
-    projection = glm::perspective(ReCalculateFOV(), 1.0f * pWinSize->x / pWinSize->y, 0.1f, 200.0f);
-    view = glm::lookAt(position, position + front, up);
-
-    pShaderProgram->useProgram();
-    pShaderProgram->setMatrix4("projection", projection);
-    pShaderProgram->setMatrix4("view", view);
-
-    pDebugProgram->useProgram();
-    pDebugProgram->setMatrix4("view", view);
-    pDebugProgram->setMatrix4("projection", projection);
-
-    RenderRays();
-
+void Camera::Think() {
+    UpdateMVP();
     updateCameraVectors();
 }
 

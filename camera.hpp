@@ -1,6 +1,5 @@
 #pragma once
 
-#include "modelmanager.hpp"
 #include "shaderprogram.hpp"
 #include <glm/vec2.hpp>
 
@@ -14,22 +13,18 @@
 
 
 namespace Renderer {
-    class ModelManager;
-
     enum Face { NONE, FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM };
-
-    struct Ray {
-        glm::vec3 origin;
-        glm::vec3 direction;
-    };
 
     class Camera {
         public:
-            Camera(ShaderProgram* shaderProgram, ShaderProgram* debugProgram, glm::ivec2* pWinSize);
+            Camera() = delete;
+            Camera(GLFWwindow* window);
 
-            ShaderProgram* pShaderProgram;
-            ShaderProgram* pDebugProgram;
-            glm::ivec2* pWinSize;
+            GLFWwindow* pWindow;
+            int wid, hei;
+
+            void UpdateWindowSize();
+            void UpdateMVP();
 
             glm::vec3 position;
             glm::vec3 front;
@@ -39,6 +34,7 @@ namespace Renderer {
 
             glm::mat4 projection;
             glm::mat4 view;
+            glm::mat4 mvp;
 
             float yaw = 0.0f;
             float pitch = 0.0f;;
@@ -50,24 +46,21 @@ namespace Renderer {
 
             glm::vec3 getCursor3DPos(double x, double y);
 
+
             float SpectAxis();
             float ReCalculateFOV();
 
             glm::vec3 GetMouseRay(int mouseX, int mouseY, int windowWidth, int windowHeight, const glm::mat4& projection, const glm::mat4& view);
-            void CheckRayIntersection(GLFWwindow* window, ModelManager mdlManager);
+            void CheckRayIntersection(GLFWwindow* window);
             bool RayIntersectsBox(const glm::vec3& origin, const glm::vec3& direction, const glm::vec3& boxMin, const glm::vec3& boxMax);
             Face GetIntersectedFace(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& boxMin, const glm::vec3& boxMax);
 
-            void Render();
+            void Think();
 
             void updateCameraVectors();
             void ProcessMouseMovement(float xoffset, float yoffset);
             void ProcessKeyboardInput(int direction, float deltaTime);
 
-            void CreateRay(const glm::vec3& origin, const glm::vec3& direction, float length);
-            void RenderRays();
-            std::vector<glm::vec3> rays;
-            float rayLength;
             void Control(GLFWwindow* window, float deltaTime);
             GLuint vao, vbo;
     };

@@ -1,8 +1,6 @@
 #include <math.h>
 #include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
+
 #include <string>
 #include <ctime>
 #include <GL/glew.h>
@@ -18,21 +16,16 @@
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
-#include "modelmanager.hpp"
 #include "camera.hpp"
+#include "model.hpp"
 #include "resourcemanager.hpp"
+#include "object.hpp"
 
 #include <GL/glext.h>  // Заголовок для расширений OpenGL
 
 #include <sys/resource.h>
 
-#include <map>
-
-#include <thread>
-#include <mutex>
-
-#include <fstream>
-
+#include "modelmanager.hpp"
 
 bool showImGui = true;
 
@@ -148,47 +141,6 @@ bool f2Pressed = false;
 
 const int GRID_SIZE = 32;
 
-std::mutex cubeMutex;
-void createCubes(int startX, int endX, int threadId, Renderer::ModelManager& mdlManager, Renderer::ResourceManager& resManager) {
-    for (int x = startX; x < endX; ++x) {
-        for (int y = 0; y < GRID_SIZE; ++y) {
-            for (int z = 0; z < GRID_SIZE; ++z) {
-                // Защита общего ресурса с помощью мьютекса
-                std::lock_guard<std::mutex> guard(cubeMutex);
-
-                Renderer::Cube c(glm::vec3(x*2, y*2, z*2), resManager.GetTexture(y % 2 == 1 ? "grass.png" : "dirt.jpg"));
-                mdlManager.AddModel(c);
-            }
-        }
-    }
-    std::cout << "Thread " << threadId << " finished.\n";
-}
-
-char* getcharsfromfile(const char* filename) {
-    std::ifstream file(filename, std::ios::in | std::ios::binary | std::ios::ate);
-
-    if (!file.is_open()) {
-        std::cerr << "failed open file!" << std::endl;
-        return nullptr;
-    }
-
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    // Выделение памяти для строки
-    char* buffer = new char[size + 1]; // Добавляем 1 для нулевого символа (строка C-style)
-
-    // Чтение данных в буфер
-    if (file.read(buffer, size)) {
-        buffer[size] = '\0'; // Добавляем нулевой символ в конец
-    }
-
-    // Закрытие файла
-    file.close();
-
-    return buffer;
-}
-
 int main(int argc, char** argv) {
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
@@ -204,7 +156,7 @@ int main(int argc, char** argv) {
     glfwWindowHint(GLFW_RESIZABLE, GL_FALSE);
 
 
-    GLFWwindow* window = glfwCreateWindow(g_windowSize.x, g_windowSize.y, "APPF", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(g_windowSize.x, g_windowSize.y, "", NULL, NULL);
     if (!window) {
         std::cerr << "Window failed" << std::endl;
         glfwTerminate();
@@ -245,47 +197,8 @@ int main(int argc, char** argv) {
     glfwSetCursorPosCallback(window, mousePosCallback);
     glfwSetWindowSizeCallback(window, glfwWindowSizeCallback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
-    //glfwSetMouseButtonCallback(window, mouseButtonCallback);
-    //glfwSetScrollCallback(window, scrollCallback);
-    //glfwSetWindowSizeCallback(window, windowSizeCallback);
 
-    //const char* vertex_shader = 
-        //"#version 460\n"
-        //"layout(location = 0) in vec3 vertex_position;"
-        //"layout(location = 1) in vec3 vertex_color;"
-        //"layout(location = 2) in vec2 vertex_uv;"
-        //"out vec3 color;"
-        //"out vec2 uv;"
-        //"uniform mat4 model;"
-        //"uniform mat4 view;"
-        //"uniform mat4 projection;"
-        //"void main() {"
-        //"color = vertex_color;"
-        //"uv = vertex_uv;"
-        //"gl_Position = projection * view * model * vec4(vertex_position, 1.0);"
-        //"}";
-
-    //const char* fragment_shader = 
-        //"#version 460\n"
-        //"in vec2 uv;"
-        //"in vec3 color;"
-        //"out vec4 frag_color;"
-        //"uniform sampler2D my_texture;"
-        //"void main() {"
-        //"vec4 texColor = texture(my_texture, uv);"
-        //"frag_color = texColor * vec4(color, 1.0);"
-        //"}";
-    Renderer::ShaderProgram shaderProgram(getcharsfromfile("shaders/cube.vert"), getcharsfromfile("shaders/cube.frag"));
-    Renderer::ShaderProgram debugProgram(getcharsfromfile("shaders/debug.vert"), getcharsfromfile("shaders/debug.frag"));
-
-    if (!shaderProgram.isCompiled()) {
-        std::cerr << "shader program error!" << std::endl;
-    }
-    if (!debugProgram.isCompiled()) {
-        std::cerr << "debug program error!" << std::endl;
-    }
-
-    Renderer::Camera camManager(&shaderProgram, &debugProgram, &g_windowSize);
+    Renderer::Camera camManager(window);
     camManager.yaw = 0.0f;
     camManager.pitch = 0.0f;
     camManager.speed = 10.5f;
@@ -293,55 +206,105 @@ int main(int argc, char** argv) {
     camManager.position = glm::vec3(0, 0, 0);
 
     glfwSetWindowUserPointer(window, &camManager);
-    //camManager.position = glm::vec3(0.0, 3.0f, -7.0f);
-
-    Renderer::ModelManager mdlManager(&shaderProgram, &camManager);
-    //mdlManager.isWireFrame = true;
-
 
     Renderer::ResourceManager resManager;
     resManager.CreateTexture("dirt.jpg");
     resManager.CreateTexture("grass.png");
 
-    //for (int i = 0; i<32; i++) {
-        //for (int j = 0; j<32; j++) {
-            //for (int t = 0; t<32; t++) {
-                //Renderer::Cube c(glm::vec3(i*2, t*2, j*2), resManager.GetTexture(j % 2 == 1 ? "grass.png" : "dirt.jpg"));
-                //mdlManager.AddModel(c);
-            //}
-        //}
-    //}
-    //
-    Renderer::Cube c(glm::vec3(0, 2, 0), resManager.GetTexture("dirt.jpg"));
-    mdlManager.AddModel(c);
+    Renderer::ModelManager models;
 
-    //const int numThreads = 4;
+    //Renderer::ShaderProgram shader = Renderer::ShaderProgram("shaders/model.vert", "shaders/model.frag");
 
-    //int chunkSize = GRID_SIZE / numThreads;
+    std::vector<GLfloat> points = {
+        -1.0f, -1.0f,  1.0f,
+         1.0f, -1.0f,  1.0f,
+         1.0f,  1.0f,  1.0f,
+        -1.0f,  1.0f,  1.0f,
+        -1.0f, -1.0f, -1.0f,
+         1.0f, -1.0f, -1.0f,
+         1.0f,  1.0f, -1.0f,
+        -1.0f,  1.0f, -1.0f 
+    };
 
-    //// Массив потоков
-    //std::thread threads[numThreads];
+    std::vector<GLuint> faces = {
+        // Front face
+        0, 1, 2,
+        2, 3, 0,
+        // Right face
+        1, 5, 6,
+        6, 2, 1,
+        // Back face
+        7, 6, 5,
+        5, 4, 7,
+        // Left face
+        4, 0, 3,
+        3, 7, 4,
+        // Bottom face
+        4, 5, 1,
+        1, 0, 4,
+        // Top face
+        3, 2, 6,
+        6, 7, 3
+    };
 
-    //// Запускаем потоки для создания кубов
-    //for (int i = 0; i < numThreads; ++i) {
-        //int startX = i * chunkSize;
-        //int endX = (i == numThreads - 1) ? GRID_SIZE : (i + 1) * chunkSize; // Последний поток может делать больше
-        //threads[i] = std::thread(createCubes, startX, endX, i + 1, std::ref(mdlManager), std::ref(resManager));
-    //}
+    std::vector<GLfloat> texture_points = {
+        // Front face
+        0.0f, 0.0f, 
+        1.0f, 0.0f, 
+        1.0f, 1.0f, 
+        0.0f, 1.0f, 
 
-    //// Ожидаем завершения всех потоков
-    //for (int i = 0; i < numThreads; ++i) {
-        //threads[i].join();
-    //}
+        // Right face
+        1.0f, 0.0f, 
+        1.0f, 1.0f, 
+        0.0f, 1.0f, 
+        0.0f, 0.0f, 
 
-    std::cout << mdlManager.vecModels.size() << " Models created." << std::endl;
+        // Back face
+        1.0f, 0.0f, 
+        1.0f, 1.0f, 
+        0.0f, 1.0f, 
+        0.0f, 0.0f, 
 
-    //Game::Map gameMap(&mdlManager, 8, 8, 8);
+        // Left face
+        0.0f, 0.0f, 
+        1.0f, 0.0f, 
+        1.0f, 1.0f, 
+        0.0f, 1.0f, 
 
-    struct block_properties {
-        float x, y, z;
-        GLuint texture;
-    } proper;
+        // Top face
+        0.0f, 1.0f, 
+        0.0f, 0.0f, 
+        1.0f, 0.0f, 
+        1.0f, 1.0f, 
+
+        // Bottom face
+        1.0f, 1.0f, // up left
+        1.0f, 0.0f, // up right
+        1.0f, 0.0f, // bottom right
+        0.0f, 0.0f, // bottom left
+    };
+
+    Renderer::Model cube(points, faces, texture_points);
+    models.AddModel("cube", &cube);
+
+
+    
+    int chunkCount = 8;
+    std::vector<Renderer::Object> objs[chunkCount];
+
+    int objCount = 16;
+
+    for (int k = 0; k<chunkCount; k++) {
+        for (int i = 0; i<objCount; i++) {
+            for (int j = 0; j<objCount; j++) {
+                for (int t = 0; t<objCount; t++) {
+                    Renderer::Object c(models.GetModel("cube"), i*2, t*2, j*2);
+                    objs[k].insert(objs[k].begin(), c);
+                }
+            }
+        }
+    }
 
     float deltaTime, lastFrame;
 
@@ -355,7 +318,7 @@ int main(int argc, char** argv) {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        camManager.Render();
+        camManager.Think();
         camManager.Control(window, deltaTime);
 
         int state = glfwGetKey(window, GLFW_KEY_F2);
@@ -370,130 +333,26 @@ int main(int argc, char** argv) {
         }
 
         if (mousePressed) {
-            camManager.CheckRayIntersection(window, mdlManager);
             mousePressed = false;
         }
-
 
         GLuint query;
         glGenQueries(1, &query);
 
         // Начало измерения
         glBeginQuery(GL_TIME_ELAPSED, query);
-        mdlManager.Render();
+
+        for (int i = 0; i<chunkCount; i++) {
+            for (Renderer::Object obj : objs[i]) {
+                obj.Render(camManager.mvp);
+            }
+        }
+
         glEndQuery(GL_TIME_ELAPSED);
 
         // Получение результата
         GLuint64 elapsed_time;
         glGetQueryObjectui64v(query, GL_QUERY_RESULT, &elapsed_time);
-
-
-        std::vector<GLuint> only_up = {
-                // Front face
-            //0, 1, 2,
-            //2, 3, 0,
-            //// Right face
-            //1, 5, 6,
-            //6, 2, 1,
-            //// Back face
-            //7, 6, 5,
-            //5, 4, 7,
-            //// Left face
-            //4, 0, 3,
-            //3, 7, 4,
-            //// Bottom face
-            //4, 5, 1,
-            //1, 0, 4,
-            //// Top face
-            3, 2, 6,
-            6, 7, 3
-        };
-
-        std::vector<GLuint> up = {
-                // Front face
-            0, 1, 2,
-            2, 3, 0,
-            //// Right face
-            1, 5, 6,
-            6, 2, 1,
-            //// Back face
-            7, 6, 5,
-            5, 4, 7,
-            //// Left face
-            4, 0, 3,
-            3, 7, 4,
-            //// Bottom face
-            //4, 5, 1,
-            //1, 0, 4,
-            //// Top face
-            3, 2, 6,
-            6, 7, 3
-        };
-
-        std::vector<GLuint> bottom = {
-                // Front face
-            0, 1, 2,
-            2, 3, 0,
-            //// Right face
-            1, 5, 6,
-            6, 2, 1,
-            //// Back face
-            7, 6, 5,
-            5, 4, 7,
-            //// Left face
-            4, 0, 3,
-            3, 7, 4,
-            //// Bottom face
-            4, 5, 1,
-            1, 0, 4,
-            //// Top face
-            //3, 2, 6,
-            //6, 7, 3
-        };
-
-        std::vector<GLuint> only_bottom = {
-                // Front face
-            //0, 1, 2,
-            //2, 3, 0,
-            //// Right face
-            //1, 5, 6,
-            //6, 2, 1,
-            //// Back face
-            //7, 6, 5,
-            //5, 4, 7,
-            //// Left face
-            //4, 0, 3,
-            //3, 7, 4,
-            //// Bottom face
-            4, 5, 1,
-            1, 0, 4,
-            //// Top face
-            //3, 2, 6,
-            //6, 7, 3
-        };
-
-        std::vector<GLuint> all = {
-            // Front face
-            0, 1, 2,
-            2, 3, 0,
-            // Right face
-            1, 5, 6,
-            6, 2, 1,
-            // Back face
-            7, 6, 5,
-            5, 4, 7,
-            // Left face
-            4, 0, 3,
-            3, 7, 4,
-            // Bottom face
-            4, 5, 1,
-            1, 0, 4,
-            // Top face
-            3, 2, 6,
-            6, 7, 3
-        };
-
-        GLuint vao = 0;
 
         if (showImGui) {
             ImGui_ImplOpenGL3_NewFrame();
@@ -507,7 +366,6 @@ int main(int argc, char** argv) {
             ImGui::Text("Memory Usage %d", logMemoryUsage().ru_maxrss);
             //ImGui::Text("Render Time %f", elapsed_time / 1e6);
             ImGui::Text("FPS %f", fps);
-            ImGui::Checkbox("Wireframe", &mdlManager.isWireFrame);
 
             double mouseX, mouseY;
             glfwGetCursorPos(window, &mouseX, &mouseY);
@@ -519,90 +377,6 @@ int main(int argc, char** argv) {
 
             if (ImGui::CollapsingHeader("Test")) {
                 ImGui::InputInt("Side", &in);
-
-                if (ImGui::Button("Setside")) {
-                    shaderProgram.setSide("side", in);
-                } 
-            }
-
-            if (ImGui::CollapsingHeader("Rays Manipulation")) {
-                ImGui::Text("Rays %d", camManager.rays.size());
-
-                for (size_t i = 0; i < camManager.rays.size(); i=i+2) {
-                    ImGui::PushID(i);
-                    ImGui::Text("start_x %f", camManager.rays[i].x);
-                    ImGui::Text("start_y %f", camManager.rays[i].y);
-                    ImGui::Text("start_z %f", camManager.rays[i].z);
-                    ImGui::Text("end_x %f", camManager.rays[i+1].x);
-                    ImGui::Text("end_y %f", camManager.rays[i+1].y);
-                    ImGui::Text("end_z %f", camManager.rays[i+1].z);
-                    ImGui::PopID();
-                }
-            }
-
-            if (ImGui::CollapsingHeader("Vertex Manipulation")) {
-                ImGui::Text("Vertex %d", mdlManager.points.size());
-
-                for (size_t i = 0; i < mdlManager.points.size(); i=i+2) {
-                    ImGui::PushID(i*2);
-                    ImGui::SliderFloat("x", &mdlManager.points[i], -10.0f, 10.0f);
-                    ImGui::SliderFloat("y", &mdlManager.points[i+1], -10.0f, 10.0f);
-                    ImGui::SliderFloat("z", &mdlManager.points[i+2], -10.0f, 10.0f);
-                    ImGui::PopID();
-                }
-
-                if (ImGui::Button("Update points")) {
-                    mdlManager.UpdateArrayBuffer();
-                }
-            }
-
-            if (ImGui::CollapsingHeader("Models Manipulation")) {
-                ImGui::Text("Models %d", mdlManager.vecModels.size());
-                if (ImGui::CollapsingHeader("New Model")) {
-                    if (ImGui::SliderFloat("x", &proper.x, -100.0f, 100.0f)) {
-                        proper.x =  roundf(proper.x / 2) * 2;
-                    }
-                    if (ImGui::SliderFloat("y", &proper.y, -100.0f, 100.0f)) {
-                        proper.y =  roundf(proper.y / 2) * 2;
-                    }
-                    if (ImGui::SliderFloat("z", &proper.z, -100.0f, 100.0f)) {
-                        proper.z =  roundf(proper.z / 2) * 2;
-                    }
-
-                    for (const auto& pair : resManager.textures) {
-                        GLuint i = pair.second;
-                        if (ImGui::ImageButton(pair.first.c_str(), (void*)(intptr_t)i, ImVec2(64, 64))) {
-                            proper.texture = i;
-                        }
-                    }
-
-                    if (ImGui::Button("Create")) {
-                        mdlManager.AddModel(Renderer::Cube(glm::vec3(proper.x, proper.y, proper.z), proper.texture));
-                    }
-                }
-
-                for (size_t i = 0; i < mdlManager.vecModels.size(); i++) {
-                    if (ImGui::CollapsingHeader(formatString("Model ID: %i", i).c_str())) {
-                        Renderer::Cube& mdl = mdlManager.vecModels[i];
-
-                        ImGui::PushID(i);
-                        ImGui::Text("TextureID: %d", mdl.texture);
-
-                        if (ImGui::Button("Delete Model")) {
-                            mdlManager.RemoveModel(i);
-                        }
-                        if (ImGui::SliderFloat("x", &mdl.position.x, -100.0f, 100.0f)) {
-                            mdl.position.x =  roundf(mdl.position.x / 2) * 2;
-                        }
-                        if (ImGui::SliderFloat("y", &mdl.position.y, -100.0f, 100.0f)) {
-                            mdl.position.y =  roundf(mdl.position.y / 2) * 2;
-                        }
-                        if (ImGui::SliderFloat("z", &mdl.position.z, -100.0f, 100.0f)) {
-                            mdl.position.z =  roundf(mdl.position.z / 2) * 2;
-                        }
-                        ImGui::PopID();
-                    }
-                }
             }
 
             if (ImGui::CollapsingHeader("Texture Manipulation")) {
@@ -614,7 +388,6 @@ int main(int argc, char** argv) {
                     ImGui::Image((void*)(intptr_t)i, ImVec2(64, 64));
                 }
             }
-
 
             ImGui::Text("Camera");
             ImGui::SliderFloat("c_x", &camManager.position.x, -100.0f, 100.0f);
@@ -642,18 +415,6 @@ int main(int argc, char** argv) {
             ImGui::SliderFloat("w_x", &camManager.worldUp.x, -100.0f, 100.0f);
             ImGui::SliderFloat("w_y", &camManager.worldUp.y, -100.0f, 100.0f);
             ImGui::SliderFloat("w_z", &camManager.worldUp.z, -100.0f, 100.0f);
-
-            //for (Renderer::Cube& mdl : mdlManager.vecModels) {
-                //ImGui::Text("Model %d", i);
-                //ImGui::PushID(i);
-                //ImGui::SliderFloat("s", &mdl.Scale, 0.0f, 10.0f);
-                //ImGui::SliderFloat("x", &mdl.Pos.x, -10.0f, 10.0f);
-                //ImGui::SliderFloat("y", &mdl.Pos.y, -10.0f, 10.0f);
-                //ImGui::SliderFloat("z", &mdl.Pos.z, -10.0f, 10.0f);
-                //ImGui::Checkbox("Wireframe", &mdl.isWireFrame);
-                //ImGui::PopID();
-                //i++;
-            //}
 
             ImGui::End();
 
