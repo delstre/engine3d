@@ -28,6 +28,8 @@
 #include "modelmanager.hpp"
 
 #include <time.h>
+#include <thread>
+#include <mutex>
 
 bool showImGui = true;
 
@@ -99,6 +101,7 @@ void glfwWindowSizeCallback(GLFWwindow* pWindow, int wid, int hei) {
 
 
 bool f2Pressed = false;
+std::mutex cubeMutex;
 
 int main(int argc, char** argv) {
     if (!glfwInit()) {
@@ -279,6 +282,8 @@ int main(int argc, char** argv) {
                 if (t > 0) {
                     objs[index]->AddActiveFaces(Renderer::Face::BOTTOM, objs[i*grid*grid + j*grid + (t-1)]);
                 }
+
+                objs[index]->UpdateActiveFaces();
             }
         }
     }
@@ -292,10 +297,37 @@ int main(int argc, char** argv) {
 
     controller.AddCallback(GLFW_KEY_F2, true, []() {});
 
+
+    Renderer::Model* cube = models.GetModel("cube");
+
+    std::vector<glm::mat4*> obj_positions;
+
+    for (int i = 0; i<grid; i++) {
+        for (int j = 0; j<grid; j++) {
+            for (int t = 0; t<grid; t++) {
+                if (objs[i*grid*grid + j*grid + t]->IsActive == true) {
+                    obj_positions.push_back(&objs[i*grid*grid + j*grid + t]->matmodel);
+                }
+            }
+        }
+    }
+
+    obj_positions.erase(obj_positions.begin());
+    cube->UpdatePositions(obj_positions);
+    obj_positions.push_back(&objs[0]->matmodel);
+
+    //std::thread updateThread = std::thread([&]() {
+        //std::lock_guard<std::mutex> lock(cubeMutex);
+        //cube->UpdatePositions(obj_positions);
+    //});
+
+    //updateThread.detach();
+
     Renderer::Interface interface(window);
     interface.AddCameraInfo(&camManager);
-    interface.AddObjectsInfo(&objs);
+    interface.AddObjectsInfo(&objs, &obj_positions);
 
+    int ticks = 0;
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -326,9 +358,15 @@ int main(int argc, char** argv) {
         // Начало измерения
         glBeginQuery(GL_TIME_ELAPSED, query);
 
-        for (Renderer::Object* obj : objs) {
-            obj->Render(camManager.mvp);
-        }
+
+        //for (Renderer::Object* obj : objs) {
+            //obj->Render(camManager.mvp);
+        //}
+        cube->UpdatePositions(obj_positions);
+        cube->pShader->useProgram();
+        glBindVertexArray(cube->vao); // Bind the VAO containing VBO and IBO configurations
+        cube->pShader->setMatrix4("mvp", camManager.mvp);
+        glDrawElementsInstanced(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, 0, obj_positions.size());
 
         glEndQuery(GL_TIME_ELAPSED);
 

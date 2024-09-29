@@ -44,12 +44,22 @@ Model::Model(std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector
     glGenBuffers(1, &t_vbo);
     glGenBuffers(1, &c_vbo);
     glGenBuffers(1, &ibo);
+    glGenBuffers(1, &p_vbo);
 
     glBindVertexArray(vao);
 
     UpdateVertices(points);
     UpdateTextures(texture_points);
     UpdateColors({ 1.0f, 1.0f, 1.0f });
+    //UpdatePositions({ 
+        //glm::vec3(0.0f, 0.0f, 0.0f),
+        //glm::vec3(1.0f, 0.0f, 0.0f),
+        //glm::vec3(2.0f, 0.0f, 0.0f),
+        //glm::vec3(3.0f, 0.0f, 0.0f),
+        //glm::vec3(0.0f, 1.0f, 0.0f),
+        //glm::vec3(0.0f, 2.0f, 0.0f),
+        //glm::vec3(0.0f, 3.0f, 0.0f),
+    //});
 
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -62,6 +72,9 @@ Model::Model(std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector
     glEnableVertexAttribArray(2);
     glBindBuffer(GL_ARRAY_BUFFER, c_vbo);
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, p_vbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, p_vbo);
 
     UpdateIndices(faces);
 }
@@ -106,6 +119,17 @@ void Model::UpdateColors(glm::vec3 color) {
 
     glBindBuffer(GL_ARRAY_BUFFER, c_vbo);
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLfloat), colors.data(), GL_STATIC_DRAW);
+}
+
+void Model::UpdatePositions(std::vector<glm::mat4*> pPositions) {
+    std::vector<glm::mat4> mat4s;
+    for (glm::mat4* position : pPositions) {
+        mat4s.push_back(*position);
+    }
+
+    this->positions = mat4s;
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, p_vbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, positions.size() * sizeof(glm::mat4), positions.data(), GL_STATIC_DRAW);
 }
 
 void Model::Render(const glm::mat4 mvp, const glm::mat4 position, const GLuint texture) {

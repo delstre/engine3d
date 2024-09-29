@@ -25,8 +25,9 @@ void Interface::AddCameraInfo(Camera* camera) {
     pCamera = camera;
 }
 
-void Interface::AddObjectsInfo(std::vector<Object*>* objects) {
+void Interface::AddObjectsInfo(std::vector<Object*>* objects, std::vector<glm::mat4*>* positions) {
     pObjects = objects;
+    pObjectsPositions = positions;
 }
 
 void Interface::GetDebugInfo(GLuint64 elapsed_time) const {
@@ -87,6 +88,7 @@ void Interface::GetCameraInfo() const {
     }
 }
 
+int size = 0;
 float Color[3] = { 0.0f, 0.0f, 0.0f };
 void Interface::GetObjectsInfo() const {
     if (pObjects == nullptr)
@@ -94,18 +96,19 @@ void Interface::GetObjectsInfo() const {
 
     if (ImGui::CollapsingHeader("Objects")) {
         int invisible = 0;
-        for (int i = 0; i < pObjects->size(); i++) {
-            if (pObjects->at(i)->IsActive == false)
-                invisible++;
-        }
 
-        ImGui::Text("Number of objects: %d", invisible);
-        for (int i = 0; i < pObjects->size(); i++) {
+        ImGui::SliderInt("Number of objects", &size, 0, pObjects->size());
+        for (int i = 0; i < size; i++) {
             if (pObjects->at(i)->IsActive == false) continue;
             ImGui::Text("Object %d", pObjects->at(i));
             ImGui::PushID(i);
 
             //ImGui::BeginChild("Scrollable Region", ImVec2(0, 100), true);
+
+            if (ImGui::Button("Delete")) {
+                pObjects->at(i+1)->IsActive = false;
+                pObjectsPositions->erase(pObjectsPositions->begin() + i+1);
+            }
 
             if (ImGui::TreeNode("Position")) {
                 ImGui::DragFloat("x", &pObjects->at(i)->position.x, 0.05f);

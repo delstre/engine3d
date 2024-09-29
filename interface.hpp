@@ -15,7 +15,7 @@ namespace Renderer {
             Interface(GLFWwindow* window);
 
             void AddCameraInfo(Camera* camera);
-            void AddObjectsInfo(std::vector<Object*>* objects);
+            void AddObjectsInfo(std::vector<Object*>* objects, std::vector<glm::mat4*>* positions);
 
             void GetDebugInfo(GLuint64 elapsed_time) const;
             void GetCameraInfo() const;
@@ -27,6 +27,7 @@ namespace Renderer {
         private:
             Camera* pCamera = nullptr;
             std::vector<Object*>* pObjects = nullptr;
+            std::vector<glm::mat4*>* pObjectsPositions = nullptr;
             std::shared_ptr<Engine::Debug> pDebug = Engine::Debug::GetInstance();
     };
 }
