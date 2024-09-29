@@ -105,7 +105,11 @@ void ShaderProgram::setTexture(const std::string& name, const GLuint& texture) {
     glUniform1i(glGetUniformLocation(m_ID, name.c_str()), 0);
 }
 
-void ShaderProgram::setSide(const std::string& name, const GLuint& side) {
+void ShaderProgram::setTextures(const std::string& name, const std::vector<GLuint>& textures) {
+    glUniform1uiv(glGetUniformLocation(m_ID, name.c_str()), textures.size(), textures.data());
+}
+
+void ShaderProgram::setUint(const std::string& name, const GLuint& side) {
     glUniform1i(glGetUniformLocation(m_ID, name.c_str()), side);
 }
 

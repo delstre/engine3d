@@ -158,6 +158,8 @@ int main(int argc, char** argv) {
     resManager.CreateTexture("dirt.jpg");
     resManager.CreateTexture("grass.png");
 
+    std::vector<GLuint> textures = { resManager.GetTexture("dirt.jpg"), resManager.GetTexture("grass.png") };
+
     Renderer::ModelManager models;
 
     std::vector<GLfloat> points = {
@@ -232,12 +234,12 @@ int main(int argc, char** argv) {
 
     models.AddModel("cube", new Renderer::Model(points, faces, texture_points));
 
-    int grid = 16;
+    int grid = 32;
     std::vector<Renderer::Object*> objs(grid*grid*grid);
 
     clock_t start_time = clock();
 
-    // Сделать отдельный класс для кубов наследонный от Renderer::Object
+    // Сделать отдельный класс для кубов наследованный от Renderer::Object
     // Также сделать отдельный класс для хранения кубов (может в октодереве)
     int cubes = 0;
     for (int i = 0; i<grid; i++) {
@@ -312,9 +314,13 @@ int main(int argc, char** argv) {
         }
     }
 
-    obj_positions.erase(obj_positions.begin());
+    //obj_positions.erase(obj_positions.begin());
     cube->UpdatePositions(obj_positions);
-    obj_positions.push_back(&objs[0]->matmodel);
+    //obj_positions.push_back(&objs[0]->matmodel);
+
+    uint dirt = resManager.GetTexture("dirt.jpg");
+
+    cube->UpdateTextures({dirt, dirt, dirt});
 
     //std::thread updateThread = std::thread([&]() {
         //std::lock_guard<std::mutex> lock(cubeMutex);
@@ -323,11 +329,11 @@ int main(int argc, char** argv) {
 
     //updateThread.detach();
 
+    int active_id = 0;
     Renderer::Interface interface(window);
     interface.AddCameraInfo(&camManager);
-    interface.AddObjectsInfo(&objs, &obj_positions);
+    interface.AddObjectsInfo(&objs, &obj_positions, &active_id);
 
-    int ticks = 0;
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -366,6 +372,8 @@ int main(int argc, char** argv) {
         cube->pShader->useProgram();
         glBindVertexArray(cube->vao); // Bind the VAO containing VBO and IBO configurations
         cube->pShader->setMatrix4("mvp", camManager.mvp);
+        cube->pShader->setTextures("textures", textures);
+        cube->pShader->setUint("active_id", active_id);
         glDrawElementsInstanced(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, 0, obj_positions.size());
 
         glEndQuery(GL_TIME_ELAPSED);

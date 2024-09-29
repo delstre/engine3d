@@ -14,6 +14,9 @@ out vec2 uv;
 out vec3 color;
 out vec3 vertexpos;
 
+flat out int instanceID;
+
+
 mat4 translate(vec3 translation) {
     return mat4(
         1.0, 0.0, 0.0, 0.0,
@@ -29,4 +32,5 @@ void main() {
     vertexpos = vertex_position;
 
     gl_Position = mvp * buffer_data.models[gl_InstanceID] * vec4(vertex_position, 1.0);
+    instanceID = gl_InstanceID;
 };

@@ -25,9 +25,10 @@ void Interface::AddCameraInfo(Camera* camera) {
     pCamera = camera;
 }
 
-void Interface::AddObjectsInfo(std::vector<Object*>* objects, std::vector<glm::mat4*>* positions) {
+void Interface::AddObjectsInfo(std::vector<Object*>* objects, std::vector<glm::mat4*>* positions, int* active_id) {
     pObjects = objects;
     pObjectsPositions = positions;
+    pActiveID = active_id;
 }
 
 void Interface::GetDebugInfo(GLuint64 elapsed_time) const {
@@ -108,6 +109,10 @@ void Interface::GetObjectsInfo() const {
             if (ImGui::Button("Delete")) {
                 pObjects->at(i+1)->IsActive = false;
                 pObjectsPositions->erase(pObjectsPositions->begin() + i+1);
+            }
+
+            if (ImGui::Button("Select")) {
+                *pActiveID = i;
             }
 
             if (ImGui::TreeNode("Position")) {
