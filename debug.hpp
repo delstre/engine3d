@@ -2,6 +2,8 @@
 
 #include <GL/glew.h>
 
+#include <memory>
+
 namespace Engine {
     class Debug {
         public:
@@ -15,8 +17,9 @@ namespace Engine {
 
             void CounterFPS();
 
-            static Debug* GetInstance() {
-                static Debug* instance;
+            // Problem: Debug* == nullptr?
+            static std::shared_ptr<Debug> GetInstance() {
+                static std::shared_ptr<Debug> instance(new Debug());
                 return instance;
             }
 
@@ -24,7 +27,6 @@ namespace Engine {
             double fps;
             int frameCount = 0;
             double lastTime;
-
     };
 }
 

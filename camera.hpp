@@ -11,10 +11,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 
+#include "object.hpp"
 
 namespace Renderer {
-    enum Face { NONE, FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM };
-
     class Camera {
         public:
             Camera() = delete;

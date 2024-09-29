@@ -1,6 +1,8 @@
 #include "interface.hpp"
 #include "config.hpp"
 
+#include <iostream>
+
 using namespace Renderer;
 
 Interface::Interface(GLFWwindow* window) {
@@ -17,15 +19,13 @@ Interface::Interface(GLFWwindow* window) {
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForOpenGL(window, true);
     ImGui_ImplOpenGL3_Init("#version 330");
-
-    pDebug = Engine::Debug::GetInstance();
 }
 
 void Interface::AddCameraInfo(Camera* camera) {
     pCamera = camera;
 }
 
-void Interface::AddObjectsInfo(std::vector<Object>* objects) {
+void Interface::AddObjectsInfo(std::vector<Object*>* objects) {
     pObjects = objects;
 }
 
@@ -33,6 +33,7 @@ void Interface::GetDebugInfo(GLuint64 elapsed_time) const {
     if (pDebug == nullptr)
         return;
 
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::CollapsingHeader("Debug")) {
         ImGui::Text("Mouse capture: %b", ImGui::GetIO().WantCaptureMouse);
         ImGui::Text("Render Time %f", elapsed_time / 1e6);
@@ -86,22 +87,95 @@ void Interface::GetCameraInfo() const {
     }
 }
 
+float Color[3] = { 0.0f, 0.0f, 0.0f };
 void Interface::GetObjectsInfo() const {
     if (pObjects == nullptr)
         return;
 
     if (ImGui::CollapsingHeader("Objects")) {
+        int invisible = 0;
         for (int i = 0; i < pObjects->size(); i++) {
-            ImGui::Separator();
-            ImGui::Text("Object %d", i);
+            if (pObjects->at(i)->IsActive == false)
+                invisible++;
+        }
+
+        ImGui::Text("Number of objects: %d", invisible);
+        for (int i = 0; i < pObjects->size(); i++) {
+            if (pObjects->at(i)->IsActive == false) continue;
+            ImGui::Text("Object %d", pObjects->at(i));
             ImGui::PushID(i);
+
+            //ImGui::BeginChild("Scrollable Region", ImVec2(0, 100), true);
+
             if (ImGui::TreeNode("Position")) {
-                ImGui::DragFloat("x", &pObjects->at(i).position.x, 0.05f);
-                ImGui::DragFloat("y", &pObjects->at(i).position.y, 0.05f);
-                ImGui::DragFloat("z", &pObjects->at(i).position.z, 0.05f);
-                pObjects->at(i).UpdatePosition();
+                ImGui::DragFloat("x", &pObjects->at(i)->position.x, 0.05f);
+                ImGui::DragFloat("y", &pObjects->at(i)->position.y, 0.05f);
+                ImGui::DragFloat("z", &pObjects->at(i)->position.z, 0.05f);
+                pObjects->at(i)->UpdatePosition();
                 ImGui::TreePop();
             }
+            
+            if (ImGui::TreeNode("Color")) {
+                ImGui::ColorEdit3("Color", Color);
+                if (ImGui::Button("Apply")) {
+                    std::cout << Color[0] << " " << Color[1] << " " << Color[2] << std::endl;
+                    pObjects->at(i)->SetModelColor(Color[0], Color[1], Color[2]);
+                }
+                ImGui::TreePop();
+            }
+
+            if (ImGui::TreeNode("Faces")) {
+                if (ImGui::TreeNode("Front")) {
+                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[FRONT]);
+                    if (pObjects->at(i)->activeFaces[FRONT] != nullptr && ImGui::Button("Apply")) {
+                        pObjects->at(i)->activeFaces[FRONT]->IsActive = !pObjects->at(i)->activeFaces[FRONT]->IsActive;
+                    }
+                    ImGui::TreePop();
+                }
+
+                if (ImGui::TreeNode("Back")) {
+                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[BACK]);
+                    if (pObjects->at(i)->activeFaces[BACK] != nullptr && ImGui::Button("Apply")) {
+                        pObjects->at(i)->activeFaces[BACK]->IsActive = !pObjects->at(i)->activeFaces[BACK]->IsActive;
+                    }
+                    ImGui::TreePop();
+                }
+
+                if (ImGui::TreeNode("Left")) {
+                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[LEFT]);
+                    if (pObjects->at(i)->activeFaces[LEFT] != nullptr && ImGui::Button("Apply")) {
+                        pObjects->at(i)->activeFaces[LEFT]->IsActive = !pObjects->at(i)->activeFaces[LEFT]->IsActive;
+                    }
+                    ImGui::TreePop();
+                }
+
+                if (ImGui::TreeNode("Right")) {
+                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[RIGHT]);
+                    if (pObjects->at(i)->activeFaces[RIGHT] != nullptr && ImGui::Button("Apply")) {
+                        pObjects->at(i)->activeFaces[RIGHT]->IsActive = !pObjects->at(i)->activeFaces[RIGHT]->IsActive;
+                    }
+                    ImGui::TreePop();
+                }
+
+                if (ImGui::TreeNode("Top")) {
+                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[TOP]);
+                    if (pObjects->at(i)->activeFaces[TOP] != nullptr && ImGui::Button("Apply")) {
+                        pObjects->at(i)->activeFaces[TOP]->IsActive = !pObjects->at(i)->activeFaces[TOP]->IsActive;
+                    }
+                    ImGui::TreePop();
+                }
+
+                if (ImGui::TreeNode("Bottom")) {
+                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[BOTTOM]);
+                    if (pObjects->at(i)->activeFaces[BOTTOM] != nullptr && ImGui::Button("Apply")) {
+                        pObjects->at(i)->activeFaces[BOTTOM]->IsActive = !pObjects->at(i)->activeFaces[BOTTOM]->IsActive;
+                    }
+                    ImGui::TreePop();
+                }
+
+                ImGui::TreePop();
+            }
+
             ImGui::PopID();
         }
     }
@@ -129,7 +203,7 @@ void Interface::Render(GLuint64 elapsed_time) {
     GetCameraInfo();
     GetObjectsInfo();
     
-    //pDebug->CounterFPS();
+    pDebug->CounterFPS();
 
     //double mouseX, mouseY;
     //glfwGetCursorPos(window, &mouseX, &mouseY);

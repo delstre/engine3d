@@ -39,7 +39,6 @@ void Debug::CounterFPS() {
     double currentTime = glfwGetTime();
     double elapsedTime = currentTime - lastTime;
 
-    Log(fps, frameCount, currentTime, elapsedTime);
     if (elapsedTime >= 0.01) {
         fps = frameCount / elapsedTime;
 

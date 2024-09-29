@@ -21,6 +21,7 @@ namespace Renderer {
             char* readFromFile(const char* filename);
 
             void setMatrix4(const std::string& name, const glm::mat4& matrix);
+            void setVector4(const std::string& name, const glm::vec4& vector);
             void setTexture(const std::string& name, const GLuint& texture);
             void setSide(const std::string& name, const GLuint& side);
 

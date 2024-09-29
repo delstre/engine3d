@@ -8,6 +8,8 @@
 #include "model.hpp"
 
 namespace Renderer {
+    enum Face { NONE, FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM };
+
     class Object {
         public:
             Object();
@@ -18,11 +20,14 @@ namespace Renderer {
             glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
             glm::mat4 matmodel = glm::translate(glm::mat4(1.0f), position);
 
-            bool IsActive = true;
+            glm::vec4 color = glm::vec4(1.0, 1.0, 1.0, 1.0);
+
+            bool IsActive = false;
 
             void UpdatePosition();
 
             void SetModel(Model* model);
+            void SetModelColor(float r, float g, float b);
             void SetPosition(glm::vec3 position);
             void SetPosition(int x, int y, int z);
             void SetMVP(glm::mat4 mvp);
@@ -30,8 +35,14 @@ namespace Renderer {
     
             void Render(const glm::mat4 mvp);
 
+            void UpdateActiveFaces();
+            void AddActiveFaces(Face face, Object* object);
+            std::vector<Object*> activeFaces = {nullptr};
+
         private:
             Model* pModel;
             GLuint texture;
+
+
     };
 }

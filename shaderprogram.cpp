@@ -96,6 +96,10 @@ void ShaderProgram::setMatrix4(const std::string& name, const glm::mat4& matrix)
     glUniformMatrix4fv(glGetUniformLocation(m_ID, name.c_str()), 1, GL_FALSE, glm::value_ptr(matrix));
 }
 
+void ShaderProgram::setVector4(const std::string& name, const glm::vec4& vector) {
+    glUniform4fv(glGetUniformLocation(m_ID, name.c_str()), 1, glm::value_ptr(vector));
+}
+
 void ShaderProgram::setTexture(const std::string& name, const GLuint& texture) {
     glBindTexture(GL_TEXTURE_2D, texture);
     glUniform1i(glGetUniformLocation(m_ID, name.c_str()), 0);

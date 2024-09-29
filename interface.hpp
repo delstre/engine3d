@@ -3,6 +3,7 @@
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
+#include <memory>
 
 #include "camera.hpp"
 #include "object.hpp"
@@ -14,7 +15,7 @@ namespace Renderer {
             Interface(GLFWwindow* window);
 
             void AddCameraInfo(Camera* camera);
-            void AddObjectsInfo(std::vector<Object>* objects);
+            void AddObjectsInfo(std::vector<Object*>* objects);
 
             void GetDebugInfo(GLuint64 elapsed_time) const;
             void GetCameraInfo() const;
@@ -25,7 +26,7 @@ namespace Renderer {
 
         private:
             Camera* pCamera = nullptr;
-            std::vector<Object>* pObjects = nullptr;
-            Engine::Debug* pDebug = nullptr;
+            std::vector<Object*>* pObjects = nullptr;
+            std::shared_ptr<Engine::Debug> pDebug = Engine::Debug::GetInstance();
     };
 }

@@ -16,16 +16,22 @@ namespace Renderer {
             Model(Model&& other) = default;
             Model& operator=(const Model& other) = default;
             Model& operator=(Model&& other) = default;
-            ~Model() = default;
+            ~Model();
 
             GLuint vao, vbo, ibo;
-            GLuint t_vbo;
+            GLuint c_vbo, t_vbo;
             std::vector<GLfloat> points;
+            std::vector<GLfloat> colors;
             std::vector<GLuint> faces;
             std::vector<GLfloat> texture_points;
 
             ShaderProgram* pShader;
 
-            void Render(const glm::mat4 mvp, const glm::mat4 position, const GLuint texture, bool wireframe);
+            void UpdateVertices(std::vector<GLfloat> points);
+            void UpdateIndices(std::vector<GLuint> faces);
+            void UpdateTextures(std::vector<GLfloat> texture_points);
+            void UpdateColors(glm::vec3 color);
+
+            void Render(const glm::mat4 mvp, const glm::mat4 position, const GLuint texture);
     };
 }

@@ -128,7 +128,6 @@ int main(int argc, char** argv) {
 
     glfwMakeContextCurrent(window);
 
-    Renderer::Interface interface(window);
 
     if (glewInit() != GLEW_OK) {
         std::cerr << "GLEW failed" << std::endl;
@@ -149,7 +148,6 @@ int main(int argc, char** argv) {
     camManager.sensitivity = 0.2f;
     camManager.position = glm::vec3(0, 0, 0);
 
-    interface.AddCameraInfo(&camManager);
 
     glfwSetWindowUserPointer(window, &camManager);
 
@@ -231,29 +229,60 @@ int main(int argc, char** argv) {
 
     models.AddModel("cube", new Renderer::Model(points, faces, texture_points));
 
-    std::vector<Renderer::Object> objs;
+    int grid = 16;
+    std::vector<Renderer::Object*> objs(grid*grid*grid);
 
     clock_t start_time = clock();
 
+    // Сделать отдельный класс для кубов наследонный от Renderer::Object
+    // Также сделать отдельный класс для хранения кубов (может в октодереве)
     int cubes = 0;
-    int grid = 16;
     for (int i = 0; i<grid; i++) {
         for (int j = 0; j<grid; j++) {
             for (int t = 0; t<grid; t++) {
-                Renderer::Object o(models.GetModel("cube"), i*2, t*2, j*2);
-                o.SetTexture(resManager.GetTexture("dirt.jpg"));
-                objs.push_back(o);
+                Renderer::Object* o = new Renderer::Object(i*2, t*2, j*2);
+                o->SetModel(models.GetModel("cube"));
+                o->SetTexture(resManager.GetTexture("dirt.jpg"));
+
+                int index = i*grid*grid + j*grid + t;
+                objs[index] = o;
                 cubes++;
             }
         }
     }
 
-    interface.AddObjectsInfo(&objs);
+    // Не работает IsActive, но сами faces определяются правильно (желательно перепроверить)
+    for (int i = 0; i<grid; i++) {
+        for (int j = 0; j<grid; j++) {
+            for (int t = 0; t<grid; t++) {
+                int index = i*grid*grid + j*grid + t;
+                if (i < grid - 1) {
+                    objs[index]->AddActiveFaces(Renderer::Face::FRONT, objs[(i+1)*grid*grid + j*grid + t]);
+                }
 
-    clock_t end_time = clock();
-    double elapsed = (double)(end_time - start_time) / CLOCKS_PER_SEC;
-    std::cout << "Time taken by function: " << elapsed << " seconds" << std::endl;
-    std::cout << "Number of cubes: " << cubes << std::endl;
+                if (i > 0) {
+                    objs[index]->AddActiveFaces(Renderer::Face::BACK, objs[(i-1)*grid*grid + j*grid + t]);
+                }
+
+                if (j < grid - 1) {
+                    objs[index]->AddActiveFaces(Renderer::Face::RIGHT, objs[i*grid*grid + (j+1)*grid + t]);
+                }
+
+                if (j > 0) {
+                    objs[index]->AddActiveFaces(Renderer::Face::LEFT, objs[i*grid*grid + (j-1)*grid + t]);
+                }
+
+                if (t < grid - 1) {
+                    objs[index]->AddActiveFaces(Renderer::Face::TOP, objs[i*grid*grid + j*grid + (t+1)]);
+                }
+
+                if (t > 0) {
+                    objs[index]->AddActiveFaces(Renderer::Face::BOTTOM, objs[i*grid*grid + j*grid + (t-1)]);
+                }
+            }
+        }
+    }
+
 
     float deltaTime, lastFrame;
 
@@ -261,9 +290,11 @@ int main(int argc, char** argv) {
 
     Engine::Controller controller(window);
 
-    controller.AddCallback(GLFW_KEY_F2, true, []() {
+    controller.AddCallback(GLFW_KEY_F2, true, []() {});
 
-    });
+    Renderer::Interface interface(window);
+    interface.AddCameraInfo(&camManager);
+    interface.AddObjectsInfo(&objs);
 
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -295,8 +326,8 @@ int main(int argc, char** argv) {
         // Начало измерения
         glBeginQuery(GL_TIME_ELAPSED, query);
 
-        for (Renderer::Object obj : objs) {
-            obj.Render(camManager.mvp);
+        for (Renderer::Object* obj : objs) {
+            obj->Render(camManager.mvp);
         }
 
         glEndQuery(GL_TIME_ELAPSED);
