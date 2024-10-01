@@ -12,10 +12,10 @@ flat in int instanceID;
 
 out vec4 frag_color;
 
-
 uniform int active_id;
+uniform int call_id;
 
-uniform sampler2D textures[100];
+uniform sampler2D textures[10];
 
 void main() {
     int side = 1;
@@ -36,14 +36,18 @@ void main() {
 
     //color += add;
 
-    //uint textureIndex = instanceTextureIndices[id];
     
-    if (instanceID == active_id) {
+    if (instanceID == active_id && call_id != active_id) {
         color = vec3(1.0);
     }
 
-    //vec4 texColor = texture(sampler2DArray textureSampler, vec3(0.0, 0.0, textureIndex));
-    //vec4 texColor = texture(textures[textureIndex], uv);
+    if (instanceID == call_id) {
+        color = vec3(1.0, 0.0, 0.0);
+    }
 
-    frag_color = vec4(color, 1.0); // Красный цвет
+    //vec4 texColor = texture(sampler2DArray textureSampler, vec3(0.0, 0.0, textureIndex));
+    uint textureIndex = instanceTextureIndices[instanceID];
+    vec4 texColor = texture(textures[textureIndex], uv);
+
+    frag_color = texColor * vec4(color, 1.0); // Красный цвет
 }

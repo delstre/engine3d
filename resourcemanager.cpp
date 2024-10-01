@@ -10,7 +10,6 @@ using namespace Renderer;
 ResourceManager::ResourceManager() {}
 
 void ResourceManager::CreateTexture(std::string filename) {
-    GLuint textureID;
     glGenTextures(1, &textureID);
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, textureID);

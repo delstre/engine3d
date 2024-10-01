@@ -3,13 +3,15 @@
 #include <GLFW/glfw3.h>
 
 #include <map>
+#include <functional>
 
 namespace Engine {
 
     struct actfunc {
         bool pressed;
         bool action;
-        void (*func)();
+        bool ismouse;
+        std::function<void()> func;
     };
 
     class Controller {
@@ -17,7 +19,7 @@ namespace Engine {
             Controller(GLFWwindow* window);
 
             void ProcessInput();
-            void AddCallback(int key, bool ispressed, void (*func)());
+            void AddCallback(int key, bool ispressed, bool ismouse, std::function<void()> func);
 
             std::map<int, actfunc> callbacks;
             std::map<int, bool> keys;

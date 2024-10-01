@@ -13,5 +13,6 @@ namespace Renderer {
         GLuint GetTexture(std::string str);
 
         std::map<std::string, GLuint> textures;
+        GLuint textureID;
     };
 }

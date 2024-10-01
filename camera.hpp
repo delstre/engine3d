@@ -52,6 +52,7 @@ namespace Renderer {
             glm::vec3 GetMouseRay(int mouseX, int mouseY, int windowWidth, int windowHeight, const glm::mat4& projection, const glm::mat4& view);
             void CheckRayIntersection(GLFWwindow* window);
             bool RayIntersectsBox(const glm::vec3& origin, const glm::vec3& direction, const glm::vec3& boxMin, const glm::vec3& boxMax);
+            bool IsHitByRay(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& position);
             Face GetIntersectedFace(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& boxMin, const glm::vec3& boxMax);
 
             void Think();

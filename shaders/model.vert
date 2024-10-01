@@ -16,7 +16,6 @@ out vec3 vertexpos;
 
 flat out int instanceID;
 
-
 mat4 translate(vec3 translation) {
     return mat4(
         1.0, 0.0, 0.0, 0.0,

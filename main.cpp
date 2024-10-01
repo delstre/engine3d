@@ -4,6 +4,7 @@
 #include <string>
 #include <ctime>
 #include <GL/glew.h>
+#include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <GLFW/glfw3.h>
 
@@ -18,7 +19,6 @@
 #include "object.hpp"
 #include "line.hpp"
 
-#include "interface.hpp"
 #include "controller.hpp"
 
 #include <GL/glext.h>  // Заголовок для расширений OpenGL
@@ -30,6 +30,14 @@
 #include <time.h>
 #include <thread>
 #include <mutex>
+
+#include "shaderprogram.hpp"
+#include "thirdparty/imgui/imgui.h"
+#include "interface.hpp"
+
+#include "modelinstance.hpp"
+
+#include <algorithm>
 
 bool showImGui = true;
 
@@ -158,6 +166,7 @@ int main(int argc, char** argv) {
     resManager.CreateTexture("dirt.jpg");
     resManager.CreateTexture("grass.png");
 
+    std::cout << resManager.GetTexture("dirt.jpg") << " " << resManager.GetTexture("grass.png") << std::endl;
     std::vector<GLuint> textures = { resManager.GetTexture("dirt.jpg"), resManager.GetTexture("grass.png") };
 
     Renderer::ModelManager models;
@@ -219,29 +228,28 @@ int main(int argc, char** argv) {
         1.0f, 1.0f, 
         0.0f, 1.0f, 
 
-        // Top face
-        0.0f, 1.0f, 
-        0.0f, 0.0f, 
-        1.0f, 0.0f, 
-        1.0f, 1.0f, 
 
         // Bottom face
         1.0f, 1.0f, // up left
         1.0f, 0.0f, // up right
         1.0f, 0.0f, // bottom right
         0.0f, 0.0f, // bottom left
+        // Top face
+        0.0f, 1.0f, 
+        0.0f, 0.0f, 
+        1.0f, 0.0f, 
+        1.0f, 1.0f, 
     };
 
-    models.AddModel("cube", new Renderer::Model(points, faces, texture_points));
+    models.AddModel("cube", new Renderer::Model(new Renderer::ShaderProgram("shaders/model.vert", "shaders/model.frag"), points, faces, texture_points));
 
-    int grid = 32;
+    int grid = 0;
     std::vector<Renderer::Object*> objs(grid*grid*grid);
 
     clock_t start_time = clock();
 
     // Сделать отдельный класс для кубов наследованный от Renderer::Object
     // Также сделать отдельный класс для хранения кубов (может в октодереве)
-    int cubes = 0;
     for (int i = 0; i<grid; i++) {
         for (int j = 0; j<grid; j++) {
             for (int t = 0; t<grid; t++) {
@@ -251,7 +259,6 @@ int main(int argc, char** argv) {
 
                 int index = i*grid*grid + j*grid + t;
                 objs[index] = o;
-                cubes++;
             }
         }
     }
@@ -295,12 +302,11 @@ int main(int argc, char** argv) {
 
     int in;
 
-    Engine::Controller controller(window);
-
-    controller.AddCallback(GLFW_KEY_F2, true, []() {});
 
 
-    Renderer::Model* cube = models.GetModel("cube");
+    //Renderer::Model* cube = models.GetModel("cube");
+
+    Renderer::ModelInstance* cube = new Renderer::ModelInstance(new Renderer::ShaderProgram("shaders/model.vert", "shaders/model.frag"), points, faces, texture_points);
 
     std::vector<glm::mat4*> obj_positions;
 
@@ -318,22 +324,83 @@ int main(int argc, char** argv) {
     cube->UpdatePositions(obj_positions);
     //obj_positions.push_back(&objs[0]->matmodel);
 
-    uint dirt = resManager.GetTexture("dirt.jpg");
+    //cube->UpdateTextures({1, 0, 0, 1, 1, 1});
 
-    cube->UpdateTextures({dirt, dirt, dirt});
+    int maxcubes = 32;
+    int cubes = 0;
+    int x = 0;
+    int y = 0;
+    int z = 0;
 
-    //std::thread updateThread = std::thread([&]() {
-        //std::lock_guard<std::mutex> lock(cubeMutex);
-        //cube->UpdatePositions(obj_positions);
-    //});
+    struct min_max {
+        glm::vec3 min;
+        glm::vec3 max;
+    };
 
-    //updateThread.detach();
+    std::vector<min_max> cubes_min_max;
+    std::thread updateThread = std::thread([&]() {
+        while (cubes < maxcubes * maxcubes * maxcubes) {
+            glm::vec3 vpos = glm::vec3(x, y, z);
+            glm::mat4* pos = new glm::mat4(glm::translate(glm::mat4(1.0f), vpos));
+            glm::vec3 min = vpos - glm::vec3(1, 1, 1);
+            glm::vec3 max = vpos + glm::vec3(1, 1, 1);
+            std::lock_guard<std::mutex> lock(cubeMutex);
+            obj_positions.push_back(pos);
+            cubes_min_max.push_back({min, max});
+            //std::this_thread::sleep_for(std::chrono::milliseconds(6));
 
-    int active_id = 0;
+            x += 2;
+            if (x/2 >= maxcubes) {
+                y += 2;
+                x = 0;
+            }
+            if (y/2 >= maxcubes) {
+                z += 2;
+                y = 0;
+            }
+            if (z/2 > maxcubes) {
+                break;
+            }
+            cubes++;
+            
+        }
+    });
+
+    updateThread.join();
+
+    std::thread whileThread = std::thread([&]() {
+        while (!glfwWindowShouldClose(window)) {
+            double mouseX, mouseY;
+            glfwGetCursorPos(window, &mouseX, &mouseY);
+            for (size_t i = 0; i < obj_positions.size(); i++) {
+                if (camManager.RayIntersectsBox(camManager.position, camManager.GetMouseRay(mouseX, mouseY, g_windowSize.x, g_windowSize.y, camManager.projection, camManager.view), cubes_min_max[i].min, cubes_min_max[i].max)) {
+                   cube->active_id = i; 
+                   break;
+                }
+                //if (camManager.IsHitByRay(camManager.position, camManager.GetMouseRay(mouseX, mouseY, g_windowSize.x, g_windowSize.y, camManager.projection, camManager.view), glm::vec3((*obj_positions[i])[3]))) {
+                    //active_id = i;
+                    //break;
+                //}
+            }  
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+    });
+
+
+    Engine::Controller controller(window);
+    controller.AddCallback(GLFW_MOUSE_BUTTON_LEFT, true, true, [&cube]() {
+        std::cout << "Left mouse button pressed" << std::endl;
+        cube->call_id = cube->active_id;
+    });
+
+    whileThread.detach();
+
     Renderer::Interface interface(window);
     interface.AddCameraInfo(&camManager);
-    interface.AddObjectsInfo(&objs, &obj_positions, &active_id);
+    interface.AddObjectsInfo(&objs, &obj_positions, &cube->active_id);
 
+    cube->UpdatePositions(obj_positions);
     while (!glfwWindowShouldClose(window)) {
         glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -364,17 +431,11 @@ int main(int argc, char** argv) {
         // Начало измерения
         glBeginQuery(GL_TIME_ELAPSED, query);
 
+        cube->Render(camManager.mvp, textures);
 
         //for (Renderer::Object* obj : objs) {
             //obj->Render(camManager.mvp);
         //}
-        cube->UpdatePositions(obj_positions);
-        cube->pShader->useProgram();
-        glBindVertexArray(cube->vao); // Bind the VAO containing VBO and IBO configurations
-        cube->pShader->setMatrix4("mvp", camManager.mvp);
-        cube->pShader->setTextures("textures", textures);
-        cube->pShader->setUint("active_id", active_id);
-        glDrawElementsInstanced(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, 0, obj_positions.size());
 
         glEndQuery(GL_TIME_ELAPSED);
 

@@ -106,7 +106,13 @@ void ShaderProgram::setTexture(const std::string& name, const GLuint& texture) {
 }
 
 void ShaderProgram::setTextures(const std::string& name, const std::vector<GLuint>& textures) {
-    glUniform1uiv(glGetUniformLocation(m_ID, name.c_str()), textures.size(), textures.data());
+    //glBindTexture(GL_TEXTURE_2D, textures[1]);
+    for (GLuint i = 0; i < textures.size(); ++i) {
+        glActiveTexture(GL_TEXTURE0 + i);
+        glBindTexture(GL_TEXTURE_2D, textures[i]);
+        glUniform1i(glGetUniformLocation(m_ID, (name + "[" + std::to_string(i) + "]").c_str()), i);
+    }
+    //glUniform1uiv(glGetUniformLocation(m_ID, name.c_str()), textures.size(), textures.data());
 }
 
 void ShaderProgram::setUint(const std::string& name, const GLuint& side) {

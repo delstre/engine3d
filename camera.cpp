@@ -87,6 +87,17 @@ bool Camera::RayIntersectsBox(const glm::vec3& origin, const glm::vec3& directio
     return tEntry <= tExit && tExit >= 0;
 }
 
+bool Camera::IsHitByRay(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& position) {
+    // Простейшая проверка: пересечение луча с шаром (можно улучшить)
+    glm::vec3 oc = rayOrigin - position;
+    float a = glm::dot(rayDirection, rayDirection);
+    float b = 2.0f * glm::dot(oc, rayDirection);
+    float c = glm::dot(oc, oc) - 1 * 1;
+    float discriminant = b * b - 4 * a * c;
+    return (discriminant > 0);
+}
+
+
 Face Camera::GetIntersectedFace(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& boxMin, const glm::vec3& boxMax) {
     std::vector<Face> faces = {FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM};
     std::vector<glm::vec3> faceNormals = {
