@@ -52,7 +52,7 @@ namespace Renderer {
             glm::vec3 GetMinBounds();
             glm::vec3 GetMaxBounds();
     
-            void Render(const glm::mat4 mvp, const std::vector<GLuint>& textures);
+            void Render(const Envy& envy, const std::vector<GLuint>& textures);
         private:
             Model* pModel = nullptr;
             ModelInstance* pModelInstance = nullptr;

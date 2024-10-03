@@ -100,19 +100,21 @@ void ShaderProgram::setVector4(const std::string& name, const glm::vec4& vector)
     glUniform4fv(glGetUniformLocation(m_ID, name.c_str()), 1, glm::value_ptr(vector));
 }
 
+void ShaderProgram::setVector3(const std::string& name, const glm::vec3& vector) {
+    glUniform3fv(glGetUniformLocation(m_ID, name.c_str()), 1, glm::value_ptr(vector));
+}
+
 void ShaderProgram::setTexture(const std::string& name, const GLuint& texture) {
     glBindTexture(GL_TEXTURE_2D, texture);
     glUniform1i(glGetUniformLocation(m_ID, name.c_str()), 0);
 }
 
 void ShaderProgram::setTextures(const std::string& name, const std::vector<GLuint>& textures) {
-    //glBindTexture(GL_TEXTURE_2D, textures[1]);
     for (GLuint i = 0; i < textures.size(); ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
         glBindTexture(GL_TEXTURE_2D, textures[i]);
         glUniform1i(glGetUniformLocation(m_ID, (name + "[" + std::to_string(i) + "]").c_str()), i);
     }
-    //glUniform1uiv(glGetUniformLocation(m_ID, name.c_str()), textures.size(), textures.data());
 }
 
 void ShaderProgram::setUint(const std::string& name, const GLuint& side) {

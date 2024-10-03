@@ -29,13 +29,19 @@ void Interface::AddObjectsInfo(std::vector<Object*>* objects) {
     pObjects = objects;
 }
 
-void Interface::GetDebugInfo(GLuint64 elapsed_time) const {
+void Interface::GetDebugInfo() const {
     if (pDebug == nullptr)
         return;
 
+    ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::CollapsingHeader("Debug")) {
-        ImGui::Text("Mouse capture: %b", ImGui::GetIO().WantCaptureMouse);
+        if (ImGui::IsMousePosValid())
+            ImGui::Text("Mouse Position: (%.1f,%.1f)", io.MousePos.x, io.MousePos.y);
+        else
+            ImGui::Text("Mouse Position: <invalid>");
+
+        ImGui::Text("Mouse capture: %b", io.WantCaptureMouse);
         ImGui::Text("Render Time %f", elapsed_time / 1e6);
         ImGui::Text("GPU Usage %f", pDebug->GetGPUMemoryUsage());
         ImGui::Text("Memory Usage %d", pDebug->GetMemoryUsage());
@@ -102,7 +108,7 @@ void Interface::GetObjectsInfo() const {
             ImGui::Text("Object %d", pObjects->at(i));
             ImGui::PushID(i);
 
-            if (pObjects->at(i)->ModelIsInstanced()) {
+            if (pObjects->at(i)->GetModelInstance() != nullptr) {
                 if (ImGui::TreeNode("Model Instance")) {
                     for (glm::mat4 mat : pObjects->at(i)->GetModelInstance()->GetMatrixes()) {
                         ImGui::Text("Matrix %d", invisible);
@@ -115,8 +121,15 @@ void Interface::GetObjectsInfo() const {
 
                     ImGui::TreePop();
                 }
-            } else {
+            } else if (pObjects->at(i)->GetModel() != nullptr) {
                 if (ImGui::TreeNode("Model")) {
+                    for (Vertex vertex : pObjects->at(i)->GetModel()->GetVertices()) {
+                        ImGui::Text("Vertex %d", invisible);
+                        ImGui::Text("position: %.6f %.6f %.6f", vertex.position.x, vertex.position.y, vertex.position.z);
+                        ImGui::Text("normal: %.6f %.6f %.6f", vertex.normal.x, vertex.normal.y, vertex.normal.z);
+                        ImGui::Text("texcoord: %.6f %.6f", vertex.texCoord.x, vertex.texCoord.y);
+                        invisible++;
+                    }
                     ImGui::TreePop();
                 }
             }
@@ -137,26 +150,68 @@ void Interface::GetObjectsInfo() const {
 void Interface::GetConfigInfo() const {
     if (ImGui::CollapsingHeader("Config")) {
         ImGui::Checkbox("Interface", &Config::InterfaceDebugActive);
+        if (ImGui::Checkbox("VSync", &Config::VSync)) {
+            glfwSwapInterval(Config::VSync);
+        };
+         
     }
 }
 
+void Interface::ShowExampleAppSimpleOverlay() const {
+    static int location = 0;
+    ImGuiIO& io = ImGui::GetIO();
+    ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_Tooltip | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+    if (location >= 0)
+    {
+        const float PAD = 10.0f;
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
+        ImVec2 work_size = viewport->WorkSize;
+        ImVec2 window_pos, window_pos_pivot;
+        window_pos.x = (location & 1) ? (work_pos.x + work_size.x - PAD) : (work_pos.x + PAD);
+        window_pos.y = (location & 2) ? (work_pos.y + work_size.y - PAD) : (work_pos.y + PAD);
+        window_pos_pivot.x = (location & 1) ? 1.0f : 0.0f;
+        window_pos_pivot.y = (location & 2) ? 1.0f : 0.0f;
+        ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
+        //ImGui::SetNextWindowViewport(viewport->ID);
+        window_flags |= ImGuiWindowFlags_NoMove;
+    }
+    else if (location == -2)
+    {
+        // Center window
+        ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
+        window_flags |= ImGuiWindowFlags_NoMove;
+    }
+    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+    if (ImGui::Begin("Example: Simple overlay", nullptr, window_flags)) {
+        GetDebugInfo();
+    }
+    ImGui::End();
+}
+
 void Interface::Render(GLuint64 elapsed_time) {
-    if (!Config::InterfaceDebugActive)
-        return;
+    this->elapsed_time = elapsed_time;
+
+
 
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    ImGui::Begin("Render Engine 0.1");
-
-    GetDebugInfo(elapsed_time);
-    GetConfigInfo();
-    ImGui::Separator();
-    GetCameraInfo();
-    GetObjectsInfo();
-    
+    ShowExampleAppSimpleOverlay();
     pDebug->CounterFPS();
+
+    if (Config::InterfaceDebugActive) {
+        ImGui::Begin("Render Engine 0.1");
+
+        GetConfigInfo();
+        ImGui::Separator();
+        GetCameraInfo();
+        GetObjectsInfo();
+        
+        ImGui::End();
+    }
+
 
     //double mouseX, mouseY;
     //glfwGetCursorPos(window, &mouseX, &mouseY);
@@ -181,7 +236,6 @@ void Interface::Render(GLuint64 elapsed_time) {
     //}
 
 
-    ImGui::End();
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

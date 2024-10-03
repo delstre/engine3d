@@ -14,7 +14,6 @@
 #include "object.hpp"
 
 namespace Renderer {
-    class Object;
     class Camera {
         public:
             Camera() = delete;

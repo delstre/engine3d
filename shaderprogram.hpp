@@ -23,6 +23,7 @@ namespace Renderer {
 
             void setMatrix4(const std::string& name, const glm::mat4& matrix);
             void setVector4(const std::string& name, const glm::vec4& vector);
+            void setVector3(const std::string& name, const glm::vec3& vector);
             void setTexture(const std::string& name, const GLuint& texture);
             void setTextures(const std::string& name, const std::vector<GLuint>& textures);
             void setUint(const std::string& name, const GLuint& side);

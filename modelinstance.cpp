@@ -4,7 +4,7 @@
 
 using namespace Renderer;
 
-ModelInstance::ModelInstance(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector<GLfloat> texture_points) : Model(shader, points, faces, texture_points) {
+ModelInstance::ModelInstance(std::vector<Vertex> vertexs, std::vector<GLuint> faces) : Model(vertexs, faces) {
     glGenBuffers(1, &p_vbo);
     glGenBuffers(1, &pt_vbo);
     glGenBuffers(1, &pc_vbo);
@@ -101,13 +101,16 @@ void ModelInstance::UpdateColor(int id, const glm::vec3& color) {
     UpdateColors();
 }
 
-void ModelInstance::Render(const glm::mat4 mvp, const std::vector<GLuint>& textures) {
+void ModelInstance::Render(const Envy& env, const std::vector<GLuint>& textures) {
     pShader->useProgram();
     glBindVertexArray(vao);
-    pShader->setMatrix4("mvp", mvp);
+    pShader->setMatrix4("mvp", env.mvp);
+    pShader->setVector3("viewPos", env.viewpos);
+    pShader->setVector3("viewDir", env.viewdir);
+
     pShader->setTextures("textures", textures);
     // uniform for max textures (textures[MAX_TEXTURES])
     pShader->setUint("active_id", active_id);
     pShader->setUint("call_id", call_id);
-    glDrawElementsInstanced(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, 0, matrixes.size());
+    glDrawElementsInstanced(renderType, indices.size(), GL_UNSIGNED_INT, 0, matrixes.size());
 }

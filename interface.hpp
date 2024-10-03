@@ -17,10 +17,11 @@ namespace Renderer {
             void AddCameraInfo(Camera* camera);
             void AddObjectsInfo(std::vector<Object*>* objects);
 
-            void GetDebugInfo(GLuint64 elapsed_time) const;
+            void GetDebugInfo() const;
             void GetCameraInfo() const;
             void GetObjectsInfo() const;
             void GetConfigInfo() const;
+            void ShowExampleAppSimpleOverlay() const;
 
             void Render(GLuint64 elapsed_time);
 
@@ -28,5 +29,7 @@ namespace Renderer {
             Camera* pCamera = nullptr;
             std::vector<Object*>* pObjects = nullptr;
             std::shared_ptr<Engine::Debug> pDebug = Engine::Debug::GetInstance();
+
+            GLuint64 elapsed_time = 0;
     };
 }

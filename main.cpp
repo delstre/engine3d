@@ -35,9 +35,12 @@
 #include "thirdparty/imgui/imgui.h"
 #include "interface.hpp"
 
+#include "model.hpp"
 #include "modelinstance.hpp"
 
 #include <algorithm>
+
+#include "config.hpp"
 
 bool showImGui = true;
 
@@ -170,95 +173,107 @@ int main(int argc, char** argv) {
     std::vector<GLuint> textures = { 0, resManager.GetTexture("dirt.jpg"), resManager.GetTexture("grass.png") };
 
     Renderer::ModelManager models;
+    models.ImportModel("cube.obj");
+    //models.ImportModel("bobo.obj");
+
 
     // Object Manager // Scene?
     // Need to save positions of cubes if cubes invisible
 
-    int grid = 16;
-    std::vector<Renderer::Object*> objs(grid*grid*grid);
+    //std::vector<Renderer::Object*> objs;
+    //Renderer::Object* obj = new Renderer::Object(models.GetModel("cube.obj"), 0, 0, 0);
+    //obj->SetTexture(textures[1]);
+    //objs.push_back(obj);
+    //
+    int grid = 128;
+    std::vector<Renderer::Object*> objs;
 
     for (int i = 0; i < grid; i++) {
         for (int j = 0; j < grid; j++) {
             for (int k = 0; k < grid; k++) {
-                Renderer::Object* cube = new Renderer::Object(models.Cube(), i*2, j*2, k*2);
-                //cube->GetModel()->UpdateColors(glm::vec3(0.5f, 0.5f, 0.5f));
+                Renderer::Object* cube = new Renderer::Object(models.GetModel("cube.obj"), i*2, j*2, k*2);
                 cube->SetTexture(textures[1]);
-                //objs.push_back(cube);
-                objs[i*grid*grid + j*grid + k] = cube;
+                //objs[i*grid*grid + j*grid + k] = cube;
+                objs.push_back(cube);
             }
         }
     }
 
-    std::vector<Renderer::Object*> render_objs;
-    enum Face {
-        TOP,
-        BOTTOM,
-        LEFT,
-        RIGHT,
-        FRONT,
-        BACK,
-        FACE_COUNT // Удобно для определения размера
-    };
+    objs[0]->SetModelInstance(Renderer::TranslateModelsToInstance(objs, 0, objs.size()));
+    objs.erase(objs.begin() + 1, objs.begin() + objs.size());
 
-    std::vector<std::vector<Renderer::Object*>> objs_faces(grid * grid * grid, std::vector<Renderer::Object*>(FACE_COUNT, nullptr));
+    //std::vector<Renderer::Object*> render_objs;
+    //enum Face {
+        //TOP,
+        //BOTTOM,
+        //LEFT,
+        //RIGHT,
+        //FRONT,
+        //BACK,
+        //FACE_COUNT // Удобно для определения размера
+    //};
 
-    for (int i = 0; i < grid; i++) {
-        for (int j = 0; j < grid; j++) {
-            for (int k = 0; k < grid; k++) {
-                Renderer::Object* cube = objs[i * grid * grid + j * grid + k];
+    //std::vector<std::vector<Renderer::Object*>> objs_faces(grid * grid * grid, std::vector<Renderer::Object*>(FACE_COUNT, nullptr));
 
-                // Проверяем и связываем соседние объекты
-                if (i + 1 < grid && objs[(i + 1) * grid * grid + j * grid + k] != nullptr) {
-                    objs_faces[i * grid * grid + j * grid + k][RIGHT] = objs[(i + 1) * grid * grid + j * grid + k];
-                }
+    //for (int i = 0; i < grid; i++) {
+        //for (int j = 0; j < grid; j++) {
+            //for (int k = 0; k < grid; k++) {
+                //Renderer::Object* cube = objs[i * grid * grid + j * grid + k];
 
-                if (i - 1 >= 0 && objs[(i - 1) * grid * grid + j * grid + k] != nullptr) {
-                    objs_faces[i * grid * grid + j * grid + k][LEFT] = objs[(i - 1) * grid * grid + j * grid + k];
-                }
+                //// Проверяем и связываем соседние объекты
+                //if (i + 1 < grid && objs[(i + 1) * grid * grid + j * grid + k] != nullptr) {
+                    //objs_faces[i * grid * grid + j * grid + k][RIGHT] = objs[(i + 1) * grid * grid + j * grid + k];
+                //}
 
-                if (j + 1 < grid && objs[i * grid * grid + (j + 1) * grid + k] != nullptr) {
-                    objs_faces[i * grid * grid + j * grid + k][TOP] = objs[i * grid * grid + (j + 1) * grid + k];
-                }
+                //if (i - 1 >= 0 && objs[(i - 1) * grid * grid + j * grid + k] != nullptr) {
+                    //objs_faces[i * grid * grid + j * grid + k][LEFT] = objs[(i - 1) * grid * grid + j * grid + k];
+                //}
 
-                if (j - 1 >= 0 && objs[i * grid * grid + (j - 1) * grid + k] != nullptr) {
-                    objs_faces[i * grid * grid + j * grid + k][BOTTOM] = objs[i * grid * grid + (j - 1) * grid + k];
-                }
+                //if (j + 1 < grid && objs[i * grid * grid + (j + 1) * grid + k] != nullptr) {
+                    //objs_faces[i * grid * grid + j * grid + k][TOP] = objs[i * grid * grid + (j + 1) * grid + k];
+                //}
 
-                if (k + 1 < grid && objs[i * grid * grid + j * grid + (k + 1)] != nullptr) {
-                    objs_faces[i * grid * grid + j * grid + k][BACK] = objs[i * grid * grid + j * grid + (k + 1)];
-                }
+                //if (j - 1 >= 0 && objs[i * grid * grid + (j - 1) * grid + k] != nullptr) {
+                    //objs_faces[i * grid * grid + j * grid + k][BOTTOM] = objs[i * grid * grid + (j - 1) * grid + k];
+                //}
 
-                if (k - 1 >= 0 && objs[i * grid * grid + j * grid + (k - 1)] != nullptr) {
-                    objs_faces[i * grid * grid + j * grid + k][FRONT] = objs[i *grid*grid+ j*grid+ (k-1)];
-                }
-            }
-        }
-    }
+                //if (k + 1 < grid && objs[i * grid * grid + j * grid + (k + 1)] != nullptr) {
+                    //objs_faces[i * grid * grid + j * grid + k][BACK] = objs[i * grid * grid + j * grid + (k + 1)];
+                //}
 
-    for (int i = 0; i < grid * grid * grid; i++) {
-        for (int j = 0; j < FACE_COUNT; j++) {
-            if (objs_faces[i][j] == nullptr) {
-                render_objs.push_back(objs[i]);
-                break;
-            }
-        }
-    }
+                //if (k - 1 >= 0 && objs[i * grid * grid + j * grid + (k - 1)] != nullptr) {
+                    //objs_faces[i * grid * grid + j * grid + k][FRONT] = objs[i *grid*grid+ j*grid+ (k-1)];
+                //}
+            //}
+        //}
+    //}
 
-    std::cout << render_objs.size() << std::endl;
+    //for (int i = 0; i < grid * grid * grid; i++) {
+        //for (int j = 0; j < FACE_COUNT; j++) {
+            //if (objs_faces[i][j] == nullptr) {
+                //render_objs.push_back(objs[i]);
+                //break;
+            //}
+        //}
+    //}
 
-    std::vector<Renderer::Object*> render_objs_x(render_objs);
+    //std::cout << render_objs.size() << std::endl;
 
-    // Optimize for render
+    //std::vector<Renderer::Object*> render_objs_x(render_objs);
+
+    //// Optimize for render
 
 
-    render_objs[0]->SetModelInstance(Renderer::TranslateModelsToInstance(render_objs, 0, render_objs.size()));
-    render_objs.erase(render_objs.begin() + 1, render_objs.begin() + render_objs.size());
+    //render_objs[0]->SetModelInstance(Renderer::TranslateModelsToInstance(render_objs, 0, render_objs.size()));
+    //render_objs.erase(render_objs.begin() + 1, render_objs.begin() + render_objs.size());
     //objs[0]->GetModelInstance()->UpdateColors({glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.5f, 0.5f, 0.5f), glm::vec3(0.5f, 0.5f, 0.5f)});
     //objs[0]->GetModelInstance()->UpdateColors();
 
     Engine::Controller controller(window);
-    
-    std::vector<Renderer::Line> lines;
+
+    controller.AddCallback(GLFW_KEY_F2, true, false, []() {
+        Config::InterfaceDebugActive = !Config::InterfaceDebugActive;
+    });
 
     //controller.AddCallback(GLFW_MOUSE_BUTTON_LEFT, true, true, [&camManager, &lines, &render_objs_x, &render_objs]() {
         //camManager.UpdateFrustum();
@@ -274,7 +289,7 @@ int main(int argc, char** argv) {
     //});
 
 
-    std::thread updateFrustum([&window, &camManager, &render_objs_x, &render_objs]() {
+    //std::thread updateFrustum([&window, &camManager, &render_objs_x, &render_objs]() {
         //while (!glfwWindowShouldClose(window)) {
             //camManager.UpdateFrustum();
 
@@ -288,56 +303,55 @@ int main(int argc, char** argv) {
             //render_objs[0]->GetModelInstance()->UpdatePositions(matrixes);
             //std::this_thread::sleep_for(std::chrono::milliseconds(100));
         //} 
-    });
+    //});
 
-    std::thread updateActiveBlocks([&window, &camManager, &render_objs, &render_objs_x]() {
-        while (!glfwWindowShouldClose(window)) {
-            double mouseX, mouseY;
-            glfwGetCursorPos(window, &mouseX, &mouseY);
+    //std::thread updateActiveBlocks([&window, &camManager, &render_objs, &render_objs_x]() {
+        //while (!glfwWindowShouldClose(window)) {
+            //double mouseX, mouseY;
+            //glfwGetCursorPos(window, &mouseX, &mouseY);
 
-            int idIntersect = -1;
-            float nearest = FLT_MAX;
-            for (int i = 0; i < render_objs_x.size(); i++) {
-                Renderer::Object* obj = render_objs_x[i];
-                if (obj->GetModel() == nullptr)
-                    continue;
-                //if (glm::distance(camManager.position, obj->position) < 50) {
-                //if (camManager.RayIntersectsBox(
-                    //camManager.position, 
-                    //camManager.GetMouseRay(mouseX, mouseY, g_windowSize.x, g_windowSize.y, camManager.projection, camManager.view), 
-                    //obj->GetMinBounds(), 
-                    //obj->GetMaxBounds(), 
-                    //near, 
-                    //far)) {
+            //int idIntersect = -1;
+            //float nearest = FLT_MAX;
+            //for (int i = 0; i < render_objs_x.size(); i++) {
+                //Renderer::Object* obj = render_objs_x[i];
+                //if (obj->GetModel() == nullptr)
+                    //continue;
+                ////if (glm::distance(camManager.position, obj->position) < 50) {
+                ////if (camManager.RayIntersectsBox(
+                    ////camManager.position, 
+                    ////camManager.GetMouseRay(mouseX, mouseY, g_windowSize.x, g_windowSize.y, camManager.projection, camManager.view), 
+                    ////obj->GetMinBounds(), 
+                    ////obj->GetMaxBounds(), 
+                    ////near, 
+                    ////far)) {
 
-                    //if (near < nearest && near >= 0) {
-                        //nearest = near;
+                    ////if (near < nearest && near >= 0) {
+                        ////nearest = near;
+                        ////idIntersect = i;
+                    ////}
+                ////}
+                //if (camManager.IsHitByRay(camManager.position, camManager.GetMouseRay(mouseX, mouseY, g_windowSize.x, g_windowSize.y, camManager.projection, camManager.view), obj->position)) {
+                    //float dist = glm::distance(camManager.position, obj->position);
+                    //if (dist < nearest) {
+                        //nearest = dist;
                         //idIntersect = i;
                     //}
                 //}
-                if (camManager.IsHitByRay(camManager.position, camManager.GetMouseRay(mouseX, mouseY, g_windowSize.x, g_windowSize.y, camManager.projection, camManager.view), obj->position)) {
-                    float dist = glm::distance(camManager.position, obj->position);
-                    if (dist < nearest) {
-                        nearest = dist;
-                        idIntersect = i;
-                    }
-                }
-                //}
-            }
+                ////}
+            //}
 
-            std::cout << idIntersect << std::endl;
-            render_objs[0]->GetModelInstance()->call_id = idIntersect; 
+            //std::cout << idIntersect << std::endl;
+            //render_objs[0]->GetModelInstance()->call_id = idIntersect; 
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
-    });
+            //std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        //}
+    //});
 
-    updateActiveBlocks.detach();
+    //updateActiveBlocks.detach();
 
     Renderer::Interface interface(window);
     interface.AddCameraInfo(&camManager);
     interface.AddObjectsInfo(&objs);
-
 
     float deltaTime, lastFrame;
     while (!glfwWindowShouldClose(window)) {
@@ -370,16 +384,17 @@ int main(int argc, char** argv) {
         // Начало измерения
         glBeginQuery(GL_TIME_ELAPSED, query);
 
-        for (Renderer::Line line : lines) {
-            line.Render(camManager.mvp);
-        }
 
-        for (Renderer::Object* obj : render_objs) {
+        Renderer::Envy env;
+        env.viewpos = camManager.position;
+        env.viewdir = camManager.front;
+        env.mvp = camManager.mvp;
+        for (Renderer::Object* obj : objs) {
             if (!obj->ModelIsInstanced()) {
                 if (camManager.IsObjectInFrustum(obj))
-                    obj->Render(camManager.mvp, textures);
+                    obj->Render(env, textures);
             } else {
-                obj->Render(camManager.mvp, textures);
+                obj->Render(env, textures);
             }
         }
 

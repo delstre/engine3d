@@ -5,7 +5,7 @@
 namespace Renderer {
     class ModelInstance : protected Model {
         public:
-            ModelInstance(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector<GLfloat> texture_points);
+            ModelInstance(std::vector<Vertex> vertexs, std::vector<GLuint> faces);
             ModelInstance(Model* model, std::vector<glm::mat4> matrixes, std::vector<uint> textures, std::vector<glm::vec3> colors);
             ModelInstance(Model* model);
 
@@ -32,7 +32,7 @@ namespace Renderer {
 
             void UpdateColor(int id, const glm::vec3& color);
 
-            void Render(const glm::mat4 mvp, const std::vector<GLuint>& texture);
+            void Render(const Envy& env, const std::vector<GLuint>& texture);
         private:
             GLuint p_vbo, pt_vbo, pc_vbo;
 

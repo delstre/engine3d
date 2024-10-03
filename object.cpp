@@ -113,15 +113,15 @@ glm::vec3 Object::GetMaxBounds() {
     return position;
 }
 
-void Object::Render(const glm::mat4 mvp, const std::vector<GLuint>& textures) {
+void Object::Render(const Envy& envy, const std::vector<GLuint>& textures) {
     if (IsActive == false)
         return;
  
     if (pModel != nullptr)
-        pModel->Render(mvp, matmodel, texture);
+        pModel->Render(envy, matmodel, texture);
     
     if (pModelInstance != nullptr)
-        pModelInstance->Render(mvp, textures);
+        pModelInstance->Render(envy, textures);
 }
 
 Renderer::ModelInstance* Renderer::TranslateModelsToInstance(std::vector<Renderer::Object*>& objects, int start, int end) {

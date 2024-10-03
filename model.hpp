@@ -6,10 +6,22 @@
 #include "shaderprogram.hpp"
 
 namespace Renderer {
+    struct Envy {
+        glm::vec3 viewpos;
+        glm::vec3 viewdir;
+        glm::mat4 mvp;
+    };
+
+    struct Vertex {
+        glm::vec3 position;   // 3 floats for position
+        glm::vec3 normal;     // 3 floats for normal
+        glm::vec2 texCoord;   // 2 floats for texture coordinates
+    };
+
     class Model {
         public:
             Model() {};
-            Model(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector<GLfloat> texture_points);
+            Model(std::vector<Vertex> vertices, std::vector<GLuint> indices);
             Model(Model* other);
 
             Model(Model&& other) = default;
@@ -17,24 +29,29 @@ namespace Renderer {
             Model& operator=(Model&& other) = default;
             ~Model();
 
-            void UpdateVertices(std::vector<GLfloat> points);
+            void UpdateVertices(std::vector<Vertex> points);
             void UpdateIndices(std::vector<GLuint> faces);
-            void UpdateTexturePoints(std::vector<GLfloat> texture_points);
-            void UpdateColors(glm::vec3 color);
+
+            std::vector<Vertex> GetVertices();
+
+            void SetRenderType(GLenum renderType);
+            void SetShader(ShaderProgram* shader);
 
             glm::vec3 GetMinBounds();
             glm::vec3 GetMaxBounds();
 
-            void Render(const glm::mat4 mvp, const glm::mat4 position, const GLuint texture);
+            void Render(const Envy& envy, const glm::mat4 position, const GLuint texture);
         protected:
             GLuint vao;
             ShaderProgram* pShader;
 
-            GLuint vbo, ibo;
-            GLuint c_vbo, t_vbo;
-            std::vector<GLfloat> points;
-            std::vector<GLfloat> colors;
-            std::vector<GLuint> faces;
-            std::vector<GLfloat> texture_points;
+            GLuint vbo, ebo;
+            std::vector<Vertex> vertices;
+            std::vector<GLuint> indices;
+
+            GLenum renderType = GL_TRIANGLES;
+
+            bool hasNormals;
+            bool hasTextureCoords;
     };
 }

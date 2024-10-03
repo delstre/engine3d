@@ -1,3 +1,4 @@
 #include "config.hpp"
 
-bool Config::InterfaceDebugActive = true;
+bool Config::InterfaceDebugActive = false;
+bool Config::VSync = true;
