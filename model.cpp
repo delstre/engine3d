@@ -1,9 +1,13 @@
 #include "model.hpp"
 
+#include <iostream>
+
+#include <cfloat>
+
 using namespace Renderer;
 
 Model::Model(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector<GLfloat> texture_points) {
-    pShader = shader;  //new ShaderProgram("shaders/model.vert", "shaders/model.frag");
+    pShader = shader;
 
     glGenVertexArrays(1, &vao);
 
@@ -16,6 +20,7 @@ Model::Model(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLu
 
     UpdateVertices(points);
     UpdateTexturePoints(texture_points);
+    UpdateColors(glm::vec3(1.0f, 1.0f, 1.0f));
 
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
@@ -31,6 +36,8 @@ Model::Model(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLu
 
     UpdateIndices(faces);
 }
+
+Model::Model(Model* other) : Model(other->pShader, other->points, other->faces, other->texture_points) {}
 
 Model::~Model() {
     glDeleteVertexArrays(1, &vao);
@@ -74,14 +81,44 @@ void Model::UpdateColors(glm::vec3 color) {
     glBufferData(GL_ARRAY_BUFFER, colors.size() * sizeof(GLfloat), colors.data(), GL_STATIC_DRAW);
 }
 
+glm::vec3 Model::GetMinBounds() {
+     glm::vec3 minBounds = glm::vec3(FLT_MAX);  // Инициализируем большими значениями
+
+    for (size_t i = 0; i < points.size(); i += 3) {
+        GLfloat x = points[i];
+        GLfloat y = points[i + 1];
+        GLfloat z = points[i + 2];
+
+        if (x < minBounds.x) minBounds.x = x;
+        if (y < minBounds.y) minBounds.y = y;
+        if (z < minBounds.z) minBounds.z = z;
+    }
+
+    return minBounds;
+}
+
+glm::vec3 Model::GetMaxBounds() {
+    glm::vec3 maxBounds = glm::vec3(-FLT_MAX);  // Инициализируем большими значениями
+
+    for (size_t i = 0; i < points.size(); i += 3) {
+        GLfloat x = points[i];
+        GLfloat y = points[i + 1];
+        GLfloat z = points[i + 2];
+
+        if (x < maxBounds.x) maxBounds.x = x;
+        if (y < maxBounds.y) maxBounds.y = y;
+        if (z < maxBounds.z) maxBounds.z = z;
+    }
+
+    return maxBounds;
+}
+
 void Model::Render(const glm::mat4 mvp, const glm::mat4 position, const GLuint texture) {
     pShader->useProgram();
     //glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-    //pShader->setTexture("my_texture", mdl.texture);
+    pShader->setTexture("my_texture", texture);
     pShader->setMatrix4("mvp", mvp);
     pShader->setMatrix4("model", position);
-    if (texture != 0)
-        pShader->setTexture("texture", texture);
 
     glBindVertexArray(vao); // Bind the VAO containing VBO and IBO configurations
     glDrawElements(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, 0);

@@ -6,43 +6,59 @@
 #include <GL/glew.h>
 
 #include "model.hpp"
+#include "modelinstance.hpp"
 
 namespace Renderer {
-    enum Face { NONE, FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM };
-
     class Object {
         public:
             Object();
             Object(int x, int y, int z);
             Object(Model* model, int x, int y, int z);
+            Object(ModelInstance* model, int x, int y, int z);
 
             glm::vec3 angle = glm::vec3(0.0, 0.0, 0.0);
             glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
             glm::mat4 matmodel = glm::translate(glm::mat4(1.0f), position);
 
-            glm::vec4 color = glm::vec4(1.0, 1.0, 1.0, 1.0);
+            glm::vec3 color = glm::vec3(1.0, 1.0, 1.0);
 
-            bool IsActive = false;
+            bool IsActive = true;
 
             void UpdatePosition();
 
             void SetModel(Model* model);
-            void SetModelColor(float r, float g, float b);
+            Model* GetModel();
+
+            void SetModelInstance(ModelInstance* model);
+            ModelInstance* GetModelInstance();
+
             void SetPosition(glm::vec3 position);
             void SetPosition(int x, int y, int z);
-            void SetMVP(glm::mat4 mvp);
-            void SetTexture(const GLuint& texture);
+
+            glm::vec3& GetPosition();
+            glm::mat4& GetMatrix();
+
+            void SetColor(glm::vec3 color);
+            glm::vec3& GetColor();
+
+            void SetTexture(uint texture);
+            GLuint GetTexture();
+
+            void SetTextureInstance(int id, uint texture);
+            GLuint GetTextureInstance(int id);
+
+            bool ModelIsInstanced();
+
+            glm::vec3 GetMinBounds();
+            glm::vec3 GetMaxBounds();
     
-            void Render(const glm::mat4 mvp);
-
-            void UpdateActiveFaces();
-            void AddActiveFaces(Face face, Object* object);
-            std::vector<Object*> activeFaces = {nullptr};
-
+            void Render(const glm::mat4 mvp, const std::vector<GLuint>& textures);
         private:
-            Model* pModel;
-            GLuint texture;
-
+            Model* pModel = nullptr;
+            ModelInstance* pModelInstance = nullptr;
+            GLuint texture = 0;
 
     };
+
+    ModelInstance* TranslateModelsToInstance(std::vector<Renderer::Object*>& objects, int start, int end);
 }

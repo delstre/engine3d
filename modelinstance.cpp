@@ -5,33 +5,100 @@
 using namespace Renderer;
 
 ModelInstance::ModelInstance(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector<GLfloat> texture_points) : Model(shader, points, faces, texture_points) {
+    glGenBuffers(1, &p_vbo);
+    glGenBuffers(1, &pt_vbo);
+    glGenBuffers(1, &pc_vbo);
+
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, p_vbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, p_vbo);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, pt_vbo);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pt_vbo);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, pc_vbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, pc_vbo);
+}
+
+ModelInstance::ModelInstance(Model* model) : Model(model) {
+    pShader = new ShaderProgram("shaders/model_instance.vert", "shaders/model_instance.frag");
+
+    glGenBuffers(1, &p_vbo);
+    glGenBuffers(1, &pt_vbo);
+    glGenBuffers(1, &pc_vbo);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, p_vbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, p_vbo);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, pt_vbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, pt_vbo);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, pc_vbo);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, pc_vbo);
+
+    UpdatePositions({glm::mat4(1.0f)});
+    UpdateTextures({0});
+    UpdateColors({glm::vec3(1.0f, 1.0f, 1.0f)});
+}
+
+ModelInstance::ModelInstance(Model* model, std::vector<glm::mat4> matrixes, std::vector<uint> textures, std::vector<glm::vec3> colors) : ModelInstance(model) {
+    UpdatePositions(matrixes);
+    UpdateTextures(textures);
+    UpdateColors(colors);
 }
 
 ModelInstance::~ModelInstance() {
     glDeleteBuffers(1, &p_vbo);
     glDeleteBuffers(1, &pt_vbo);
+    glDeleteBuffers(1, &pc_vbo);
 }
 
-void ModelInstance::UpdatePositions(std::vector<glm::mat4*> pPositions) {
-    std::vector<glm::mat4> mat4s;
-    for (glm::mat4* position : pPositions) {
-        mat4s.push_back(*position);
-    }
+std::vector<glm::mat4>& ModelInstance::GetMatrixes() {
+    return matrixes;
+}
 
-    this->positions = mat4s;
+std::vector<uint>& ModelInstance::GetTextures() {
+    return textures;
+}
+
+void ModelInstance::AddModel(const glm::mat4& matrix = glm::mat4(1.0f), const uint& texture = 0) {
+    matrixes.push_back(matrix);
+    textures.push_back(texture);
+}
+
+void ModelInstance::UpdatePositions(const std::vector<glm::mat4>& matrixes) {
+    this->matrixes = matrixes;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, p_vbo);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, positions.size() * sizeof(glm::mat4), positions.data(), GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, matrixes.size() * sizeof(glm::mat4), matrixes.data(), GL_STATIC_DRAW);
 }
 
-void ModelInstance::UpdateTextures(std::vector<glm::uint> textures) {
+void ModelInstance::UpdatePositions() {
+    UpdatePositions(matrixes);
+}
+
+
+void ModelInstance::UpdateTextures(const std::vector<uint>& textures) {
     this->textures = textures;
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, pt_vbo);
     glBufferData(GL_SHADER_STORAGE_BUFFER, textures.size() * sizeof(uint), textures.data(), GL_STATIC_DRAW);
+}
+
+void ModelInstance::UpdateTextures() {
+    UpdateTextures(textures);
+}
+
+void ModelInstance::UpdateColors(const std::vector<glm::vec3>& colors) {
+    this->colors = colors;
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, pc_vbo);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, colors.size() * sizeof(glm::vec3), colors.data(), GL_STATIC_DRAW);
+}
+
+void ModelInstance::UpdateColors() {
+    UpdateColors(colors);
+}
+
+void ModelInstance::UpdateColor(int id, const glm::vec3& color) {
+    colors[id] = color;
+    UpdateColors();
 }
 
 void ModelInstance::Render(const glm::mat4 mvp, const std::vector<GLuint>& textures) {
@@ -39,7 +106,8 @@ void ModelInstance::Render(const glm::mat4 mvp, const std::vector<GLuint>& textu
     glBindVertexArray(vao);
     pShader->setMatrix4("mvp", mvp);
     pShader->setTextures("textures", textures);
+    // uniform for max textures (textures[MAX_TEXTURES])
     pShader->setUint("active_id", active_id);
     pShader->setUint("call_id", call_id);
-    glDrawElementsInstanced(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, 0, positions.size());
+    glDrawElementsInstanced(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, 0, matrixes.size());
 }

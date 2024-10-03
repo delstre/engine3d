@@ -14,6 +14,10 @@
 
 #include <vector>
 
+#include <glm/gtc/type_ptr.hpp>
+
+#include <cfloat>
+
 using namespace Renderer;
 
 Camera::Camera(GLFWwindow* window) {
@@ -28,9 +32,65 @@ void Camera::UpdateWindowSize() {
 }
 
 void Camera::UpdateMVP() {
-    projection = glm::perspective(ReCalculateFOV(), 1.0f * wid / hei, 0.1f, 200.0f);
+    projection = glm::perspective(ReCalculateFOV(), 1.0f * wid / hei, 0.1f, 100.0f);
     view = glm::lookAt(position, position + front, up);
     mvp = projection * view;
+}
+
+void Camera::UpdateFrustum() {
+    float* m = glm::value_ptr(mvp);
+
+    // Плоскости
+    // Near
+    planes[0] = glm::vec4(m[3] + m[2], m[7] + m[6], m[11] + m[10], m[15] + m[14]);
+    // Far
+    planes[1] = glm::vec4(m[3] - m[2], m[7] - m[6], m[11] - m[10], m[15] - m[14]);
+    // Left
+    planes[2] = glm::vec4(m[3] + m[0], m[7] + m[4], m[11] + m[8], m[15] + m[12]);
+    // Right
+    planes[3] = glm::vec4(m[3] - m[0], m[7] - m[4], m[11] - m[8], m[15] - m[12]);
+    // Top
+    planes[4] = glm::vec4(m[3] - m[1], m[7] - m[5], m[11] - m[9], m[15] - m[13]);
+    // Bottom
+    planes[5] = glm::vec4(m[3] + m[1], m[7] + m[5], m[11] + m[9], m[15] + m[13]);
+
+    // Извлечение плоскостей
+    //planes[0] = glm::vec4(clip[0][3] + clip[0][0], clip[1][3] + clip[1][0], clip[2][3] + clip[2][0], clip[3][3] + clip[3][0]); // Левая плоскость
+    //planes[1] = glm::vec4(clip[0][3] - clip[0][0], clip[1][3] - clip[1][0], clip[2][3] - clip[2][0], clip[3][3] - clip[3][0]); // Правая плоскость
+    //planes[2] = glm::vec4(clip[0][3] + clip[0][1], clip[1][3] + clip[1][1], clip[2][3] + clip[2][1], clip[3][3] + clip[3][1]); // Нижняя плоскость
+    //planes[3] = glm::vec4(clip[0][3] - clip[0][1], clip[1][3] - clip[1][1], clip[2][3] - clip[2][1], clip[3][3] - clip[3][1]); // Верхняя плоскость
+    //planes[4] = glm::vec4(clip[0][3] + clip[0][2], clip[1][3] + clip[1][2], clip[2][3] + clip[2][2], clip[3][3] + clip[3][2]); // Ближняя плоскость
+    //planes[5] = glm::vec4(clip[0][3] - clip[0][2], clip[1][3] - clip[1][2], clip[2][3] - clip[2][2], clip[3][3] - clip[3][2]); // Дальняя плоскость
+
+    // Нормализуем плоскости для упрощения дальнейших расчетов
+    //for (int i = 0; i < 6; i++) {
+        //float length = glm::length(glm::vec3(planes[i]));
+        //planes[i] /= length;
+    //}
+}
+
+bool Camera::IsBoxInFrustum(const glm::vec3& min, const glm::vec3& max) {
+    //for (int i = 0; i < 6; i++) {
+        //glm::vec3 positiveVertex = min;
+
+        //if (planes[i].x >= 0) positiveVertex.x = max.x;
+        //if (planes[i].y >= 0) positiveVertex.y = max.y;
+        //if (planes[i].z >= 0) positiveVertex.z = max.z;
+
+        //if (glm::dot(glm::vec3(planes[i]), positiveVertex) + planes[i].w < 0)
+            //return false;
+    //}
+    //return true;
+}
+
+bool Camera::IsObjectInFrustum(Object* object) {
+    for (int i = 0; i < 6; i++) {
+        float distance = glm::dot(glm::vec3(planes[i]), object->position) + planes[i].w;
+        if (distance < -2) {
+            return false; // Объект вне фрустра
+        }
+    }
+    return true; // Объект внутри фрустра
 }
 
 float Camera::SpectAxis() {
@@ -73,18 +133,45 @@ glm::vec3 Camera::getCursor3DPos(double x, double y) {
     return rayDirection;
 } 
 
-bool Camera::RayIntersectsBox(const glm::vec3& origin, const glm::vec3& direction, const glm::vec3& boxMin, const glm::vec3& boxMax) {
-    glm::vec3 invDir = 1.0f / direction;
-    glm::vec3 t0 = (boxMin - origin) * invDir;
-    glm::vec3 t1 = (boxMax - origin) * invDir;
+bool Camera::RayIntersectsBox(const glm::vec3& rayOrigin, const glm::vec3& rayDir, const glm::vec3& minBounds, const glm::vec3& maxBounds, float& tNear, float& tFar) {
+    //glm::vec3 invDir = 1.0f / direction;
+    //glm::vec3 t0 = (boxMin - origin) * invDir;
+    //glm::vec3 t1 = (boxMax - origin) * invDir;
 
-    glm::vec3 tMin = glm::min(t0, t1);
-    glm::vec3 tMax = glm::max(t0, t1);
+    //glm::vec3 tMin = glm::min(t0, t1);
+    //glm::vec3 tMax = glm::max(t0, t1);
 
-    float tEntry = glm::max(glm::max(tMin.x, tMin.y), tMin.z);
-    float tExit = glm::min(glm::min(tMax.x, tMax.y), tMax.z);
+    //float tEntry = glm::max(glm::max(tMin.x, tMin.y), tMin.z);
+    //float tExit = glm::min(glm::min(tMax.x, tMax.y), tMax.z);
     
-    return tEntry <= tExit && tExit >= 0;
+    //return tEntry <= tExit && tExit >= 0;
+    tNear = -FLT_MAX;
+    tFar = FLT_MAX;
+
+    // Проверка по каждой оси (X, Y, Z)
+    for (int i = 0; i < 3; i++) {
+        if (rayDir[i] != 0.0f) {
+            // Найдем расстояния до границ по этой оси
+            float t1 = (minBounds[i] - rayOrigin[i]) / rayDir[i];
+            float t2 = (maxBounds[i] - rayOrigin[i]) / rayDir[i];
+
+            // Убедимся, что t1 — минимальное, а t2 — максимальное
+            if (t1 > t2) std::swap(t1, t2);
+
+            // tNear — максимальное из всех t1, а tFar — минимальное из всех t2
+            tNear = std::max(tNear, t1);
+            tFar = std::min(tFar, t2);
+
+            // Если tNear больше tFar, то пересечения нет
+            if (tNear > tFar) return false;
+        } else {
+            // Если луч параллелен оси, то луч должен быть внутри границ по этой оси
+            if (rayOrigin[i] < minBounds[i] || rayOrigin[i] > maxBounds[i]) return false;
+        }
+    }
+
+    // Если мы дошли до этого момента, значит луч пересекает куб
+    return true;
 }
 
 bool Camera::IsHitByRay(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& position) {
@@ -98,81 +185,81 @@ bool Camera::IsHitByRay(const glm::vec3& rayOrigin, const glm::vec3& rayDirectio
 }
 
 
-Face Camera::GetIntersectedFace(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& boxMin, const glm::vec3& boxMax) {
-    std::vector<Face> faces = {FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM};
-    std::vector<glm::vec3> faceNormals = {
-        glm::vec3(0, 0, 1),   // FRONT
-        glm::vec3(0, 0, -1),  // BACK
-        glm::vec3(-1, 0, 0),  // LEFT
-        glm::vec3(1, 0, 0),   // RIGHT
-        glm::vec3(0, 1, 0),   // TOP
-        glm::vec3(0, -1, 0)   // BOTTOM
-    };
+//Face Camera::GetIntersectedFace(const glm::vec3& rayOrigin, const glm::vec3& rayDirection, const glm::vec3& boxMin, const glm::vec3& boxMax) {
+    //std::vector<Face> faces = {FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM};
+    //std::vector<glm::vec3> faceNormals = {
+        //glm::vec3(0, 0, 1),   // FRONT
+        //glm::vec3(0, 0, -1),  // BACK
+        //glm::vec3(-1, 0, 0),  // LEFT
+        //glm::vec3(1, 0, 0),   // RIGHT
+        //glm::vec3(0, 1, 0),   // TOP
+        //glm::vec3(0, -1, 0)   // BOTTOM
+    //};
 
-    for (size_t i = 0; i < faces.size(); ++i) {
-        glm::vec3 normal = faceNormals[i];
-        glm::vec3 facePoint;
+    //for (size_t i = 0; i < faces.size(); ++i) {
+        //glm::vec3 normal = faceNormals[i];
+        //glm::vec3 facePoint;
 
-        if (normal.z == 1) {
-            facePoint = glm::vec3(boxMin.x, boxMin.y, boxMax.z); // FRONT
-        } else if (normal.z == -1) {
-            facePoint = glm::vec3(boxMin.x, boxMin.y, boxMin.z); // BACK
-        } else if (normal.y == -1) {
-            facePoint = glm::vec3(boxMin.x, boxMax.y, boxMin.z); // TOP
-        } else if (normal.y == 1) {
-            facePoint = glm::vec3(boxMin.x, boxMin.y, boxMin.z); // BOTTOM
-        } else if (normal.x == -1) {
-            facePoint = glm::vec3(boxMin.x, boxMin.y, boxMin.z); // LEFT
-        } else if (normal.x == 1) {
-            facePoint = glm::vec3(boxMin.x, boxMin.y, boxMax.z); // RIGHT
-        }
+        //if (normal.z == 1) {
+            //facePoint = glm::vec3(boxMin.x, boxMin.y, boxMax.z); // FRONT
+        //} else if (normal.z == -1) {
+            //facePoint = glm::vec3(boxMin.x, boxMin.y, boxMin.z); // BACK
+        //} else if (normal.y == -1) {
+            //facePoint = glm::vec3(boxMin.x, boxMax.y, boxMin.z); // TOP
+        //} else if (normal.y == 1) {
+            //facePoint = glm::vec3(boxMin.x, boxMin.y, boxMin.z); // BOTTOM
+        //} else if (normal.x == -1) {
+            //facePoint = glm::vec3(boxMin.x, boxMin.y, boxMin.z); // LEFT
+        //} else if (normal.x == 1) {
+            //facePoint = glm::vec3(boxMin.x, boxMin.y, boxMax.z); // RIGHT
+        //}
 
-        //std::cout << normal.x << " " << normal.y << " " << normal.z << std::endl;
-        //std::cout << rayDirection.x << " " << rayDirection.y << " " << rayDirection.z << std::endl;
-        //std::cout << boxMin.x << " " << boxMin.y << " " << boxMin.z << std::endl;
+        ////std::cout << normal.x << " " << normal.y << " " << normal.z << std::endl;
+        ////std::cout << rayDirection.x << " " << rayDirection.y << " " << rayDirection.z << std::endl;
+        ////std::cout << boxMin.x << " " << boxMin.y << " " << boxMin.z << std::endl;
             
-        int dir = 0;
-        glm::vec3 dirv = abs(facePoint - rayOrigin);
+        //int dir = 0;
+        //glm::vec3 dirv = abs(facePoint - rayOrigin);
 
-        if (dirv.y > dirv.x + dirv.z) {
-            if (i < 4) continue;
-            dir = 3;
-        } else if (dirv.x > dirv.z) {
-            dir = 1;
-        } else if (dirv.z > dirv.x) {
-            if (i < 2) continue;
-            dir = 2;
-        }
+        //if (dirv.y > dirv.x + dirv.z) {
+            //if (i < 4) continue;
+            //dir = 3;
+        //} else if (dirv.x > dirv.z) {
+            //dir = 1;
+        //} else if (dirv.z > dirv.x) {
+            //if (i < 2) continue;
+            //dir = 2;
+        //}
 
-        //std::cout << dir << " " << abs(dirv.x) << " " << dirv.y << " " << dirv.z << std::endl;
+        ////std::cout << dir << " " << abs(dirv.x) << " " << dirv.y << " " << dirv.z << std::endl;
 
-        // Рассчитайте параметр t для пересечения
-        float t;
-        if (dir == 1) {
-            t = (facePoint.x - rayOrigin.x) / rayDirection.x;
-        } else if (dir == 2) {
-            t = (facePoint.z - rayOrigin.z) / rayDirection.z;
-        } else if (dir == 3) {
-            t = (facePoint.y - rayOrigin.y) / rayDirection.y;
-        } else {
-            continue;
-        }
+        //// Рассчитайте параметр t для пересечения
+        //float t;
+        //if (dir == 1) {
+            //t = (facePoint.x - rayOrigin.x) / rayDirection.x;
+        //} else if (dir == 2) {
+            //t = (facePoint.z - rayOrigin.z) / rayDirection.z;
+        //} else if (dir == 3) {
+            //t = (facePoint.y - rayOrigin.y) / rayDirection.y;
+        //} else {
+            //continue;
+        //}
 
-        // Проверка, попадает ли пересечение в границы куба
-        glm::vec3 intersection = rayOrigin + t * rayDirection;
-        if (intersection.x >= boxMin.x && intersection.x <= boxMax.x && 
-            intersection.y >= boxMin.y && intersection.y <= boxMax.y && 
-            intersection.z >= boxMin.z && intersection.z <= boxMax.z) {
-        std::cout << t << " " << intersection.x << " " << intersection.y << " " << intersection.z << std::endl;
-            std::cout << faces[i] << std::endl;
-            return faces[i];
-        } else {
-            continue;
-        }
-    }
+        //// Проверка, попадает ли пересечение в границы куба
+        //glm::vec3 intersection = rayOrigin + t * rayDirection;
+        //if (intersection.x >= boxMin.x && intersection.x <= boxMax.x && 
+            //intersection.y >= boxMin.y && intersection.y <= boxMax.y && 
+            //intersection.z >= boxMin.z && intersection.z <= boxMax.z) {
+        //std::cout << t << " " << intersection.x << " " << intersection.y << " " << intersection.z << std::endl;
+            //std::cout << faces[i] << std::endl;
+            //return faces[i];
+        //} else {
+            //continue;
+        //}
+    //}
 
-    return NONE;
-}
+    //return NONE;
+//}
 
 // Функция, получающая направление луча из координат мыши
 glm::vec3 Camera::GetMouseRay(int mouseX, int mouseY, int windowWidth, int windowHeight, const glm::mat4& projection, const glm::mat4& view) {

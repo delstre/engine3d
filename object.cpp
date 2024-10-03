@@ -3,25 +3,42 @@
 #include <IL/il.h>
 
 #include "object.hpp"
+#include "modelinstance.hpp"
+
+#include <iostream>
 
 using namespace Renderer;
 
 Object::Object() : Object(0, 0, 0) {}
-Object::Object(int x, int y, int z) : activeFaces(7) {
+
+Object::Object(int x, int y, int z) {
     SetPosition(x, y, z);
-    UpdateActiveFaces();
 }
 
 Object::Object(Model* model, int x, int y, int z) : Object(x, y, z) {
     SetModel(model);
 }
 
+Object::Object(ModelInstance* model, int x, int y, int z) : Object(x, y, z) {
+    SetModelInstance(model);
+}
+
 void Object::SetModel(Model* model) {
+    this->pModelInstance = nullptr;
     this->pModel = model;
 }
 
-void Object::SetModelColor(float r, float g, float b) {
-    pModel->UpdateColors(glm::vec3(r, g, b));
+Model* Object::GetModel() {
+    return pModel;
+}
+
+void Object::SetModelInstance(ModelInstance* model) {
+    this->pModel = nullptr;
+    this->pModelInstance = model;
+}
+
+ModelInstance* Object::GetModelInstance() {
+    return pModelInstance;
 }
 
 void Object::SetPosition(glm::vec3 position) {
@@ -33,56 +50,91 @@ void Object::SetPosition(int x, int y, int z) {
     UpdatePosition();
 }
 
+glm::vec3& Object::GetPosition() {
+    return position;
+}
+
+glm::mat4& Object::GetMatrix() {
+    return matmodel;
+}
+
+void Object::SetColor(glm::vec3 color) {
+    this->color = color;
+}
+
+glm::vec3& Object::GetColor() {
+    return color;
+}
+
+void Object::SetTexture(uint texture) {
+    this->texture = texture;
+}
+
+GLuint Object::GetTexture() {
+    return texture;
+}
+
+void Object::SetTextureInstance(int id, uint texture) {
+    if (pModelInstance != nullptr) {
+        pModelInstance->GetTextures()[id] = texture;
+        pModelInstance->UpdateTextures();
+    }
+}
+
+GLuint Object::GetTextureInstance(int id) {
+    if (pModelInstance != nullptr) {
+        return pModelInstance->GetTextures()[id];
+    }
+
+    return 0;
+}
+
 void Object::UpdatePosition() {
     matmodel = glm::translate(glm::mat4(1.0f), position);
 }
 
-void Object::SetTexture(const GLuint& texture) {
-    this->texture = texture;
+bool Object::ModelIsInstanced() {
+    return pModelInstance != nullptr;
 }
 
-void Object::Render(const glm::mat4 mvp) {
-    if (IsActive == false || pModel == nullptr)
-        return;
-
-    pModel->Render(mvp, matmodel, texture);
-}
-
-void Object::AddActiveFaces(Face face, Object* object) {
-    if (object == this || object == nullptr)
-        return;
-
-    if (activeFaces[face] != nullptr || object->activeFaces[face] != nullptr)
-        return;
-
-    activeFaces[face] = object;
-
-    if (face == FRONT) {
-        object->AddActiveFaces(BACK, this);
-    } else if (face == BACK) {
-        object->AddActiveFaces(FRONT, this);
-    } else if (face == LEFT) {
-        object->AddActiveFaces(RIGHT, this);
-    } else if (face == RIGHT) {
-        object->AddActiveFaces(LEFT, this);
-    } else if (face == TOP) {
-        object->AddActiveFaces(BOTTOM, this);
-    } else if (face == BOTTOM) {
-        object->AddActiveFaces(TOP, this);
+glm::vec3 Object::GetMinBounds() {
+    if (pModel != nullptr) {
+        return pModel->GetMinBounds() + position;
     }
 
-    UpdateActiveFaces();
-    object->UpdateActiveFaces();
+    return position;
 }
 
-void Object::UpdateActiveFaces() {
-    IsActive = false;
-
-    // Проверяем каждую грань на активность
-    for (int i = 0; i < 6; i++) {
-        if (activeFaces[i] != nullptr) {
-            IsActive = true;
-            return; // Если хотя бы одна грань активна, выходим из функции
-        }
+glm::vec3 Object::GetMaxBounds() {
+    if (pModel != nullptr) {
+        return pModel->GetMaxBounds() + position;
     }
+
+    return position;
+}
+
+void Object::Render(const glm::mat4 mvp, const std::vector<GLuint>& textures) {
+    if (IsActive == false)
+        return;
+ 
+    if (pModel != nullptr)
+        pModel->Render(mvp, matmodel, texture);
+    
+    if (pModelInstance != nullptr)
+        pModelInstance->Render(mvp, textures);
+}
+
+Renderer::ModelInstance* Renderer::TranslateModelsToInstance(std::vector<Renderer::Object*>& objects, int start, int end) {
+    int size = objects.size();
+    std::vector<glm::mat4> matrixes;
+    std::vector<uint> textures;
+    std::vector<glm::vec3> colors;
+
+    for (int i = start; i < (end < size ? end : size); i++) {
+        matrixes.push_back(objects[i]->GetMatrix());
+        textures.push_back(objects[i]->GetTexture());
+        colors.push_back(objects[i]->GetColor());
+    }
+
+    return new Renderer::ModelInstance(objects[start]->GetModel(), matrixes, textures, colors);
 }

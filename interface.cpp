@@ -25,10 +25,8 @@ void Interface::AddCameraInfo(Camera* camera) {
     pCamera = camera;
 }
 
-void Interface::AddObjectsInfo(std::vector<Object*>* objects, std::vector<glm::mat4*>* positions, int* active_id) {
+void Interface::AddObjectsInfo(std::vector<Object*>* objects) {
     pObjects = objects;
-    pObjectsPositions = positions;
-    pActiveID = active_id;
 }
 
 void Interface::GetDebugInfo(GLuint64 elapsed_time) const {
@@ -104,15 +102,23 @@ void Interface::GetObjectsInfo() const {
             ImGui::Text("Object %d", pObjects->at(i));
             ImGui::PushID(i);
 
-            //ImGui::BeginChild("Scrollable Region", ImVec2(0, 100), true);
+            if (pObjects->at(i)->ModelIsInstanced()) {
+                if (ImGui::TreeNode("Model Instance")) {
+                    for (glm::mat4 mat : pObjects->at(i)->GetModelInstance()->GetMatrixes()) {
+                        ImGui::Text("Matrix %d", invisible);
+                        ImGui::Text("%.6f %.6f %.6f %.6f", mat[0][0], mat[0][1], mat[0][2], mat[0][3]);
+                        ImGui::Text("%.6f %.6f %.6f %.6f", mat[1][0], mat[1][1], mat[1][2], mat[1][3]);
+                        ImGui::Text("%.6f %.6f %.6f %.6f", mat[2][0], mat[2][1], mat[2][2], mat[2][3]);
+                        ImGui::Text("%.6f %.6f %.6f %.6f", mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
+                        invisible++;
+                    }
 
-            if (ImGui::Button("Delete")) {
-                pObjects->at(i+1)->IsActive = false;
-                pObjectsPositions->erase(pObjectsPositions->begin() + i+1);
-            }
-
-            if (ImGui::Button("Select")) {
-                *pActiveID = i;
+                    ImGui::TreePop();
+                }
+            } else {
+                if (ImGui::TreeNode("Model")) {
+                    ImGui::TreePop();
+                }
             }
 
             if (ImGui::TreeNode("Position")) {
@@ -120,67 +126,6 @@ void Interface::GetObjectsInfo() const {
                 ImGui::DragFloat("y", &pObjects->at(i)->position.y, 0.05f);
                 ImGui::DragFloat("z", &pObjects->at(i)->position.z, 0.05f);
                 pObjects->at(i)->UpdatePosition();
-                ImGui::TreePop();
-            }
-            
-            if (ImGui::TreeNode("Color")) {
-                ImGui::ColorEdit3("Color", Color);
-                if (ImGui::Button("Apply")) {
-                    std::cout << Color[0] << " " << Color[1] << " " << Color[2] << std::endl;
-                    pObjects->at(i)->SetModelColor(Color[0], Color[1], Color[2]);
-                }
-                ImGui::TreePop();
-            }
-
-            if (ImGui::TreeNode("Faces")) {
-                if (ImGui::TreeNode("Front")) {
-                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[FRONT]);
-                    if (pObjects->at(i)->activeFaces[FRONT] != nullptr && ImGui::Button("Apply")) {
-                        pObjects->at(i)->activeFaces[FRONT]->IsActive = !pObjects->at(i)->activeFaces[FRONT]->IsActive;
-                    }
-                    ImGui::TreePop();
-                }
-
-                if (ImGui::TreeNode("Back")) {
-                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[BACK]);
-                    if (pObjects->at(i)->activeFaces[BACK] != nullptr && ImGui::Button("Apply")) {
-                        pObjects->at(i)->activeFaces[BACK]->IsActive = !pObjects->at(i)->activeFaces[BACK]->IsActive;
-                    }
-                    ImGui::TreePop();
-                }
-
-                if (ImGui::TreeNode("Left")) {
-                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[LEFT]);
-                    if (pObjects->at(i)->activeFaces[LEFT] != nullptr && ImGui::Button("Apply")) {
-                        pObjects->at(i)->activeFaces[LEFT]->IsActive = !pObjects->at(i)->activeFaces[LEFT]->IsActive;
-                    }
-                    ImGui::TreePop();
-                }
-
-                if (ImGui::TreeNode("Right")) {
-                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[RIGHT]);
-                    if (pObjects->at(i)->activeFaces[RIGHT] != nullptr && ImGui::Button("Apply")) {
-                        pObjects->at(i)->activeFaces[RIGHT]->IsActive = !pObjects->at(i)->activeFaces[RIGHT]->IsActive;
-                    }
-                    ImGui::TreePop();
-                }
-
-                if (ImGui::TreeNode("Top")) {
-                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[TOP]);
-                    if (pObjects->at(i)->activeFaces[TOP] != nullptr && ImGui::Button("Apply")) {
-                        pObjects->at(i)->activeFaces[TOP]->IsActive = !pObjects->at(i)->activeFaces[TOP]->IsActive;
-                    }
-                    ImGui::TreePop();
-                }
-
-                if (ImGui::TreeNode("Bottom")) {
-                    ImGui::Text("ID %d", pObjects->at(i)->activeFaces[BOTTOM]);
-                    if (pObjects->at(i)->activeFaces[BOTTOM] != nullptr && ImGui::Button("Apply")) {
-                        pObjects->at(i)->activeFaces[BOTTOM]->IsActive = !pObjects->at(i)->activeFaces[BOTTOM]->IsActive;
-                    }
-                    ImGui::TreePop();
-                }
-
                 ImGui::TreePop();
             }
 
