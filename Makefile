@@ -1,86 +1,35 @@
-#
-# Cross Platform Makefile
-# Compatible with MSYS2/MINGW, Ubuntu 14.04.1 and Mac OS X
-#
-# You will need GLFW (http://www.glfw.org):
-# Linux:
-#   apt-get install libglfw-dev
-# Mac OS X:
-#   brew install glfw
-# MSYS2:
-#   pacman -S --noconfirm --needed mingw-w64-x86_64-toolchain mingw-w64-x86_64-glfw
-#
-
 CXX = g++
-#CXX = clang++
+CXXFLAGS = -g -std=c++11 -Wall -Wformat -Ilib/nfd/src/include
 
-EXE = souce
-IMGUI_DIR = thirdparty/imgui
-NFD_DIR = thirdparty/nativefiledialog/build/gmake_linux
-NFD_LIB = thirdparty/nativefiledialog/build/lib/Release/x64/libnfd.a
+CC = gcc
+CFLAGS = -O2 -Wall -Ilib/nfd/src/include
 
-SOURCES = main.cpp debug.cpp config.cpp shaderprogram.cpp controller.cpp interface.cpp line.cpp object.cpp model.cpp modelmanager.cpp modelinstance.cpp camera.cpp resourcemanager.cpp 
-SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
-SOURCES += $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
-OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
-UNAME_S := $(shell uname -s)
-LINUX_GL_LIBS = -lGL
+INCLUDES = -Iinclude -Ilib/imgui -Ilib/nfd/src/include
+LIBS = `pkg-config --libs glfw3 gtk+-3.0 gdk-3.0` -lglfw -lGL -lGLU -lGLEW -lIL -lILU -lpthread
 
-CXXFLAGS = -std=c++11 -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
-CXXFLAGS += -g -Wall -Wformat -lGL -lGLU -lGLEW -lglfw -lIL -lpthread -pthread
-CXXFLAGS += -ltbb -I/usr/include/tbb -I thirdparty/nativefiledialog/src/include
-LIBS += $(NFD_LIB)
+SRCS_CPP = $(wildcard src/*.cpp)
+SRCS_CPP += $(wildcard lib/imgui/*.cpp) lib/imgui/backends/imgui_impl_glfw.cpp lib/imgui/backends/imgui_impl_opengl3.cpp
+SRCS_C = lib/nfd/src/nfd_common.c lib/nfd/src/nfd_gtk.c
 
-##---------------------------------------------------------------------
-## OPENGL ES
-##---------------------------------------------------------------------
+OBJS_CPP = $(SRCS_CPP:.cpp=.o)
+OBJS_C = $(SRCS_C:.c=.o)
 
-## This assumes a GL ES library available in the system, e.g. libGLESv2.so
-# CXXFLAGS += -DIMGUI_IMPL_OPENGL_ES2
-# LINUX_GL_LIBS = -lGLESv2
+TARGET = build/proj
 
-##---------------------------------------------------------------------
-## BUILD FLAGS PER PLATFORM
-##---------------------------------------------------------------------
+NFD_CFLAGS = `pkg-config --libs --cflags gtk+-3.0`
 
-ifeq ($(UNAME_S), Linux) #LINUX
-	ECHO_MESSAGE = "Linux"
-	LIBS += $(LINUX_GL_LIBS) `pkg-config --static --libs glfw3 gtk+-3.0`
+all : $(TARGET)
 
-	CXXFLAGS += `pkg-config --cflags glfw3 gtk+-3.0`
-	CFLAGS = $(CXXFLAGS)
-endif
+$(TARGET) : $(OBJS_CPP) $(OBJS_C)
+	$(CXX) $(OBJS_CPP) $(OBJS_C) -o $(TARGET) $(LIBS)
 
-ifeq ($(OS), Windows_NT)
-	ECHO_MESSAGE = "MinGW"
-	LIBS += -lglfw3 -lgdi32 -lopengl32 -limm32
+%.o : %.cpp
+	@echo "Compiling C++ file: $<"
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-	CXXFLAGS += `pkg-config --cflags glfw3`
-	CFLAGS = $(CXXFLAGS)
-endif
-
-##---------------------------------------------------------------------
-## BUILD RULES
-##---------------------------------------------------------------------
-
-
-%.o:%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-%.o:$(IMGUI_DIR)/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-%.o:$(IMGUI_DIR)/backends/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-all: $(EXE)
-	@echo Build complete for $(ECHO_MESSAGE)
-
-$(EXE): $(OBJS)
-	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
-
-$(NFD_LIB):
-	${MAKE} --no-print-directory -C $(NFD_DIR) -f nfd.make config=release_x64
+%.o: %.c
+	@echo "Compiling C file: $<"
+	$(CC) $(CFLAGS) $(NFD_CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(EXE) $(OBJS)
+	rm -f $(TARGET) $(OBJS_C) $(OBJS_CPP)

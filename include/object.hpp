@@ -12,9 +12,9 @@ namespace Renderer {
     class Object {
         public:
             Object();
-            Object(int x, int y, int z);
-            Object(Model* model, int x, int y, int z);
-            Object(ModelInstance* model, int x, int y, int z);
+            Object(glm::vec3 position);
+            Object(Model* model, glm::vec3 position);
+            Object(ModelInstance* model, glm::vec3 position);
 
             glm::vec3 angle = glm::vec3(0.0, 0.0, 0.0);
             glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);

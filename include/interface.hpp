@@ -12,38 +12,44 @@
 
 #include "modelmanager.hpp"
 #include "resourcemanager.hpp"
+#include "framebuffer.hpp"
+
+#include "window.hpp"
+
+namespace Engine {
+    class Window;
+};
 
 namespace Renderer {
     class Interface {
         public:
-            Interface(GLFWwindow* window);
-
-            void AddCameraInfo(Camera* camera);
-            void AddObjectsInfo(std::vector<Object*>* objects);
+            Interface(Engine::Window* window);
 
             void SetModelManager(ModelManager* mdlManager);
             void SetResourceManager(ResourceManager* resManager);
 
             void GetDebugInfo() const;
-            void GetCameraInfo() const;
-            void GetObjectsInfo() const;
             void GetConfigInfo() const;
+            void GetScene(FrameBuffer* pFbo) const;
+            void GetObjectsInfo(Engine::Scene* scene) const;
+            void GetCameraInfo(Engine::Scene* scene) const;
             
-            void GetModelManagerInfo() const;
+            void GetModelManager() const;
             void GetResourceManagerInfo() const;
 
             void ShowExampleAppSimpleOverlay() const;
 
-            void Render(GLuint64 elapsed_time);
+            void Render(Engine::Scene* scene, GLuint64 elapsed_time);
 
         private:
-            Camera* pCamera = nullptr;
-            std::vector<Object*>* pObjects = nullptr;
             std::shared_ptr<Engine::Debug> pDebug = Engine::Debug::GetInstance();
 
+            FrameBuffer* pFrameBuffer = nullptr;
             ModelManager* pModelManager;
             ResourceManager* pResourceManager;
 
             GLuint64 elapsed_time = 0;
+
+            Engine::Window* pWindow = nullptr;
     };
 }

@@ -19,7 +19,8 @@ namespace Engine {
             Controller(GLFWwindow* window);
 
             void ProcessInput();
-            void AddCallback(int key, bool ispressed, bool ismouse, std::function<void()> func);
+            void AddCallback(int key, bool ispressed, std::function<void()> func);
+            void AddCallbackMouse(int key, bool ispressed, std::function<void()> func);
 
             std::map<int, actfunc> callbacks;
             std::map<int, bool> keys;

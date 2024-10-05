@@ -7,8 +7,12 @@ Controller::Controller(GLFWwindow* window) {
     pWindow = window;
 }
 
-void Controller::AddCallback(int key, bool ispressed, bool ismouse, std::function<void()> func) {
-    callbacks[key] = actfunc {false, ispressed, ismouse, func};
+void Controller::AddCallback(int key, bool ispressed, std::function<void()> func) {
+    callbacks[key] = actfunc {false, ispressed, false, func};
+};
+
+void Controller::AddCallbackMouse(int key, bool ispressed, std::function<void()> func) {
+    callbacks[key] = actfunc {false, ispressed, true, func};
 };
 
 void Controller::ProcessInput() {

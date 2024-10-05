@@ -4,6 +4,9 @@
 #include <fstream>
 #include <sstream>
 
+#include <filesystem>
+
+
 using namespace Renderer;
 
 void ModelManager::AddModel(std::string name, Model* model) {
@@ -14,7 +17,21 @@ Model* ModelManager::GetModel(std::string name) const {
     return models.at(name);
 }
 
+std::map<std::string, Model*> ModelManager::GetModels() const {
+    return models;
+}
+
+std::string ModelManager::GetModelName(Model* model) const {
+    for (auto const& [key, value] : models) {
+        if (value == model) {
+            return key;
+        }
+    }
+    return "";
+}
+
 bool ModelManager::ImportModel(const std::string& path) {
+    std::cout << "Importing model: " << path << std::endl;
     std::ifstream file(path);
     if (!file.is_open()) {
         std::cerr << "Could not open the OBJ file: " << path << std::endl;
@@ -29,6 +46,8 @@ bool ModelManager::ImportModel(const std::string& path) {
     std::vector<GLuint> indices;    // Vector to hold indices
 
     GLenum mode = GL_TRIANGLES;
+
+    std::string name;
 
     std::string line;
     while (std::getline(file, line)) {
@@ -50,6 +69,9 @@ bool ModelManager::ImportModel(const std::string& path) {
             glm::vec3 normal;
             ss >> normal.x >> normal.y >> normal.z;
             tempNormals.push_back(normal);
+        }
+        else if (prefix == "o") {
+            ss >> name;
         }
         else if (prefix == "f") {  // Face
             unsigned int vertexIndex[4], texCoordIndex[4], normalIndex[4]; // Support for up to 4 indices
@@ -89,9 +111,9 @@ bool ModelManager::ImportModel(const std::string& path) {
     file.close();
 
     Model* model = new Model(vertices, indices);
-    model->SetShader(new ShaderProgram("shaders/model.vert", "shaders/model.frag"));
+    model->SetShader(new ShaderProgram("../shaders/model.vert", "../shaders/model.frag"));
     model->SetRenderType(mode);
-    AddModel(path, model);
+    AddModel(name, model);
 
     return true;
 }

@@ -47,9 +47,14 @@ void ResourceManager::CreateTexture(std::string filename) {
     // Удаляем ID изображения DevIL, поскольку он больше не нужен
     ilDeleteImages(1, &imageID);
 
-    textures[filename] = textureID; 
+    MapTextures[filename] = textureID; 
+    VecTextures.push_back(textureID);
 }
 
 GLuint ResourceManager::GetTexture(std::string file) {
-    return textures[file];
+    return MapTextures[file];
+}
+
+std::vector<GLuint> ResourceManager::GetTextures() {
+    return VecTextures;
 }

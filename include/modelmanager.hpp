@@ -12,6 +12,8 @@ namespace Renderer {
 
             void AddModel(std::string name, Model* model);
             Model* GetModel(std::string name) const;
+            std::map<std::string, Model*> GetModels() const;
+            std::string GetModelName(Model* model) const;
 
             bool ImportModel(const std::string& path);
 

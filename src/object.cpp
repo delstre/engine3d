@@ -9,17 +9,17 @@
 
 using namespace Renderer;
 
-Object::Object() : Object(0, 0, 0) {}
+Object::Object() : Object(glm::vec3(0, 0, 0)) {}
 
-Object::Object(int x, int y, int z) {
-    SetPosition(x, y, z);
+Object::Object(glm::vec3 position) {
+    SetPosition(position);
 }
 
-Object::Object(Model* model, int x, int y, int z) : Object(x, y, z) {
+Object::Object(Model* model, glm::vec3 position) : Object(position) {
     SetModel(model);
 }
 
-Object::Object(ModelInstance* model, int x, int y, int z) : Object(x, y, z) {
+Object::Object(ModelInstance* model, glm::vec3 position) : Object(position) {
     SetModelInstance(model);
 }
 
@@ -117,6 +117,9 @@ void Object::Render(const Envy& envy, const std::vector<GLuint>& textures) {
     if (IsActive == false)
         return;
  
+    if (pModel == nullptr)
+        std::cout << "Model is null" << std::endl;
+
     if (pModel != nullptr)
         pModel->Render(envy, matmodel, texture);
     
