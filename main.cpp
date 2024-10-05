@@ -185,22 +185,22 @@ int main(int argc, char** argv) {
     //obj->SetTexture(textures[1]);
     //objs.push_back(obj);
     //
-    int grid = 128;
+    //int grid = 16;
     std::vector<Renderer::Object*> objs;
 
-    for (int i = 0; i < grid; i++) {
-        for (int j = 0; j < grid; j++) {
-            for (int k = 0; k < grid; k++) {
-                Renderer::Object* cube = new Renderer::Object(models.GetModel("cube.obj"), i*2, j*2, k*2);
-                cube->SetTexture(textures[1]);
-                //objs[i*grid*grid + j*grid + k] = cube;
-                objs.push_back(cube);
-            }
-        }
-    }
+    //for (int i = 0; i < grid; i++) {
+        //for (int j = 0; j < grid; j++) {
+            //for (int k = 0; k < grid; k++) {
+                //Renderer::Object* cube = new Renderer::Object(models.GetModel("cube.obj"), i*2, j*2, k*2);
+                //cube->SetTexture(textures[1]);
+                ////objs[i*grid*grid + j*grid + k] = cube;
+                //objs.push_back(cube);
+            //}
+        //}
+    //}
 
-    objs[0]->SetModelInstance(Renderer::TranslateModelsToInstance(objs, 0, objs.size()));
-    objs.erase(objs.begin() + 1, objs.begin() + objs.size());
+    //objs[0]->SetModelInstance(Renderer::TranslateModelsToInstance(objs, 0, objs.size()));
+    //objs.erase(objs.begin() + 1, objs.begin() + objs.size());
 
     //std::vector<Renderer::Object*> render_objs;
     //enum Face {
@@ -352,6 +352,7 @@ int main(int argc, char** argv) {
     Renderer::Interface interface(window);
     interface.AddCameraInfo(&camManager);
     interface.AddObjectsInfo(&objs);
+    interface.SetModelManager(&models);
 
     float deltaTime, lastFrame;
     while (!glfwWindowShouldClose(window)) {

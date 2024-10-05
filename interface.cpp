@@ -29,6 +29,14 @@ void Interface::AddObjectsInfo(std::vector<Object*>* objects) {
     pObjects = objects;
 }
 
+void Interface::SetModelManager(ModelManager* mdlManager) {
+    pModelManager = mdlManager;
+}
+
+void Interface::SetResourceManager(ResourceManager* resManager) {
+    pResourceManager = resManager;
+}
+
 void Interface::GetDebugInfo() const {
     if (pDebug == nullptr)
         return;
@@ -157,6 +165,35 @@ void Interface::GetConfigInfo() const {
     }
 }
 
+void Interface::GetModelManagerInfo() const {
+    if (pModelManager == nullptr)
+        return;
+
+    if (ImGui::CollapsingHeader("ModelManager")) {
+        if (ImGui::Button("Load Model (OBJ)")) {
+            nfdchar_t *outPath = NULL;
+            nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath);
+            if (result == NFD_OKAY) {
+                std::cout << "succ" << std::endl;
+                free(outPath);
+            } else if (result == NFD_CANCEL) {
+                std::cout << "err" << std::endl;
+            } else {
+                std::cout << "unk err" << std::endl;
+            }
+        }
+    }
+
+}
+
+void Interface::GetResourceManagerInfo() const {
+    if (pResourceManager == nullptr)
+        return;
+
+
+}
+
+
 void Interface::ShowExampleAppSimpleOverlay() const {
     static int location = 0;
     ImGuiIO& io = ImGui::GetIO();
@@ -206,8 +243,13 @@ void Interface::Render(GLuint64 elapsed_time) {
 
         GetConfigInfo();
         ImGui::Separator();
+
+        // Scene issue?
         GetCameraInfo();
         GetObjectsInfo();
+
+        GetModelManagerInfo();
+        GetResourceManagerInfo();
         
         ImGui::End();
     }

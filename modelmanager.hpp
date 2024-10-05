@@ -1,3 +1,5 @@
+#pragma once
+
 #include "model.hpp"
 #include "modelinstance.hpp"
 #include <map>

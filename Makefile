@@ -16,6 +16,9 @@ CXX = g++
 
 EXE = souce
 IMGUI_DIR = thirdparty/imgui
+NFD_DIR = thirdparty/nativefiledialog/build/gmake_linux
+NFD_LIB = thirdparty/nativefiledialog/build/lib/Release/x64/libnfd.a
+
 SOURCES = main.cpp debug.cpp config.cpp shaderprogram.cpp controller.cpp interface.cpp line.cpp object.cpp model.cpp modelmanager.cpp modelinstance.cpp camera.cpp resourcemanager.cpp 
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
@@ -25,8 +28,8 @@ LINUX_GL_LIBS = -lGL
 
 CXXFLAGS = -std=c++11 -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
 CXXFLAGS += -g -Wall -Wformat -lGL -lGLU -lGLEW -lglfw -lIL -lpthread -pthread
-CXXFLAGS += -ltbb -I/usr/include/tbb
-LIBS =
+CXXFLAGS += -ltbb -I/usr/include/tbb -I thirdparty/nativefiledialog/src/include
+LIBS += $(NFD_LIB)
 
 ##---------------------------------------------------------------------
 ## OPENGL ES
@@ -42,9 +45,9 @@ LIBS =
 
 ifeq ($(UNAME_S), Linux) #LINUX
 	ECHO_MESSAGE = "Linux"
-	LIBS += $(LINUX_GL_LIBS) `pkg-config --static --libs glfw3`
+	LIBS += $(LINUX_GL_LIBS) `pkg-config --static --libs glfw3 gtk+-3.0`
 
-	CXXFLAGS += `pkg-config --cflags glfw3`
+	CXXFLAGS += `pkg-config --cflags glfw3 gtk+-3.0`
 	CFLAGS = $(CXXFLAGS)
 endif
 
@@ -60,6 +63,7 @@ endif
 ## BUILD RULES
 ##---------------------------------------------------------------------
 
+
 %.o:%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
@@ -74,6 +78,9 @@ all: $(EXE)
 
 $(EXE): $(OBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
+
+$(NFD_LIB):
+	${MAKE} --no-print-directory -C $(NFD_DIR) -f nfd.make config=release_x64
 
 clean:
 	rm -f $(EXE) $(OBJS)
