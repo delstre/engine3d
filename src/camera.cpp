@@ -84,12 +84,12 @@ bool Camera::IsBoxInFrustum(const glm::vec3& min, const glm::vec3& max) {
 }
 
 bool Camera::IsObjectInFrustum(Object* object) {
-    for (int i = 0; i < 6; i++) {
-        float distance = glm::dot(glm::vec3(planes[i]), object->position) + planes[i].w;
-        if (distance < -2) {
-            return false; // Объект вне фрустра
-        }
-    }
+    //for (int i = 0; i < 6; i++) {
+        //float distance = glm::dot(glm::vec3(planes[i]), object->position) + planes[i].w;
+        //if (distance < -2) {
+            //return false; // Объект вне фрустра
+        //}
+    //}
     return true; // Объект внутри фрустра
 }
 

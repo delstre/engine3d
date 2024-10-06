@@ -1,21 +1,20 @@
 #include "controller.hpp"
 
-
 using namespace Engine;
 
-Controller::Controller(GLFWwindow* window) {
+WindowController::WindowController(GLFWwindow* window) {
     pWindow = window;
 }
 
-void Controller::AddCallback(int key, bool ispressed, std::function<void()> func) {
+void WindowController::AddCallback(int key, bool ispressed, std::function<void()> func) {
     callbacks[key] = actfunc {false, ispressed, false, func};
 };
 
-void Controller::AddCallbackMouse(int key, bool ispressed, std::function<void()> func) {
+void WindowController::AddCallbackMouse(int key, bool ispressed, std::function<void()> func) {
     callbacks[key] = actfunc {false, ispressed, true, func};
 };
 
-void Controller::ProcessInput() {
+void WindowController::ProcessInput() {
     if (!callbacks.empty()) {
         for (auto& callback : callbacks) {
             int action = callback.second.ismouse ? glfwGetMouseButton(pWindow, callback.first) : glfwGetKey(pWindow, callback.first);

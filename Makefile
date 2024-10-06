@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -fPIC -g -std=c++11 -Wall -Wformat -Ilib/nfd/src/include
+CXXFLAGS = -fPIC -g -std=c++17 -Wall -Wformat -Ilib/nfd/src/include
 
 CC = gcc
 CFLAGS = -fPIC -g -O2 -Wall -Ilib/nfd/src/include

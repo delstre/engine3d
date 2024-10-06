@@ -13,8 +13,7 @@ namespace Engine {
     class Scene {
         public:
             void Init(GLFWwindow* pWindow);
-            Renderer::Object* AddObject(std::string name="Cube", glm::vec3 position=glm::vec3(0, 0, 0));
-            Renderer::Object* AddObject(Renderer::Object* obj);
+            void AddObject(Renderer::Object* obj);
             Renderer::Camera* AddCamera(glm::vec3 position); // maybe merge with object
 
             Renderer::Camera* GetActiveCamera();
@@ -36,7 +35,7 @@ namespace Engine {
             Renderer::ResourceManager* pResourceManager = nullptr;
             Renderer::FrameBuffer* pFbo = nullptr;
             Renderer::Camera* pActiveCamera = nullptr;
-            Engine::Controller* pController = nullptr; 
+            Engine::WindowController* pController = nullptr; 
             GLFWwindow* pWindow = nullptr;
             
             std::vector<Renderer::Object*> objs;

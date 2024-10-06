@@ -117,58 +117,82 @@ void Interface::GetCameraInfo(Engine::Scene* scene) const {
     ImGui::End();
 }
 
-int size = 0;
-float Color[3] = { 0.0f, 0.0f, 0.0f };
-void Interface::GetObjectsInfo(Engine::Scene* scene) const {
+void Interface::ObjectInspector() const {
+    ImGui::Begin("Object inspector");
+
+    if (pSelectedObject != nullptr) {
+        ImGui::Text("Name: %s", pSelectedObject->name.c_str());
+    }
+
+    ImGui::End();
+}
+
+void Interface::GetObjectsInfo(Engine::Scene* scene) {
     ImGui::Begin("Objects");
 
-    int invisible = 0;
+    if (ImGui::TreeNode("List of objects")) {
+        for (Renderer::Object* obj : scene->GetObjects()) {
+            ImGui::PushID(obj);
+            if (ImGui::Selectable(obj->name.c_str(), pSelectedObject == obj)) {
+                pSelectedObject = obj;
+            }
+            ImGui::PopID();
+        }
+
+        ImGui::TreePop();
+    }
 
     if (ImGui::Button("Create object")) {
-        scene->AddObject();
+        Renderer::Object* obj = new Renderer::Object("new object");
+        scene->AddObject(obj);
     }
 
-    std::vector<Renderer::Object*> pObjects = scene->GetObjects();
-    for (int i = 0; i < pObjects.size(); i++) {
-        ImGui::Text("Object %d", pObjects.at(i));
-        ImGui::PushID(i);
+    //if (ImGui::Button("Create object")) {
+        //Renderer::Object* obj = new Renderer::Object("new object");
+        //scene->AddObject(obj);
+    //}
 
-        if (pObjects.at(i)->GetModelInstance() != nullptr) {
-            if (ImGui::TreeNode("Model Instance")) {
-                for (glm::mat4 mat : pObjects.at(i)->GetModelInstance()->GetMatrixes()) {
-                    ImGui::Text("Matrix %d", invisible);
-                    ImGui::Text("%.6f %.6f %.6f %.6f", mat[0][0], mat[0][1], mat[0][2], mat[0][3]);
-                    ImGui::Text("%.6f %.6f %.6f %.6f", mat[1][0], mat[1][1], mat[1][2], mat[1][3]);
-                    ImGui::Text("%.6f %.6f %.6f %.6f", mat[2][0], mat[2][1], mat[2][2], mat[2][3]);
-                    ImGui::Text("%.6f %.6f %.6f %.6f", mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
-                    invisible++;
-                }
+    //std::vector<Renderer::Object*> pObjects = scene->GetObjects();
+    //for (int i = 0; i < pObjects.size(); i++) {
+        //ImGui::Text("Object %d", pObjects.at(i));
+        //ImGui::PushID(i);
 
-                ImGui::TreePop();
-            }
-        } else if (pObjects.at(i)->GetModel() != nullptr) {
-            if (ImGui::TreeNode("Model")) {
-                for (Vertex vertex : pObjects.at(i)->GetModel()->GetVertices()) {
-                    ImGui::Text("Vertex %d", invisible);
-                    ImGui::Text("position: %.6f %.6f %.6f", vertex.position.x, vertex.position.y, vertex.position.z);
-                    ImGui::Text("normal: %.6f %.6f %.6f", vertex.normal.x, vertex.normal.y, vertex.normal.z);
-                    ImGui::Text("texcoord: %.6f %.6f", vertex.texCoord.x, vertex.texCoord.y);
-                    invisible++;
-                }
-                ImGui::TreePop();
-            }
-        }
+        //if (pObjects.at(i)->GetModelInstance() != nullptr) {
+            //if (ImGui::TreeNode("Model Instance")) {
+                //for (glm::mat4 mat : pObjects.at(i)->GetModelInstance()->GetMatrixes()) {
+                    //ImGui::Text("Matrix %d", invisible);
+                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[0][0], mat[0][1], mat[0][2], mat[0][3]);
+                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[1][0], mat[1][1], mat[1][2], mat[1][3]);
+                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[2][0], mat[2][1], mat[2][2], mat[2][3]);
+                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
+                    //invisible++;
+                //}
 
-        if (ImGui::TreeNode("Position")) {
-            ImGui::DragFloat("x", &pObjects.at(i)->position.x, 0.05f);
-            ImGui::DragFloat("y", &pObjects.at(i)->position.y, 0.05f);
-            ImGui::DragFloat("z", &pObjects.at(i)->position.z, 0.05f);
-            pObjects.at(i)->UpdatePosition();
-            ImGui::TreePop();
-        }
+                //ImGui::TreePop();
+            //}
+        //} else if (pObjects.at(i)->GetModel() != nullptr) {
+            //if (ImGui::TreeNode("Model")) {
+                //for (Vertex vertex : pObjects.at(i)->GetModel()->GetVertices()) {
+                    //ImGui::Text("Vertex %d", invisible);
+                    //ImGui::Text("position: %.6f %.6f %.6f", vertex.position.x, vertex.position.y, vertex.position.z);
+                    //ImGui::Text("normal: %.6f %.6f %.6f", vertex.normal.x, vertex.normal.y, vertex.normal.z);
+                    //ImGui::Text("texcoord: %.6f %.6f", vertex.texCoord.x, vertex.texCoord.y);
+                    //invisible++;
+                //}
+                //ImGui::TreePop();
+            //}
+        //}
 
-        ImGui::PopID(); 
-    }
+        //if (ImGui::TreeNode("Position")) {
+            //ImGui::DragFloat("x", &pObjects.at(i)->position.x, 0.05f);
+            //ImGui::DragFloat("y", &pObjects.at(i)->position.y, 0.05f);
+            //ImGui::DragFloat("z", &pObjects.at(i)->position.z, 0.05f);
+            //pObjects.at(i)->UpdatePosition();
+            //ImGui::TreePop();
+        //}
+
+        //ImGui::PopID(); 
+    //}
 
     ImGui::End();
 }
@@ -846,6 +870,7 @@ void Interface::Render(Engine::Scene* scene, GLuint64 elapsed_time) {
         GetScene(scene->GetFrameBuffer());
         GetCameraInfo(scene);
         GetObjectsInfo(scene);
+        ObjectInspector();
     }
 
     //GetModelManager();

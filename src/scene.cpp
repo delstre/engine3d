@@ -6,7 +6,7 @@ using namespace Engine;
 void Scene::Init(GLFWwindow* pWindow) {
     pModelManager = new Renderer::ModelManager();
     pResourceManager = new Renderer::ResourceManager();
-    pController = new Engine::Controller(pWindow); 
+    pController = new Engine::WindowController(pWindow); 
 
     int wid, hei;
     glfwGetWindowSize(pWindow, &wid, &hei);
@@ -52,15 +52,8 @@ Renderer::Camera* Scene::AddCamera(glm::vec3 position) {
     return cam;
 }
 
-Renderer::Object* Scene::AddObject(std::string name, glm::vec3 position) {
-    objs.push_back(new Renderer::Object(pModelManager->GetModel(name), position));
-
-    return nullptr;
-}
-
-Renderer::Object* Scene::AddObject(Renderer::Object* obj) {
+void Scene::AddObject(Renderer::Object* obj) {
     objs.push_back(obj);
-    return obj;
 }
 
 Renderer::Camera* Scene::GetActiveCamera() {
@@ -115,13 +108,10 @@ void Scene::LoadLibFile(std::string path) {
         return;
     }
 
-    void* myClass = create();
+    Engine::Component* CustomComponent = static_cast<Engine::Component*>(create());
 
-    Renderer::Object* obj = static_cast<Renderer::Object*>(myClass);
-    if (obj->GetModel() == nullptr) {
-
-    }
-    obj->SetModel(pModelManager->GetModel("Cube"));
+    Renderer::Object* obj = new Renderer::Object("custom");
+    obj->AddComponent(CustomComponent);
 
     objs.push_back(obj);
 }
@@ -153,7 +143,8 @@ void Scene::Render() {
     env.viewdir = cam->front;
     env.mvp = cam->mvp;
     for (int i = 0; i < objs.size(); i++) {
-        objs[i]->Render(env, GetTextures());
+        objs[i]->Update();
+        //objs[i]->Render(env, GetTextures());
     }
 
     pFbo->Unbind();

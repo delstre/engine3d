@@ -1,11 +1,11 @@
 #pragma once
 
-#include <object.hpp>
+#include <component.hpp>
 
-class MyClass : public Renderer::Object {
+class MyClass : public Engine::Component {
     public:
         MyClass();
-        void doSomething();
+        void Update() override;
 };
 
 extern "C" MyClass* create();

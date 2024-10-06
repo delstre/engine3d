@@ -2,142 +2,64 @@
 #include <glm/mat4x4.hpp>
 #include <IL/il.h>
 
-#include "object.hpp"
-#include "modelinstance.hpp"
+#include <object.hpp>
+#include <modelinstance.hpp>
 
-#include <iostream>
+#include <stdexcept>
 
 using namespace Renderer;
 
-Object::Object() : Object(glm::vec3(0, 0, 0)) {}
+Object::Object(const std::string& name) {
+    this->name = name;
+};
 
-Object::Object(glm::vec3 position) {
-    SetPosition(position);
+template<typename T, typename... Args>
+T* Object::AddComponent(Args&&... args) {
+    static_assert(std::is_base_of<Engine::Component, T>::value, "T must be a Component");
+    auto component = std::make_unique<T>(std::forward<Args>(args)...);
+    T* ptr = component.get();
+    components[typeid(T)] = std::move(component); // Добавляем в unordered_map
+    return ptr; // Возвращаем указатель на добавленный компонент
 }
 
-Object::Object(Model* model, glm::vec3 position) : Object(position) {
-    SetModel(model);
-}
-
-Object::Object(ModelInstance* model, glm::vec3 position) : Object(position) {
-    SetModelInstance(model);
-}
-
-void Object::SetModel(Model* model) {
-    this->pModelInstance = nullptr;
-    this->pModel = model;
-}
-
-Model* Object::GetModel() {
-    return pModel;
-}
-
-void Object::SetModelInstance(ModelInstance* model) {
-    this->pModel = nullptr;
-    this->pModelInstance = model;
-}
-
-ModelInstance* Object::GetModelInstance() {
-    return pModelInstance;
-}
-
-void Object::SetPosition(glm::vec3 position) {
-    SetPosition(position.x, position.y, position.z);
-}
-
-void Object::SetPosition(int x, int y, int z) {
-    position = glm::vec3(x, y, z);
-    UpdatePosition();
-}
-
-glm::vec3& Object::GetPosition() {
-    return position;
-}
-
-glm::mat4& Object::GetMatrix() {
-    return matmodel;
-}
-
-void Object::SetColor(glm::vec3 color) {
-    this->color = color;
-}
-
-glm::vec3& Object::GetColor() {
-    return color;
-}
-
-void Object::SetTexture(uint texture) {
-    this->texture = texture;
-}
-
-GLuint Object::GetTexture() {
-    return texture;
-}
-
-void Object::SetTextureInstance(int id, uint texture) {
-    if (pModelInstance != nullptr) {
-        pModelInstance->GetTextures()[id] = texture;
-        pModelInstance->UpdateTextures();
+template <typename T>
+void Object::AddComponent(T* component) {
+    static_assert(std::is_base_of<Engine::Component, T>::value, "T must be a Component");
+    if (!component) {
+        throw std::invalid_argument("Component pointer is null");
     }
+    // Сохраняем компонент в unordered_map
+    components[typeid(T)] = std::unique_ptr<Engine::Component>(component); // Уникальный указатель для управления памятью
 }
 
-GLuint Object::GetTextureInstance(int id) {
-    if (pModelInstance != nullptr) {
-        return pModelInstance->GetTextures()[id];
+template void Object::AddComponent<Engine::Component>(Engine::Component*);
+
+
+template <typename T>
+T* Object::GetComponent() {
+    auto it = components.find(typeid(T));
+    return it != components.end() ? static_cast<T*>(it->second.get()) : nullptr;
+}
+
+void Object::Update() {
+    for (const auto& [key, component] : components) {
+        // need for model and modelinstance mvp, textures arguments
+        component->Update();
     }
 
-    return 0;
 }
 
-void Object::UpdatePosition() {
-    matmodel = glm::translate(glm::mat4(1.0f), position);
-}
+//Renderer::ModelInstance* Renderer::TranslateModelsToInstance(std::vector<Renderer::Object*>& objects, int start, int end) {
+    //int size = objects.size();
+    //std::vector<glm::mat4> matrixes;
+    //std::vector<uint> textures;
+    //std::vector<glm::vec3> colors;
 
-bool Object::ModelIsInstanced() {
-    return pModelInstance != nullptr;
-}
+    //for (int i = start; i < (end < size ? end : size); i++) {
+        //matrixes.push_back(objects[i]->GetMatrix());
+        //textures.push_back(objects[i]->GetTexture());
+        //colors.push_back(objects[i]->GetColor());
+    //}
 
-glm::vec3 Object::GetMinBounds() {
-    if (pModel != nullptr) {
-        return pModel->GetMinBounds() + position;
-    }
-
-    return position;
-}
-
-glm::vec3 Object::GetMaxBounds() {
-    if (pModel != nullptr) {
-        return pModel->GetMaxBounds() + position;
-    }
-
-    return position;
-}
-
-void Object::Render(const Envy& envy, const std::vector<GLuint>& textures) {
-    if (IsActive == false)
-        return;
- 
-    if (pModel == nullptr)
-        std::cout << "Model is null" << std::endl;
-
-    if (pModel != nullptr)
-        pModel->Render(envy, matmodel, texture);
-    
-    if (pModelInstance != nullptr)
-        pModelInstance->Render(envy, textures);
-}
-
-Renderer::ModelInstance* Renderer::TranslateModelsToInstance(std::vector<Renderer::Object*>& objects, int start, int end) {
-    int size = objects.size();
-    std::vector<glm::mat4> matrixes;
-    std::vector<uint> textures;
-    std::vector<glm::vec3> colors;
-
-    for (int i = start; i < (end < size ? end : size); i++) {
-        matrixes.push_back(objects[i]->GetMatrix());
-        textures.push_back(objects[i]->GetTexture());
-        colors.push_back(objects[i]->GetColor());
-    }
-
-    return new Renderer::ModelInstance(objects[start]->GetModel(), matrixes, textures, colors);
-}
+    //return new Renderer::ModelInstance(objects[start]->GetModel(), matrixes, textures, colors);
+//}

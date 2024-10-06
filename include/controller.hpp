@@ -6,7 +6,6 @@
 #include <functional>
 
 namespace Engine {
-
     struct actfunc {
         bool pressed;
         bool action;
@@ -14,9 +13,9 @@ namespace Engine {
         std::function<void()> func;
     };
 
-    class Controller {
+    class WindowController {
         public:
-            Controller(GLFWwindow* window);
+            WindowController(GLFWwindow* window);
 
             void ProcessInput();
             void AddCallback(int key, bool ispressed, std::function<void()> func);
