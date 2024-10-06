@@ -10,7 +10,7 @@ void Scene::Init(GLFWwindow* pWindow) {
 
     int wid, hei;
     glfwGetWindowSize(pWindow, &wid, &hei);
-    //pController->AddCallbackMouse(GLFW_MOUSE_BUTTON_LEFT, false, [this, &wid, &hei]() {
+   //pController->AddCallbackMouse(GLFW_MOUSE_BUTTON_LEFT, false, [this, &wid, &hei]() {
         //static bool firstMouse = true;
 
         //double xpos, ypos;
@@ -81,6 +81,49 @@ std::vector<GLuint> Scene::GetTextures() {
 
 std::vector<Renderer::Object*> Scene::GetObjects() {
     return objs;
+}
+
+void Scene::LoadLibFile(std::string path) {
+    void* handle = dlopen(path.c_str(), RTLD_LAZY);
+    if (!handle) {
+        std::cerr << "Cannot open library: " << dlerror() << std::endl;
+        return;
+    } else {
+        std::cout << "Opened library: " << path << std::endl;
+    }
+
+    // Определяем типы указателей на функции
+    typedef void* (*create_t)();
+    typedef void (*destroy_t)(void*);
+    typedef void (*doSomething_t)(void*);
+
+    // Загружаем функцию create
+    create_t create = (create_t) dlsym(handle, "create");
+    const char* dlsym_error = dlerror();
+    if (dlsym_error) {
+        std::cerr << "Cannot load symbol create: " << dlsym_error << std::endl;
+        dlclose(handle);
+        return;
+    }
+
+    // Загружаем функцию destroy
+    destroy_t destroy = (destroy_t) dlsym(handle, "destroy");
+    dlsym_error = dlerror();
+    if (dlsym_error) {
+        std::cerr << "Cannot load symbol destroy: " << dlsym_error << std::endl;
+        dlclose(handle);
+        return;
+    }
+
+    void* myClass = create();
+
+    Renderer::Object* obj = static_cast<Renderer::Object*>(myClass);
+    if (obj->GetModel() == nullptr) {
+
+    }
+    obj->SetModel(pModelManager->GetModel("Cube"));
+
+    objs.push_back(obj);
 }
 
 float lastFrame = 0;

@@ -817,6 +817,20 @@ void Interface::Render(Engine::Scene* scene, GLuint64 elapsed_time) {
                 //scene->AddCamera(glm::vec3(0, 0, 0));
                 pWindow->SceneInit(scene);
             }
+
+            if (scene && ImGui::MenuItem("Load so file")) {
+                nfdchar_t *outPath = NULL;
+                nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath);
+                if (result == NFD_OKAY) {
+                    scene->LoadLibFile(outPath);
+                    free(outPath);
+                } else if (result == NFD_CANCEL) {
+                    std::cout << "err" << std::endl;
+                } else {
+                    std::cout << "unk err" << std::endl;
+                }
+            }
+
             ImGui::EndMenu();
         }
 

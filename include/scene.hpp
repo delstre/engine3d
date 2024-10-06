@@ -7,6 +7,8 @@
 #include "resourcemanager.hpp"
 #include "controller.hpp"
 
+#include <dlfcn.h>
+
 namespace Engine {
     class Scene {
         public:
@@ -24,6 +26,8 @@ namespace Engine {
             std::vector<GLuint> GetTextures();
 
             std::vector<Renderer::Object*> GetObjects();
+
+            void LoadLibFile(std::string path);
 
             void Render();
 

@@ -1,8 +1,8 @@
 CXX = g++
-CXXFLAGS = -g -std=c++11 -Wall -Wformat -Ilib/nfd/src/include
+CXXFLAGS = -fPIC -g -std=c++11 -Wall -Wformat -Ilib/nfd/src/include
 
 CC = gcc
-CFLAGS = -O2 -Wall -Ilib/nfd/src/include
+CFLAGS = -fPIC -g -O2 -Wall -Ilib/nfd/src/include
 
 INCLUDES = -Iinclude -Ilib/imgui -Ilib/nfd/src/include
 LIBS = `pkg-config --libs glfw3 gtk+-3.0 gdk-3.0` -lglfw -lGL -lGLU -lGLEW -lIL -lILU -lpthread
