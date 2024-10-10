@@ -1,5 +1,6 @@
 #include "scene.hpp"
 #include <csignal>
+#include <typeinfo>
 
 using namespace Engine;
 
@@ -24,8 +25,7 @@ void Scene::Init(GLFWwindow* pWindow) {
         //this->GetActiveCamera()->ProcessMouseMovement(-xoffset, yoffset);
     //});
 
-    pController->AddCallback(GLFW_KEY_F2, true, [this]() {
-    });
+    pController->AddCallback(GLFW_KEY_F2, true, [this]() {});
 
     // project initialize
     pModelManager->ImportModel("projects/new/models/cube.obj");
@@ -53,6 +53,11 @@ Renderer::Camera* Scene::AddCamera(glm::vec3 position) {
 }
 
 void Scene::AddObject(Renderer::Object* obj) {
+    obj->SetComponentManager(pComponentManager);
+    obj->AddComponent("Transform");
+    obj->AddComponent("ModelRender");
+    obj->GetComponent<Renderer::ModelRender>()->SetModel(pModelManager->GetModel("cube"));
+
     objs.push_back(obj);
 }
 
@@ -85,10 +90,8 @@ void Scene::LoadLibFile(std::string path) {
         std::cout << "Opened library: " << path << std::endl;
     }
 
-    // Определяем типы указателей на функции
-    typedef void* (*create_t)();
-    typedef void (*destroy_t)(void*);
-    typedef void (*doSomething_t)(void*);
+    using create_t = Component* (*)();
+    using destroy_t = void (*)(void*);
 
     // Загружаем функцию create
     create_t create = (create_t) dlsym(handle, "create");
@@ -108,12 +111,25 @@ void Scene::LoadLibFile(std::string path) {
         return;
     }
 
-    Engine::Component* CustomComponent = static_cast<Engine::Component*>(create());
+    pComponentManager->RegisterComponent("CustomComponent", [&create](Renderer::Object* obj) {
+        auto comp = create();
+        comp->SetParent(obj);
+        return comp;
+    });
 
     Renderer::Object* obj = new Renderer::Object("custom");
-    obj->AddComponent(CustomComponent);
+
+    obj->AddComponent("CustomComponent");
 
     objs.push_back(obj);
+}
+
+Renderer::ModelManager* Scene::GetModelManager() {
+    return pModelManager;
+}
+
+Renderer::ResourceManager* Scene::GetResourceManager() {
+    return pResourceManager;
 }
 
 float lastFrame = 0;
@@ -130,7 +146,6 @@ void Scene::Render() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     Renderer::Camera* cam = GetActiveCamera();
-
     cam->Think();
 
     float currentFrame = glfwGetTime();
@@ -143,6 +158,7 @@ void Scene::Render() {
     env.viewdir = cam->front;
     env.mvp = cam->mvp;
     for (int i = 0; i < objs.size(); i++) {
+        objs[i]->SetENV(env);
         objs[i]->Update();
         //objs[i]->Render(env, GetTextures());
     }
@@ -160,4 +176,8 @@ void Scene::SetFrameSize(int width, int height) {
 
 Renderer::FrameBuffer* Scene::GetFrameBuffer() {
     return pFbo;
+}
+
+void Scene::SetComponentManager(Engine::ComponentManager* manager) {
+    pComponentManager = manager;
 }

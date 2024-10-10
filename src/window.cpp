@@ -93,6 +93,12 @@ void Window::Init() {
     //interface.SetResourceManager(&resManager);
 
     pInterface = new Renderer::Interface(this);
+    pComponentManager = new Engine::ComponentManager();
+    pComponentManager->RegisterComponents();
+
+    Engine::Scene* pScene = new Engine::Scene();
+    pScene->Init(pWindow);
+    SceneInit(pScene);
 
     //Renderer::FrameBuffer fbo(g_windowSize.x, g_windowSize.y);
     //interface.SetSceneInfo(&fbo);
@@ -113,6 +119,7 @@ void Window::SceneInit(Scene* scene) {
     if (scene != nullptr) {
         pScene = scene;
         pScene->SetFrameSize(width, height);
+        pScene->SetComponentManager(pComponentManager);
     }
 }
 

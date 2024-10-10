@@ -3,31 +3,25 @@
 #include <vector>
 #include <GL/glew.h>
 
-#include "shaderprogram.hpp"
+#include <shaderprogram.hpp>
+#include <component.hpp>
 
 namespace Renderer {
-    struct Envy {
-        glm::vec3 viewpos;
-        glm::vec3 viewdir;
-        glm::mat4 mvp;
-    };
-
     struct Vertex {
-        glm::vec3 position;   // 3 floats for position
-        glm::vec3 normal;     // 3 floats for normal
-        glm::vec2 texCoord;   // 2 floats for texture coordinates
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec2 texCoord;
     };
 
-    class Model {
+    class ModelRender : public Engine::Component {
         public:
-            Model() {};
-            Model(std::vector<Vertex> vertices, std::vector<GLuint> indices);
-            Model(Model* other);
-
-            Model(Model&& other) = default;
-            Model& operator=(const Model& other) = default;
-            Model& operator=(Model&& other) = default;
-            ~Model();
+            ModelRender() {};
+            ModelRender(std::vector<Vertex> vertices, std::vector<GLuint> indices);
+            ModelRender(const ModelRender& other) = default;
+            ModelRender(ModelRender&& other) = default;
+            ModelRender& operator=(const ModelRender& other);
+            ModelRender& operator=(ModelRender&& other) = default;
+            ~ModelRender();
 
             void UpdateVertices(std::vector<Vertex> points);
             void UpdateIndices(std::vector<GLuint> faces);
@@ -37,13 +31,18 @@ namespace Renderer {
             void SetRenderType(GLenum renderType);
             void SetShader(ShaderProgram* shader);
 
+            void SetModel(ModelRender* model);
+
             glm::vec3 GetMinBounds();
             glm::vec3 GetMaxBounds();
 
-            void Render(const Envy& envy, const glm::mat4 position, const GLuint texture);
+            void Update() override;
+            void InterfaceUpdate() override;
         protected:
+            GLuint texture;
+
             GLuint vao;
-            ShaderProgram* pShader;
+            ShaderProgram* pShader = nullptr;
 
             GLuint vbo, ebo;
             std::vector<Vertex> vertices;

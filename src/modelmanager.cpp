@@ -9,25 +9,16 @@
 
 using namespace Renderer;
 
-void ModelManager::AddModel(std::string name, Model* model) {
+void ModelManager::AddModel(std::string name, ModelRender* model) {
     models[name] = model;
 }
 
-Model* ModelManager::GetModel(std::string name) const { 
+ModelRender* ModelManager::GetModel(const std::string& name) const { 
     return models.at(name);
 }
 
-std::map<std::string, Model*> ModelManager::GetModels() const {
+std::map<std::string, ModelRender*> ModelManager::GetModels() const {
     return models;
-}
-
-std::string ModelManager::GetModelName(Model* model) const {
-    for (auto const& [key, value] : models) {
-        if (value == model) {
-            return key;
-        }
-    }
-    return "";
 }
 
 bool ModelManager::ImportModel(const std::string& path) {
@@ -84,7 +75,7 @@ bool ModelManager::ImportModel(const std::string& path) {
                 vertexCount++;
             }
 
-            for (int i = 0; i < vertexCount; i++) {
+            for (size_t i = 0; i < vertexCount; i++) {
                 unsigned int vi = vertexIndex[i] - 1;
                 unsigned int ti = texCoordIndex[i] - 1;
                 unsigned int ni = normalIndex[i] - 1;
@@ -110,10 +101,10 @@ bool ModelManager::ImportModel(const std::string& path) {
 
     file.close();
 
-    Model* model = new Model(vertices, indices);
+    ModelRender* model = new ModelRender(vertices, indices);
     model->SetShader(new ShaderProgram("../shaders/model.vert", "../shaders/model.frag"));
     model->SetRenderType(mode);
-    AddModel(name, model);
+    AddModel("cube", model);
 
     return true;
 }

@@ -5,31 +5,48 @@
 #include <glm/mat4x4.hpp>
 #include <GL/glew.h>
 
-#include <component.hpp>
-#include <unordered_map>
-#include <typeindex>
-#include <memory>
 #include <string>
+#include <memory>
+#include <vector>
+
+#include <component.hpp>
+
+namespace Engine {
+    class Component;
+    class ComponentManager;
+}
 
 namespace Renderer {
+    struct Envy {
+        glm::vec3 viewpos;
+        glm::vec3 viewdir;
+        glm::mat4 mvp;
+    };
+
     class Object {
         public:
             Object(const std::string& name);
 
-            template<typename T, typename... Args>
-            T* AddComponent(Args&&... args);
-
-            template <typename T>
-            void AddComponent(T* component);
+            void AddComponent(const std::string& name);
+            void RemoveComponent(const std::string& name);
 
             template <typename T>
             T* GetComponent();
 
+            std::vector<Engine::Component*>& GetComponents();
+
+            void SetComponentManager(Engine::ComponentManager* manager);
+
+            void SetENV(const Envy& env);
             void Update();
 
             std::string name;
+            Envy env;
         private:
-            std::unordered_map<std::type_index, std::unique_ptr<Engine::Component>> components; // Хранение компонентов
+            Engine::ComponentManager* pComponentManager = nullptr;
+            std::vector<Engine::Component*> components;
+
+
 
     };
 

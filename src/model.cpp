@@ -1,4 +1,6 @@
-#include "model.hpp"
+#include <model.hpp>
+#include <transform.hpp>
+#include "object.hpp"
 
 #include <iostream>
 
@@ -6,38 +8,7 @@
 
 using namespace Renderer;
 
-//Model::Model(ShaderProgram* shader, std::vector<GLfloat> points, std::vector<GLuint> faces, std::vector<GLfloat> texture_points) {
-    //pShader = shader;
-
-    //glGenVertexArrays(1, &vao);
-
-    //glGenBuffers(1, &vbo);
-    //glGenBuffers(1, &t_vbo);
-    //glGenBuffers(1, &c_vbo);
-    //glGenBuffers(1, &ebo);
-
-    //glBindVertexArray(vao);
-
-    //UpdateVertices(points);
-    //UpdateTexturePoints(texture_points);
-    //UpdateColors(glm::vec3(1.0f, 1.0f, 1.0f));
-
-    //glEnableVertexAttribArray(0);
-    //glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    //glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
-
-    //glEnableVertexAttribArray(1);
-    //glBindBuffer(GL_ARRAY_BUFFER, t_vbo);
-    //glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), nullptr);
-
-    //glEnableVertexAttribArray(2);
-    //glBindBuffer(GL_ARRAY_BUFFER, c_vbo);
-    //glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), nullptr);
-
-    //UpdateIndices(faces);
-//}
-
-Model::Model(std::vector<Vertex> vertices, std::vector<GLuint> indices) : vertices(vertices), indices(indices) {
+ModelRender::ModelRender(std::vector<Vertex> vertices, std::vector<GLuint> indices) : vertices(vertices), indices(indices) {
     glGenVertexArrays(1, &vao);
 
     glGenBuffers(1, &vbo);
@@ -59,44 +30,61 @@ Model::Model(std::vector<Vertex> vertices, std::vector<GLuint> indices) : vertic
 
 
     glBindVertexArray(0);
-
 }
 
-Model::Model(Model* other) : Model(other->vertices, other->indices) {
-    renderType = other->renderType;
-}
-
-Model::~Model() {
+ModelRender::~ModelRender() {
     glDeleteVertexArrays(1, &vao);
     glDeleteBuffers(1, &vbo);
     glDeleteBuffers(1, &ebo);
 }
 
-void Model::UpdateVertices(std::vector<Vertex> vertices) {
+ModelRender& ModelRender::operator=(const ModelRender& other) {
+    if (this == &other) {
+        return *this;
+    }
+
+    ModelRender* model = new ModelRender(other.vertices, other.indices);
+    model->SetShader(new ShaderProgram("../shaders/model.vert", "../shaders/model.frag"));
+    model->SetRenderType(other.renderType);
+
+    return *model;
+}
+
+void ModelRender::UpdateVertices(std::vector<Vertex> vertices) {
     this->vertices = vertices;
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 }
 
-void Model::UpdateIndices(std::vector<GLuint> indices) {
+void ModelRender::UpdateIndices(std::vector<GLuint> indices) {
     this->indices = indices;
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 }
 
-void Model::SetRenderType(GLenum renderType) {
+void ModelRender::SetRenderType(GLenum renderType) {
     this->renderType = renderType;
 }
 
-std::vector<Vertex> Model::GetVertices() {
+std::vector<Vertex> ModelRender::GetVertices() {
     return vertices;
 }
 
-void Model::SetShader(ShaderProgram* shader) {
+void ModelRender::SetShader(ShaderProgram* shader) {
     pShader = shader;
 }
 
-glm::vec3 Model::GetMinBounds() {
+void ModelRender::SetModel(ModelRender* model) {
+    renderType = model->renderType;
+    pShader = model->pShader;
+    vertices = model->vertices;
+    indices = model->indices;
+    vao = model->vao;
+    vbo = model->vbo;
+    ebo = model->ebo;
+}
+
+glm::vec3 ModelRender::GetMinBounds() {
      glm::vec3 minBounds = glm::vec3(FLT_MAX);  // Инициализируем большими значениями
 
     //for (size_t i = 0; i < vertices.size(); i += 3) {
@@ -112,7 +100,7 @@ glm::vec3 Model::GetMinBounds() {
     return minBounds;
 }
 
-glm::vec3 Model::GetMaxBounds() {
+glm::vec3 ModelRender::GetMaxBounds() {
     glm::vec3 maxBounds = glm::vec3(-FLT_MAX);  // Инициализируем большими значениями
 
     //for (size_t i = 0; i < points.size(); i += 3) {
@@ -128,17 +116,32 @@ glm::vec3 Model::GetMaxBounds() {
     return maxBounds;
 }
 
-void Model::Render(const Envy& env, const glm::mat4 position, const GLuint texture) {
+void ModelRender::Update() {
+    if (pShader == nullptr) {
+        return;
+    }
+
     pShader->useProgram();
     //glPolygonMode(GL_FRONT_AND_BACK, wireframe ? GL_LINE : GL_FILL);
-    pShader->setMatrix4("mvp", env.mvp);
-    pShader->setVector3("viewPos", env.viewpos);
-    pShader->setVector3("viewDir", env.viewdir);
+    pShader->setMatrix4("mvp", parent->env.mvp);
+    pShader->setVector3("viewPos", parent->env.viewpos);
+    pShader->setVector3("viewDir", parent->env.viewdir);
 
     pShader->setTexture("my_texture", texture);
-    pShader->setMatrix4("model", position);
+    Engine::Transform* transform = GetComponent<Engine::Transform>();
+    if (transform != nullptr)
+        pShader->setMatrix4("model", transform->GetMatrix());
 
     glBindVertexArray(vao);
     glDrawElements(renderType, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+}
+
+void ModelRender::InterfaceUpdate() {
+    if (ImGui::TreeNode("Model")) {
+        ImGui::Text("Vertices: %d", vertices.size());
+        ImGui::Text("Indices: %d", indices.size());
+
+        ImGui::TreePop();
+    }
 }

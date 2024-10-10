@@ -5,6 +5,7 @@
 
 #include <clocale>
 #include <iostream>
+#include <memory>
 
 // Helpers macros
 // We normally try to not use many helpers in imgui_demo.cpp in order to make code easier to copy and paste,
@@ -42,14 +43,6 @@ Interface::Interface(Engine::Window* window) {
     ImGui_ImplGlfw_InitForOpenGL(window->GetWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
     pWindow = window;
-}
-
-void Interface::SetModelManager(ModelManager* mdlManager) {
-    pModelManager = mdlManager;
-}
-
-void Interface::SetResourceManager(ResourceManager* resManager) {
-    pResourceManager = resManager;
 }
 
 void Interface::GetDebugInfo() const {
@@ -117,11 +110,28 @@ void Interface::GetCameraInfo(Engine::Scene* scene) const {
     ImGui::End();
 }
 
-void Interface::ObjectInspector() const {
+void Interface::ObjectInspector(Engine::Scene* scene) const {
     ImGui::Begin("Object inspector");
 
     if (pSelectedObject != nullptr) {
         ImGui::Text("Name: %s", pSelectedObject->name.c_str());
+
+        if (ImGui::Button("Add component"))
+            ImGui::OpenPopup("my_select_popup");
+
+        if (ImGui::BeginPopup("my_select_popup")) {
+            for (const auto& [key, value] : scene->pComponentManager->GetComponents()) {
+                if (ImGui::Selectable(key.c_str())) {
+                    pSelectedObject->AddComponent(key);
+                }
+            }
+
+            ImGui::EndPopup();
+        }
+
+        for (const auto& comp : pSelectedObject->GetComponents()) {
+            comp->InterfaceUpdate();
+        }
     }
 
     ImGui::End();
@@ -130,6 +140,11 @@ void Interface::ObjectInspector() const {
 void Interface::GetObjectsInfo(Engine::Scene* scene) {
     ImGui::Begin("Objects");
 
+    if (ImGui::Button("Create object")) {
+        scene->AddObject(new Renderer::Object("new object"));
+    }
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("List of objects")) {
         for (Renderer::Object* obj : scene->GetObjects()) {
             ImGui::PushID(obj);
@@ -142,10 +157,6 @@ void Interface::GetObjectsInfo(Engine::Scene* scene) {
         ImGui::TreePop();
     }
 
-    if (ImGui::Button("Create object")) {
-        Renderer::Object* obj = new Renderer::Object("new object");
-        scene->AddObject(obj);
-    }
 
     //if (ImGui::Button("Create object")) {
         //Renderer::Object* obj = new Renderer::Object("new object");
@@ -233,9 +244,8 @@ void Interface::GetScene(FrameBuffer* pFbo) const {
     ImGui::End();
 }
 
-void Interface::GetModelManager() const {
-    if (pModelManager == nullptr)
-        return;
+void Interface::GetModelManager(Engine::Scene* scene) const {
+    Renderer::ModelManager* pModelManager = scene->GetModelManager();
 
     ImGui::Begin("ModelManager", nullptr, ImGuiWindowFlags_MenuBar);
     if (ImGui::BeginMenuBar()) {
@@ -258,16 +268,15 @@ void Interface::GetModelManager() const {
         ImGui::EndMenuBar();
     }
 
-    for (auto const [key, value] : pModelManager->GetModels()) {
-        ImGui::Text("Model [%d]: %s", value, key.c_str());
-    }
+    //for (auto const [key, value] : pModelManager->GetModels()) {
+        //ImGui::Text("Model [%d]: %s", value, key.c_str());
+    //}
 
     ImGui::End();
 }
 
-void Interface::GetResourceManagerInfo() const {
-    if (pResourceManager == nullptr)
-        return;
+void Interface::GetResourceManager(Engine::Scene* scene) const {
+    Renderer::ResourceManager* pResourceManager = scene->GetResourceManager();
 
     ImGui::Begin("ResourceManager", nullptr, ImGuiWindowFlags_MenuBar);
     if (ImGui::BeginMenuBar()) {
@@ -870,10 +879,10 @@ void Interface::Render(Engine::Scene* scene, GLuint64 elapsed_time) {
         GetScene(scene->GetFrameBuffer());
         GetCameraInfo(scene);
         GetObjectsInfo(scene);
-        ObjectInspector();
+        ObjectInspector(scene);
+        GetModelManager(scene);
     }
 
-    //GetModelManager();
 
     if (Config::InterfaceDebugActive) {
         ImGui::Begin("Debug");
@@ -883,7 +892,7 @@ void Interface::Render(Engine::Scene* scene, GLuint64 elapsed_time) {
 
         // Scene issue?
 
-        GetResourceManagerInfo();
+        //GetResourceManagerInfo();
         
         ImGui::End();
     }

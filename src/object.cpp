@@ -4,8 +4,8 @@
 
 #include <object.hpp>
 #include <modelinstance.hpp>
-
-#include <stdexcept>
+#include <transform.hpp>
+#include <iostream>
 
 using namespace Renderer;
 
@@ -13,40 +13,55 @@ Object::Object(const std::string& name) {
     this->name = name;
 };
 
-template<typename T, typename... Args>
-T* Object::AddComponent(Args&&... args) {
-    static_assert(std::is_base_of<Engine::Component, T>::value, "T must be a Component");
-    auto component = std::make_unique<T>(std::forward<Args>(args)...);
-    T* ptr = component.get();
-    components[typeid(T)] = std::move(component); // Добавляем в unordered_map
-    return ptr; // Возвращаем указатель на добавленный компонент
-}
-
-template <typename T>
-void Object::AddComponent(T* component) {
-    static_assert(std::is_base_of<Engine::Component, T>::value, "T must be a Component");
-    if (!component) {
-        throw std::invalid_argument("Component pointer is null");
+void Object::AddComponent(const std::string& name) {
+    Engine::Component* component = pComponentManager->CreateComponent(this, name);
+    if (component) {
+        components.push_back(component);
+    } else {
+        std::cerr << "Failed to create component: " << name << std::endl;
     }
-    // Сохраняем компонент в unordered_map
-    components[typeid(T)] = std::unique_ptr<Engine::Component>(component); // Уникальный указатель для управления памятью
 }
 
-template void Object::AddComponent<Engine::Component>(Engine::Component*);
-
+void Object::RemoveComponent(const std::string& name) {
+    for (auto it = components.begin(); it != components.end(); ++it) {
+        if ((*it)->GetTypeName() == name) {
+            components.erase(it);
+            break;
+        }
+    }
+}
 
 template <typename T>
 T* Object::GetComponent() {
-    auto it = components.find(typeid(T));
-    return it != components.end() ? static_cast<T*>(it->second.get()) : nullptr;
+    for (const auto& component: components) {
+        T* result = dynamic_cast<T*>(component);
+        if (result) {
+            return result;
+        }
+    }
+    return nullptr; // Компонент не найден
+}
+
+std::vector<Engine::Component*>& Object::GetComponents() {
+    return components;
+}
+
+void Object::SetComponentManager(Engine::ComponentManager* manager) {
+    pComponentManager = manager;
+}
+
+void Object::SetENV(const Envy& env) {
+    this->env = env;
 }
 
 void Object::Update() {
-    for (const auto& [key, component] : components) {
-        // need for model and modelinstance mvp, textures arguments
+    for (const auto& component: components) {
+        if (!component) {
+            continue;
+        }
+
         component->Update();
     }
-
 }
 
 //Renderer::ModelInstance* Renderer::TranslateModelsToInstance(std::vector<Renderer::Object*>& objects, int start, int end) {
@@ -63,3 +78,6 @@ void Object::Update() {
 
     //return new Renderer::ModelInstance(objects[start]->GetModel(), matrixes, textures, colors);
 //}
+
+template Engine::Transform* Object::GetComponent<Engine::Transform>();
+template Renderer::ModelRender* Object::GetComponent<Renderer::ModelRender>();

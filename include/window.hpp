@@ -29,6 +29,7 @@ namespace Engine {
 
             GLFWwindow* pWindow = nullptr;
             Scene* pScene = nullptr;
+            ComponentManager* pComponentManager = nullptr;
             Renderer::Interface* pInterface = nullptr;
     };
 }

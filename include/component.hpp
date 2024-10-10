@@ -1,52 +1,41 @@
-#include <model.hpp>
-#include <modelinstance.hpp>
+#pragma once
+
+#include <imgui.h>
+#include <object.hpp>
+
+#include <functional>
+#include <memory>
+
+namespace Renderer {
+    class Object;
+}
 
 namespace Engine {
     class Component {
         public:
             virtual ~Component() {}
             virtual void Update() = 0;
+            virtual void InterfaceUpdate() = 0;
+
+            void SetParent(Renderer::Object* parent);
+
+            template <typename T> T* GetComponent();
+            std::string GetTypeName();
+
+        protected:
+            Renderer::Object* parent = nullptr;
     };
 
-    class Transform : public Component {
+    class ComponentManager {
         public:
-            glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
-            glm::vec3 angle = glm::vec3(0.0, 0.0, 0.0);
+            using ComponentConstructor = std::function<Component*(Renderer::Object*)>;
 
-            void Update() override {
-                //std::cout << "Transform::Update()" << std::endl;
-            }
-    };
+            void RegisterComponent(const std::string& name, ComponentConstructor constructor);
+            void RegisterComponents();
+            std::unordered_map<std::string, ComponentConstructor> GetComponents();
+            Component* CreateComponent(Renderer::Object* obj, const std::string& name);
 
-    class ModelRender : public Component {
-        public:
-            Renderer::Model* model = nullptr;
-
-            void Update() override {
-                //model->Render(envy, matmodel, texture);
-            }
-    };
-
-    class ModelInstancedRender : public Component {
-        public:
-            Renderer::ModelInstance* model = nullptr;
-
-            void Update() override {
-                //model->Render(envy, textures);
-            }
-    };
-
-    class Physics : public Component {
-        public:
-            void Update() override {
-                //std::cout << "Physics::Update()" << std::endl;
-            }
-    };
-
-    class Controller : public Component {
-        public:
-            void Update() override {
-                //std::cout << "Controller::Update()" << std::endl;
-            }
+        private:
+            std::unordered_map<std::string, ComponentConstructor> constructors;
     };
 }

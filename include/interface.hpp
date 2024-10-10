@@ -25,19 +25,16 @@ namespace Renderer {
         public:
             Interface(Engine::Window* window);
 
-            void SetModelManager(ModelManager* mdlManager);
-            void SetResourceManager(ResourceManager* resManager);
-
             void GetDebugInfo() const;
             void GetConfigInfo() const;
             void GetScene(FrameBuffer* pFbo) const;
             void GetObjectsInfo(Engine::Scene* scene);
             void GetCameraInfo(Engine::Scene* scene) const;
 
-            void ObjectInspector() const;
+            void ObjectInspector(Engine::Scene* scene) const;
             
-            void GetModelManager() const;
-            void GetResourceManagerInfo() const;
+            void GetModelManager(Engine::Scene* scene) const;
+            void GetResourceManager(Engine::Scene* scene) const;
 
             void ShowExampleAppSimpleOverlay() const;
 
@@ -47,8 +44,6 @@ namespace Renderer {
             std::shared_ptr<Engine::Debug> pDebug = Engine::Debug::GetInstance();
 
             FrameBuffer* pFrameBuffer = nullptr;
-            ModelManager* pModelManager;
-            ResourceManager* pResourceManager;
 
             GLuint64 elapsed_time = 0;
 

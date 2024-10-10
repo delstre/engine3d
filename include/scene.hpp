@@ -22,15 +22,24 @@ namespace Engine {
             void SetFrameSize(int width, int height);
             Renderer::FrameBuffer* GetFrameBuffer();
 
+            void SetComponentManager(Engine::ComponentManager* manager);
+
             std::vector<GLuint> GetTextures();
 
             std::vector<Renderer::Object*> GetObjects();
 
             void LoadLibFile(std::string path);
 
+            Renderer::ModelManager* GetModelManager();
+            Renderer::ResourceManager* GetResourceManager();
+
             void Render();
 
+            Engine::ComponentManager* pComponentManager = nullptr;
+
         private:
+            std::vector<std::string> comps;
+
             Renderer::ModelManager* pModelManager = nullptr;
             Renderer::ResourceManager* pResourceManager = nullptr;
             Renderer::FrameBuffer* pFbo = nullptr;

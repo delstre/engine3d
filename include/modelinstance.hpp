@@ -1,19 +1,19 @@
 #pragma once
 
-#include "model.hpp"
+#include <model.hpp>
 
 namespace Renderer {
-    class ModelInstance : protected Model {
+    class ModelInstanceRender : protected ModelRender {
         public:
-            ModelInstance(std::vector<Vertex> vertexs, std::vector<GLuint> faces);
-            ModelInstance(Model* model, std::vector<glm::mat4> matrixes, std::vector<uint> textures, std::vector<glm::vec3> colors);
-            ModelInstance(Model* model);
+            ModelInstanceRender(std::vector<Vertex> vertexs, std::vector<GLuint> faces);
+            //ModelInstanceRender(ModelRender* model, std::vector<glm::mat4> matrixes, std::vector<uint> textures, std::vector<glm::vec3> colors);
+            ModelInstanceRender(const ModelRender& model);
 
-            ModelInstance(const ModelInstance& other) = default;
-            ModelInstance(ModelInstance&& other) = default;
-            ModelInstance& operator=(const ModelInstance& other) = default;
-            ModelInstance& operator=(ModelInstance&& other) = default;
-            ~ModelInstance();
+            ModelInstanceRender(const ModelInstanceRender& other) = default;
+            ModelInstanceRender(ModelInstanceRender&& other) = default;
+            ModelInstanceRender& operator=(const ModelInstanceRender& other) = default;
+            ModelInstanceRender& operator=(ModelInstanceRender&& other) = default;
+            ~ModelInstanceRender();
 
             int active_id = -1;
             int call_id = -1;
