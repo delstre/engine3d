@@ -16,6 +16,7 @@ void Transform::Update() {
 } 
 
 void Transform::InterfaceUpdate() {
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("Transform")) {
 
 

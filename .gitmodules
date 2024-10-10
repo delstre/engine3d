@@ -1,5 +1,5 @@
 [submodule "thirdparty/imgui"]
-	path = thirdparty/imgui
+	path = lib/imgui
 	url = https://github.com/ocornut/imgui
 	branch = docking
 [submodule "lib/nfd"]

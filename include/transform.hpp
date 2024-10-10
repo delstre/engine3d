@@ -1,3 +1,5 @@
+#pragma once
+
 #include <component.hpp>
 
 #include <glm/glm.hpp>

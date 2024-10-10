@@ -27,7 +27,7 @@ namespace Renderer {
 
             void GetDebugInfo() const;
             void GetConfigInfo() const;
-            void GetScene(FrameBuffer* pFbo) const;
+            void GetScene(Engine::Scene* scene) const;
             void GetObjectsInfo(Engine::Scene* scene);
             void GetCameraInfo(Engine::Scene* scene) const;
 

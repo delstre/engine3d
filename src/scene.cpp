@@ -111,17 +111,11 @@ void Scene::LoadLibFile(std::string path) {
         return;
     }
 
-    pComponentManager->RegisterComponent("CustomComponent", [&create](Renderer::Object* obj) {
-        auto comp = create();
-        comp->SetParent(obj);
+    pComponentManager->RegisterComponent("CustomComponent", [create](Renderer::Object* obj) {
+        Component* comp = create();
+        //comp->SetParent(obj);
         return comp;
     });
-
-    Renderer::Object* obj = new Renderer::Object("custom");
-
-    obj->AddComponent("CustomComponent");
-
-    objs.push_back(obj);
 }
 
 Renderer::ModelManager* Scene::GetModelManager() {

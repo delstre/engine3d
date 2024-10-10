@@ -218,11 +218,54 @@ void Interface::GetConfigInfo() const {
     }
 }
 
-void Interface::GetScene(FrameBuffer* pFbo) const {
+bool mouseCapture = false;
+void Interface::GetScene(Engine::Scene* scene) const {
+    Renderer::FrameBuffer* pFbo = scene->GetFrameBuffer();
     if (pFbo == nullptr)
         return;
 
     ImGui::Begin("Scene");
+
+    ImVec2 mousePos = ImGui::GetMousePos();
+    ImVec2 windowPos = ImGui::GetWindowPos();
+    ImVec2 windowSize = ImGui::GetWindowSize();
+
+    // Check if the mouse is within the panel bounds
+    bool isMouseInsidePanel = 
+        mousePos.x >= windowPos.x && 
+        mousePos.x <= windowPos.x + windowSize.x && 
+        mousePos.y >= windowPos.y && 
+        mousePos.y <= windowPos.y + windowSize.y;
+
+        if (isMouseInsidePanel) {
+            if (ImGui::IsMouseClicked(1)) {
+                mouseCapture = true;
+                glfwSetInputMode(pWindow->GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+                glfwSetCursorPos(pWindow->GetWindow(), (windowPos.x + windowSize.x) / 2, (windowPos.y + windowSize.y) / 2);
+            }
+        }
+
+        if (mouseCapture) {
+            double cursorX, cursorY;
+            glfwGetCursorPos(pWindow->GetWindow(), &cursorX, &cursorY);
+
+            float xoffset = ((windowPos.x + windowSize.x) / 2) - cursorX;
+            float yoffset = ((windowPos.y + windowSize.y) / 2) - cursorY; // Invert Y-axis
+
+            std::cout << xoffset << " " << yoffset << std::endl;
+
+            glfwSetCursorPos(pWindow->GetWindow(), (windowPos.x + windowSize.x) / 2, (windowPos.y + windowSize.y) / 2);
+
+            Camera* pCamera = scene->GetActiveCamera();
+            pCamera->ProcessMouseMovement(-xoffset, yoffset);
+        }
+
+        if (ImGui::IsMouseReleased(1)) { // Right mouse button released
+            mouseCapture = false;
+            glfwSetInputMode(pWindow->GetWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL); // Show the cursor again
+        }
+
+
         ImGui::BeginChild("GameRender");
 
         float width = ImGui::GetContentRegionAvail().x;
@@ -876,7 +919,7 @@ void Interface::Render(Engine::Scene* scene, GLuint64 elapsed_time) {
     ShowExampleAppAssetsBrowser(&v);
 
     if (scene != nullptr) {
-        GetScene(scene->GetFrameBuffer());
+        GetScene(scene);
         GetCameraInfo(scene);
         GetObjectsInfo(scene);
         ObjectInspector(scene);

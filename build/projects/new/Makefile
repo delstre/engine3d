@@ -1,12 +1,12 @@
 # Компилятор и флаги
 CXX = g++
-CXXFLAGS = -Wall -fPIC -I../../../include # Убедитесь, что путь к заголовкам правильный
+CXXFLAGS = -Wall -fPIC -I../../../include -I../../../lib/imgui
 
 # Цели
 TARGET = obj.so
 
 # Исходные файлы
-SRCS = obj.cpp ../../../src/object.cpp # Укажите правильный путь к object.cpp
+SRCS = obj.cpp ../../../src/component.cpp 
 
 # Объектные файлы
 OBJS = $(SRCS:.cpp=.o)

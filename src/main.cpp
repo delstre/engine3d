@@ -61,22 +61,7 @@ std::string formatString(const char* format, int value) {
 
 glm::ivec2 g_windowSize(1600, 800);
 
-bool mouseCapture = false;
-
 void mousePosCallback(GLFWwindow* window, double xpos, double ypos) {
-    if (mouseCapture) {
-        int width = g_windowSize.x, height = g_windowSize.y;
-        static bool firstMouse = true;
-
-        float xoffset = (width / 2) - xpos;
-        float yoffset = (height / 2 - ypos); // инвертируем ось Y, так как движемся по экрану
-
-        glfwSetCursorPos(window, width / 2, height / 2);
-
-        Renderer::Camera* camera = static_cast<Renderer::Camera*>(glfwGetWindowUserPointer(window));  // Получаем камеру
-        camera->ProcessMouseMovement(-xoffset, yoffset);
-    }
-
     ImGuiIO& io = ImGui::GetIO();
     io.MousePos = ImVec2(xpos, ypos);
 }

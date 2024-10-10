@@ -5,8 +5,15 @@ MyClass::MyClass() {
     // Конструктор
 }
 
+MyClass::~MyClass() {
+
+} 
+
 void MyClass::Update() {
-    std::cout << "My render!" << std::endl;
+}
+
+void MyClass::InterfaceUpdate() {
+
 }
 
 // Функции для создания и уничтожения объектов MyClass

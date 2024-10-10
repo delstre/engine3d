@@ -10,6 +10,7 @@
 #include <vector>
 
 #include <component.hpp>
+#include <componentmanager.hpp>
 
 namespace Engine {
     class Component;
