@@ -1,12 +1,15 @@
 # Компилятор и флаги
 CXX = g++
-CXXFLAGS = -Wall -fPIC -I../../../include -I../../../lib/imgui
+
+ENGINE_DIR = ../../../
+
+CXXFLAGS = -Wall -fPIC -I$(ENGINE_DIR)include -I$(ENGINE_DIR)lib/imgui
 
 # Цели
 TARGET = obj.so
 
 # Исходные файлы
-SRCS = obj.cpp ../../../src/component.cpp 
+SRCS = obj.cpp $(wildcard $(ENGINE_DIR)src/*cpp)
 
 # Объектные файлы
 OBJS = $(SRCS:.cpp=.o)

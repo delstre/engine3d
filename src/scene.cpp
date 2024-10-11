@@ -113,7 +113,7 @@ void Scene::LoadLibFile(std::string path) {
 
     pComponentManager->RegisterComponent("CustomComponent", [create](Renderer::Object* obj) {
         Component* comp = create();
-        //comp->SetParent(obj);
+        comp->SetParent(obj);
         return comp;
     });
 }
@@ -154,7 +154,6 @@ void Scene::Render() {
     for (int i = 0; i < objs.size(); i++) {
         objs[i]->SetENV(env);
         objs[i]->Update();
-        //objs[i]->Render(env, GetTextures());
     }
 
     pFbo->Unbind();

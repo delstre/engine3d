@@ -2,7 +2,7 @@
 
 #include <component.hpp>
 
-class MyClass : public Engine::Component {
+class MyClass : protected Engine::Component {
     public:
         MyClass();
         ~MyClass();

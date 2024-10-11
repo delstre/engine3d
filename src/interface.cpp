@@ -930,6 +930,8 @@ void Interface::Render(Engine::Scene* scene, GLuint64 elapsed_time) {
     if (Config::InterfaceDebugActive) {
         ImGui::Begin("Debug");
 
+        GetDebugInfo();
+        pDebug->CounterFPS();
         GetConfigInfo();
         ImGui::Separator();
 
