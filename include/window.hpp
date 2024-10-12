@@ -1,7 +1,7 @@
 #pragma once
 
-#include "scene.hpp"
 #include "interface.hpp"
+#include "scene.hpp"
 #include <GLFW/glfw3.h>
 
 namespace Renderer {

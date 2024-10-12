@@ -6,6 +6,7 @@
 #include <modelinstance.hpp>
 #include <transform.hpp>
 #include <iostream>
+#include <memory>
 
 using namespace Renderer;
 
@@ -39,7 +40,7 @@ T* Object::GetComponent() {
             return result;
         }
     }
-    return nullptr; // Компонент не найден
+    return nullptr;
 }
 
 std::vector<Engine::Component*>& Object::GetComponents() {
@@ -81,3 +82,9 @@ void Object::Update() {
 
 template Engine::Transform* Object::GetComponent<Engine::Transform>();
 template Renderer::ModelRender* Object::GetComponent<Renderer::ModelRender>();
+
+extern "C" {
+    void* GetTransform(void* obj) {
+        return obj;
+    }
+}

@@ -2,7 +2,7 @@
 
 #include <component.hpp>
 
-class MyClass : protected Engine::Component {
+class MyClass : public Engine::Component {
     public:
         MyClass();
         ~MyClass();
@@ -10,5 +10,7 @@ class MyClass : protected Engine::Component {
         void InterfaceUpdate() override;
 };
 
-extern "C" MyClass* create();
-extern "C" void destroy(MyClass*);
+extern "C" MyClass* Create();
+extern "C" void Destroy(MyClass*);
+extern "C" void Update(MyClass*);
+extern "C" void SetParent(MyClass* object, Renderer::Object* parent);

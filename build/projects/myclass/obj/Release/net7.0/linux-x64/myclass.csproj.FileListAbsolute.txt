@@ -1,0 +1,12 @@
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/bin/Release/net7.0/linux-x64/myclass.deps.json
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/bin/Release/net7.0/linux-x64/myclass.dll
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/bin/Release/net7.0/linux-x64/myclass.pdb
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/obj/Release/net7.0/linux-x64/myclass.csproj.AssemblyReference.cache
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/obj/Release/net7.0/linux-x64/myclass.GeneratedMSBuildEditorConfig.editorconfig
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/obj/Release/net7.0/linux-x64/myclass.AssemblyInfoInputs.cache
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/obj/Release/net7.0/linux-x64/myclass.AssemblyInfo.cs
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/obj/Release/net7.0/linux-x64/myclass.csproj.CoreCompileInputs.cache
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/obj/Release/net7.0/linux-x64/myclass.dll
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/obj/Release/net7.0/linux-x64/refint/myclass.dll
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/obj/Release/net7.0/linux-x64/myclass.pdb
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/obj/Release/net7.0/linux-x64/ref/myclass.dll

@@ -138,11 +138,6 @@ void ModelRender::Update() {
 }
 
 void ModelRender::InterfaceUpdate() {
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("Model")) {
-        ImGui::Text("Vertices: %d", vertices.size());
-        ImGui::Text("Indices: %d", indices.size());
-
-        ImGui::TreePop();
-    }
+    ImGui::Text("Vertices: %d", vertices.size());
+    ImGui::Text("Indices: %d", indices.size());
 }

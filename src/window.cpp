@@ -92,13 +92,11 @@ void Window::Init() {
     //interface.SetModelManager(&models);
     //interface.SetResourceManager(&resManager);
 
-    pInterface = new Renderer::Interface(this);
     pComponentManager = new Engine::ComponentManager();
     pComponentManager->RegisterComponents();
 
-    Engine::Scene* pScene = new Engine::Scene();
-    pScene->Init(pWindow);
-    SceneInit(pScene);
+    pInterface = new Renderer::Interface(this);
+    pInterface->LoadProject();
 
     //Renderer::FrameBuffer fbo(g_windowSize.x, g_windowSize.y);
     //interface.SetSceneInfo(&fbo);
@@ -117,9 +115,9 @@ void Window::Init() {
 
 void Window::SceneInit(Scene* scene) {
     if (scene != nullptr) {
-        pScene = scene;
-        pScene->SetFrameSize(width, height);
-        pScene->SetComponentManager(pComponentManager);
+        scene->Init(GetWindow());
+        scene->SetFrameSize(width, height);
+        scene->SetComponentManager(pComponentManager);
     }
 }
 
@@ -131,6 +129,7 @@ void Window::Render() {
         GLuint query;
         glGenQueries(1, &query);
 
+        Scene* pScene = pInterface->GetScene();
         if (pScene != nullptr) {
             glBeginQuery(GL_TIME_ELAPSED, query);
             pScene->Render();
@@ -141,7 +140,7 @@ void Window::Render() {
         glGetQueryObjectui64v(query, GL_QUERY_RESULT, &elapsed_time);
 
         if (pInterface != nullptr)
-            pInterface->Render(pScene, elapsed_time);
+            pInterface->Render(elapsed_time);
 
         glfwPollEvents();
         glfwSwapBuffers(pWindow);

@@ -1,6 +1,7 @@
 #include "scene.hpp"
 #include <csignal>
 #include <typeinfo>
+#include <cscomponent.hpp>
 
 using namespace Engine;
 
@@ -81,43 +82,6 @@ std::vector<Renderer::Object*> Scene::GetObjects() {
     return objs;
 }
 
-void Scene::LoadLibFile(std::string path) {
-    void* handle = dlopen(path.c_str(), RTLD_LAZY);
-    if (!handle) {
-        std::cerr << "Cannot open library: " << dlerror() << std::endl;
-        return;
-    } else {
-        std::cout << "Opened library: " << path << std::endl;
-    }
-
-    using create_t = Component* (*)();
-    using destroy_t = void (*)(void*);
-
-    // Загружаем функцию create
-    create_t create = (create_t) dlsym(handle, "create");
-    const char* dlsym_error = dlerror();
-    if (dlsym_error) {
-        std::cerr << "Cannot load symbol create: " << dlsym_error << std::endl;
-        dlclose(handle);
-        return;
-    }
-
-    // Загружаем функцию destroy
-    destroy_t destroy = (destroy_t) dlsym(handle, "destroy");
-    dlsym_error = dlerror();
-    if (dlsym_error) {
-        std::cerr << "Cannot load symbol destroy: " << dlsym_error << std::endl;
-        dlclose(handle);
-        return;
-    }
-
-    pComponentManager->RegisterComponent("CustomComponent", [create](Renderer::Object* obj) {
-        Component* comp = create();
-        comp->SetParent(obj);
-        return comp;
-    });
-}
-
 Renderer::ModelManager* Scene::GetModelManager() {
     return pModelManager;
 }
@@ -125,6 +89,8 @@ Renderer::ModelManager* Scene::GetModelManager() {
 Renderer::ResourceManager* Scene::GetResourceManager() {
     return pResourceManager;
 }
+
+// bind and unbind for final application need to remove!
 
 float lastFrame = 0;
 float deltaTime = 0;

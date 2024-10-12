@@ -1,0 +1,2 @@
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/bin/Release/net7.0/linux-x64/publish/myclass.so
+/home/delstre-/cnt/prj/vxl/build/projects/myclass/bin/Release/net7.0/linux-x64/publish/myclass.pdb

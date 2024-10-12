@@ -9,9 +9,16 @@ namespace Engine {
         public:
             glm::mat4& GetMatrix();
             glm::vec3& GetPosition();
+            glm::vec3* GetPositionPtr();
+            glm::vec3& GetAngle();
+
+            void SetPosition(glm::vec3 position);
+            void SetAngle(glm::vec3 angle);
 
             void Update() override;
             void InterfaceUpdate() override;
+
+            ~Transform() {}
         private:
             glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
             glm::vec3 angle = glm::vec3(0.0, 0.0, 0.0);

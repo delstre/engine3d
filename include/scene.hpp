@@ -28,8 +28,6 @@ namespace Engine {
 
             std::vector<Renderer::Object*> GetObjects();
 
-            void LoadLibFile(std::string path);
-
             Renderer::ModelManager* GetModelManager();
             Renderer::ResourceManager* GetResourceManager();
 

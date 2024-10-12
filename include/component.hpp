@@ -15,11 +15,10 @@ namespace Engine {
             virtual ~Component() {}
             virtual void Update() = 0;
             virtual void InterfaceUpdate() = 0;
-
-            void SetParent(Renderer::Object* parent);
+            virtual void SetParent(Renderer::Object* parent);
 
             template <typename T> T* GetComponent();
-            std::string GetTypeName();
+            virtual std::string GetTypeName() const;
 
         protected:
             Renderer::Object* parent = nullptr;

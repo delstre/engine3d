@@ -14,10 +14,12 @@
 #include "resourcemanager.hpp"
 #include "framebuffer.hpp"
 
-#include "window.hpp"
+#include "scene.hpp"
+#include "project.hpp"
 
 namespace Engine {
     class Window;
+    class Project;
 };
 
 namespace Renderer {
@@ -25,23 +27,28 @@ namespace Renderer {
         public:
             Interface(Engine::Window* window);
 
+            void SetProject(Engine::Project* project);
+            void LoadProject();
+            Engine::Scene* GetScene() const;
+
             void GetDebugInfo() const;
             void GetConfigInfo() const;
-            void GetScene(Engine::Scene* scene) const;
-            void GetObjectsInfo(Engine::Scene* scene);
-            void GetCameraInfo(Engine::Scene* scene) const;
 
+            void GetSceneInfo(Engine::Scene* scene) const;
+            void GetCameraInfo(Engine::Scene* scene) const;
+            void GetObjectsInfo(Engine::Scene* scene);
             void ObjectInspector(Engine::Scene* scene) const;
-            
             void GetModelManager(Engine::Scene* scene) const;
             void GetResourceManager(Engine::Scene* scene) const;
 
             void ShowExampleAppSimpleOverlay() const;
 
-            void Render(Engine::Scene* scene, GLuint64 elapsed_time);
+            void Render(GLuint64 elapsed_time);
 
         private:
             std::shared_ptr<Engine::Debug> pDebug = Engine::Debug::GetInstance();
+
+            Engine::Project* pProject = nullptr;
 
             FrameBuffer* pFrameBuffer = nullptr;
 

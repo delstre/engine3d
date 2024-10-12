@@ -39,6 +39,7 @@ namespace Renderer {
             void SetComponentManager(Engine::ComponentManager* manager);
 
             void SetENV(const Envy& env);
+
             void Update();
 
             std::string name;

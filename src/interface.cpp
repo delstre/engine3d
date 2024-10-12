@@ -3,6 +3,8 @@
 #include "framebuffer.hpp"
 #include "scene.hpp"
 
+#include <sstream>
+
 #include <clocale>
 #include <iostream>
 #include <memory>
@@ -45,6 +47,25 @@ Interface::Interface(Engine::Window* window) {
     pWindow = window;
 }
 
+
+void Interface::SetProject(Engine::Project* pProject) {
+    this->pProject = pProject;
+    pProject->Init();
+}
+
+void Interface::LoadProject() {
+    SetProject(new Engine::Project(pWindow));
+    if (pProject->Load("project.json")) {
+        std::cout << "Project loaded" << std::endl;
+    } else {
+        std::cout << "Failed to load project" << std::endl;
+    }
+}
+
+Engine::Scene* Interface::GetScene() const {
+    return pProject->GetScene();
+}
+
 void Interface::GetDebugInfo() const {
     if (pDebug == nullptr)
         return;
@@ -65,162 +86,19 @@ void Interface::GetDebugInfo() const {
     }
 }
 
-void Interface::GetCameraInfo(Engine::Scene* scene) const {
-    ImGui::Begin("Camera");
-
-    Camera* pCamera = scene->GetActiveCamera();
-
-    if (ImGui::TreeNode("Position")) {
-        ImGui::SliderFloat("x", &pCamera->position.x, -100.0f, 100.0f);
-        ImGui::SliderFloat("y", &pCamera->position.y, -100.0f, 100.0f);
-        ImGui::SliderFloat("z", &pCamera->position.z, -100.0f, 100.0f);
-        ImGui::TreePop();
-    }
-
-    if (ImGui::TreeNode("Eye Position")) {
-        ImGui::SliderFloat("x", &pCamera->front.x, -100.0f, 100.0f);
-        ImGui::SliderFloat("y", &pCamera->front.y, -100.0f, 100.0f);
-        ImGui::SliderFloat("z", &pCamera->front.z, -100.0f, 100.0f);
-        ImGui::SliderFloat("yaw", &pCamera->yaw, -180.0f, 180.0f);
-        ImGui::SliderFloat("pitch", &pCamera->pitch, -180.0f, 180.0f);
-        ImGui::TreePop();
-    }
-
-    if (ImGui::TreeNode("Up Vector")) {
-        ImGui::SliderFloat("x", &pCamera->up.x, -100.0f, 100.0f);
-        ImGui::SliderFloat("y", &pCamera->up.y, -100.0f, 100.0f);
-        ImGui::SliderFloat("z", &pCamera->up.z, -100.0f, 100.0f);
-        ImGui::TreePop();
-    }
-
-    if (ImGui::TreeNode("Right Vector")) {
-        ImGui::SliderFloat("x", &pCamera->right.x, -100.0f, 100.0f);
-        ImGui::SliderFloat("y", &pCamera->right.y, -100.0f, 100.0f);
-        ImGui::SliderFloat("z", &pCamera->right.z, -100.0f, 100.0f);
-        ImGui::TreePop();
-    }
-
-    if (ImGui::TreeNode("World Up Vector")) {
-        ImGui::SliderFloat("x", &pCamera->worldUp.x, -100.0f, 100.0f);
-        ImGui::SliderFloat("y", &pCamera->worldUp.y, -100.0f, 100.0f);
-        ImGui::SliderFloat("z", &pCamera->worldUp.z, -100.0f, 100.0f);
-        ImGui::TreePop();
-    }
-
-    ImGui::End();
-}
-
-void Interface::ObjectInspector(Engine::Scene* scene) const {
-    ImGui::Begin("Object inspector");
-
-    if (pSelectedObject != nullptr) {
-        ImGui::Text("Name: %s", pSelectedObject->name.c_str());
-
-        if (ImGui::Button("Add component"))
-            ImGui::OpenPopup("my_select_popup");
-
-        if (ImGui::BeginPopup("my_select_popup")) {
-            for (const auto& [key, value] : scene->pComponentManager->GetComponents()) {
-                if (ImGui::Selectable(key.c_str())) {
-                    pSelectedObject->AddComponent(key);
-                }
-            }
-
-            ImGui::EndPopup();
-        }
-
-        for (const auto& comp : pSelectedObject->GetComponents()) {
-            comp->InterfaceUpdate();
-        }
-    }
-
-    ImGui::End();
-}
-
-void Interface::GetObjectsInfo(Engine::Scene* scene) {
-    ImGui::Begin("Objects");
-
-    if (ImGui::Button("Create object")) {
-        scene->AddObject(new Renderer::Object("new object"));
-    }
-
-    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
-    if (ImGui::TreeNode("List of objects")) {
-        for (Renderer::Object* obj : scene->GetObjects()) {
-            ImGui::PushID(obj);
-            if (ImGui::Selectable(obj->name.c_str(), pSelectedObject == obj)) {
-                pSelectedObject = obj;
-            }
-            ImGui::PopID();
-        }
-
-        ImGui::TreePop();
-    }
-
-
-    //if (ImGui::Button("Create object")) {
-        //Renderer::Object* obj = new Renderer::Object("new object");
-        //scene->AddObject(obj);
-    //}
-
-    //std::vector<Renderer::Object*> pObjects = scene->GetObjects();
-    //for (int i = 0; i < pObjects.size(); i++) {
-        //ImGui::Text("Object %d", pObjects.at(i));
-        //ImGui::PushID(i);
-
-        //if (pObjects.at(i)->GetModelInstance() != nullptr) {
-            //if (ImGui::TreeNode("Model Instance")) {
-                //for (glm::mat4 mat : pObjects.at(i)->GetModelInstance()->GetMatrixes()) {
-                    //ImGui::Text("Matrix %d", invisible);
-                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[0][0], mat[0][1], mat[0][2], mat[0][3]);
-                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[1][0], mat[1][1], mat[1][2], mat[1][3]);
-                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[2][0], mat[2][1], mat[2][2], mat[2][3]);
-                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
-                    //invisible++;
-                //}
-
-                //ImGui::TreePop();
-            //}
-        //} else if (pObjects.at(i)->GetModel() != nullptr) {
-            //if (ImGui::TreeNode("Model")) {
-                //for (Vertex vertex : pObjects.at(i)->GetModel()->GetVertices()) {
-                    //ImGui::Text("Vertex %d", invisible);
-                    //ImGui::Text("position: %.6f %.6f %.6f", vertex.position.x, vertex.position.y, vertex.position.z);
-                    //ImGui::Text("normal: %.6f %.6f %.6f", vertex.normal.x, vertex.normal.y, vertex.normal.z);
-                    //ImGui::Text("texcoord: %.6f %.6f", vertex.texCoord.x, vertex.texCoord.y);
-                    //invisible++;
-                //}
-                //ImGui::TreePop();
-            //}
-        //}
-
-        //if (ImGui::TreeNode("Position")) {
-            //ImGui::DragFloat("x", &pObjects.at(i)->position.x, 0.05f);
-            //ImGui::DragFloat("y", &pObjects.at(i)->position.y, 0.05f);
-            //ImGui::DragFloat("z", &pObjects.at(i)->position.z, 0.05f);
-            //pObjects.at(i)->UpdatePosition();
-            //ImGui::TreePop();
-        //}
-
-        //ImGui::PopID(); 
-    //}
-
-    ImGui::End();
-}
-
 void Interface::GetConfigInfo() const {
     if (ImGui::CollapsingHeader("Config")) {
         ImGui::Checkbox("Interface", &Config::InterfaceDebugActive);
         if (ImGui::Checkbox("VSync", &Config::VSync)) {
             glfwSwapInterval(Config::VSync);
         };
-         
     }
 }
 
 bool mouseCapture = false;
-void Interface::GetScene(Engine::Scene* scene) const {
+void Interface::GetSceneInfo(Engine::Scene* scene) const {
     Renderer::FrameBuffer* pFbo = scene->GetFrameBuffer();
+
     if (pFbo == nullptr)
         return;
 
@@ -283,6 +161,170 @@ void Interface::GetScene(Engine::Scene* scene) const {
 
 
         ImGui::EndChild();
+
+    ImGui::End();
+}
+
+void Interface::GetCameraInfo(Engine::Scene* scene) const {
+    ImGui::Begin("Camera");
+
+    Camera* pCamera = scene->GetActiveCamera();
+
+    if (ImGui::TreeNode("Position")) {
+        ImGui::SliderFloat("x", &pCamera->position.x, -100.0f, 100.0f);
+        ImGui::SliderFloat("y", &pCamera->position.y, -100.0f, 100.0f);
+        ImGui::SliderFloat("z", &pCamera->position.z, -100.0f, 100.0f);
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNode("Eye Position")) {
+        ImGui::SliderFloat("x", &pCamera->front.x, -100.0f, 100.0f);
+        ImGui::SliderFloat("y", &pCamera->front.y, -100.0f, 100.0f);
+        ImGui::SliderFloat("z", &pCamera->front.z, -100.0f, 100.0f);
+        ImGui::SliderFloat("yaw", &pCamera->yaw, -180.0f, 180.0f);
+        ImGui::SliderFloat("pitch", &pCamera->pitch, -180.0f, 180.0f);
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNode("Up Vector")) {
+        ImGui::SliderFloat("x", &pCamera->up.x, -100.0f, 100.0f);
+        ImGui::SliderFloat("y", &pCamera->up.y, -100.0f, 100.0f);
+        ImGui::SliderFloat("z", &pCamera->up.z, -100.0f, 100.0f);
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNode("Right Vector")) {
+        ImGui::SliderFloat("x", &pCamera->right.x, -100.0f, 100.0f);
+        ImGui::SliderFloat("y", &pCamera->right.y, -100.0f, 100.0f);
+        ImGui::SliderFloat("z", &pCamera->right.z, -100.0f, 100.0f);
+        ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNode("World Up Vector")) {
+        ImGui::SliderFloat("x", &pCamera->worldUp.x, -100.0f, 100.0f);
+        ImGui::SliderFloat("y", &pCamera->worldUp.y, -100.0f, 100.0f);
+        ImGui::SliderFloat("z", &pCamera->worldUp.z, -100.0f, 100.0f);
+        ImGui::TreePop();
+    }
+
+    ImGui::End();
+}
+
+void Interface::GetObjectsInfo(Engine::Scene* scene) {
+    ImGui::Begin("Objects");
+
+    if (ImGui::Button("Create object")) {
+        scene->AddObject(new Renderer::Object("new object"));
+    }
+
+    ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+    if (ImGui::TreeNode("List of objects")) {
+        for (Renderer::Object* obj : scene->GetObjects()) {
+            ImGui::PushID(obj);
+            
+            std::stringstream addressStream;
+            addressStream << std::hex << reinterpret_cast<std::uintptr_t>(obj);
+            std::string addressString = addressStream.str();
+
+            std::string name = "Object: " + obj->name + " (Address: " + addressString + ")";
+
+            if (ImGui::Selectable(name.c_str(), pSelectedObject == obj)) {
+                pSelectedObject = obj;
+            }
+            ImGui::PopID();
+        }
+
+        ImGui::TreePop();
+    }
+
+
+    //if (ImGui::Button("Create object")) {
+        //Renderer::Object* obj = new Renderer::Object("new object");
+        //scene->AddObject(obj);
+    //}
+
+    //std::vector<Renderer::Object*> pObjects = scene->GetObjects();
+    //for (int i = 0; i < pObjects.size(); i++) {
+        //ImGui::Text("Object %d", pObjects.at(i));
+        //ImGui::PushID(i);
+
+        //if (pObjects.at(i)->GetModelInstance() != nullptr) {
+            //if (ImGui::TreeNode("Model Instance")) {
+                //for (glm::mat4 mat : pObjects.at(i)->GetModelInstance()->GetMatrixes()) {
+                    //ImGui::Text("Matrix %d", invisible);
+                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[0][0], mat[0][1], mat[0][2], mat[0][3]);
+                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[1][0], mat[1][1], mat[1][2], mat[1][3]);
+                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[2][0], mat[2][1], mat[2][2], mat[2][3]);
+                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
+                    //invisible++;
+                //}
+
+                //ImGui::TreePop();
+            //}
+        //} else if (pObjects.at(i)->GetModel() != nullptr) {
+            //if (ImGui::TreeNode("Model")) {
+                //for (Vertex vertex : pObjects.at(i)->GetModel()->GetVertices()) {
+                    //ImGui::Text("Vertex %d", invisible);
+                    //ImGui::Text("position: %.6f %.6f %.6f", vertex.position.x, vertex.position.y, vertex.position.z);
+                    //ImGui::Text("normal: %.6f %.6f %.6f", vertex.normal.x, vertex.normal.y, vertex.normal.z);
+                    //ImGui::Text("texcoord: %.6f %.6f", vertex.texCoord.x, vertex.texCoord.y);
+                    //invisible++;
+                //}
+                //ImGui::TreePop();
+            //}
+        //}
+
+        //if (ImGui::TreeNode("Position")) {
+            //ImGui::DragFloat("x", &pObjects.at(i)->position.x, 0.05f);
+            //ImGui::DragFloat("y", &pObjects.at(i)->position.y, 0.05f);
+            //ImGui::DragFloat("z", &pObjects.at(i)->position.z, 0.05f);
+            //pObjects.at(i)->UpdatePosition();
+            //ImGui::TreePop();
+        //}
+
+        //ImGui::PopID(); 
+    //}
+
+    ImGui::End();
+}
+
+void Interface::ObjectInspector(Engine::Scene* scene) const {
+    ImGui::Begin("Object inspector");
+
+    if (pSelectedObject != nullptr) {
+        ImGui::Text("Name: %s", pSelectedObject->name.c_str());
+
+        if (ImGui::Button("Add component"))
+            ImGui::OpenPopup("my_select_popup");
+
+        if (ImGui::BeginPopup("my_select_popup")) {
+            for (const auto& [key, value] : scene->pComponentManager->GetComponents()) {
+                if (ImGui::Selectable(key.c_str())) {
+                    pSelectedObject->AddComponent(key);
+                }
+            }
+
+            ImGui::EndPopup();
+        }
+
+        for (const auto& comp : pSelectedObject->GetComponents()) {
+            ImGui::SetNextItemOpen(true, ImGuiCond_Once);
+
+            std::stringstream addressStream;
+            addressStream << std::hex << reinterpret_cast<std::uintptr_t>(comp);
+            std::string addressString = addressStream.str();
+
+            std::string name = comp->GetTypeName() + " (Address: " + addressString + ")";
+
+            if (ImGui::TreeNode(name.c_str())) {
+                if (ImGui::Button("Remove component")) {
+                    pSelectedObject->RemoveComponent(comp->GetTypeName());
+                }
+                comp->InterfaceUpdate();
+                ImGui::TreePop();
+            }
+        }
+    }
 
     ImGui::End();
 }
@@ -834,7 +876,7 @@ void ShowExampleAppAssetsBrowser(bool* p_open)
     assets_browser.Draw("Example: Assets Browser", p_open);
 }
 
-void Interface::Render(Engine::Scene* scene, GLuint64 elapsed_time) {
+void Interface::Render(GLuint64 elapsed_time) {
     this->elapsed_time = elapsed_time;
 
     ImGui_ImplOpenGL3_NewFrame();
@@ -885,20 +927,30 @@ void Interface::Render(Engine::Scene* scene, GLuint64 elapsed_time) {
         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     }
 
+    Engine::Scene* scene = GetScene();
+
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("New scene")) {
-                scene = new Engine::Scene();
-                scene->Init(pWindow->GetWindow());
-                //scene->AddCamera(glm::vec3(0, 0, 0));
-                pWindow->SceneInit(scene);
+            if (ImGui::MenuItem("New project")) {
+                SetProject(new Engine::Project(pWindow));
+            }
+
+            if (ImGui::MenuItem("Save project")) {
+                pProject->Save("project.json");
+            }
+
+            if (ImGui::MenuItem("Load project")) {
+                SetProject(new Engine::Project(pWindow));
+                if (pProject->Load("project.json")) {
+                    std::cout << "Loaded project project.json" << std::endl;
+                }
             }
 
             if (scene && ImGui::MenuItem("Load so file")) {
                 nfdchar_t *outPath = NULL;
                 nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath);
                 if (result == NFD_OKAY) {
-                    scene->LoadLibFile(outPath);
+                    pProject->IncludeFile(outPath);
                     free(outPath);
                 } else if (result == NFD_CANCEL) {
                     std::cout << "err" << std::endl;
@@ -919,7 +971,7 @@ void Interface::Render(Engine::Scene* scene, GLuint64 elapsed_time) {
     ShowExampleAppAssetsBrowser(&v);
 
     if (scene != nullptr) {
-        GetScene(scene);
+        GetSceneInfo(scene);
         GetCameraInfo(scene);
         GetObjectsInfo(scene);
         ObjectInspector(scene);
