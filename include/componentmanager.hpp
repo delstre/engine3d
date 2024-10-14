@@ -19,12 +19,15 @@ namespace Engine {
             ComponentManager() {};
             ~ComponentManager() = default; 
 
-            void RegisterComponent(const std::string& name, std::function<Component*(Renderer::Object*)> constructor);
+            void RegisterComponent(const std::string& name, std::function<IComponent*()> constructor);
             void RegisterComponents();
-            std::unordered_map<std::string, std::function<Component*(Renderer::Object*)>> GetComponents();
-            Component* CreateComponent(Renderer::Object* obj, const std::string& name);
+            std::unordered_map<std::string, std::function<IComponent*()>> GetComponents();
+            IComponent* CreateComponent(const std::string& name);
 
         private:
-            std::unordered_map<std::string, std::function<Component*(Renderer::Object*)>> constructors;
+            std::unordered_map<std::string, std::function<IComponent*()>> constructors;
     };
 }
+
+#define REGISTER_COMPONENT(NAME) \
+    ComponentManager::RegisterComponent(#NAME, []() { return new NAME(); })

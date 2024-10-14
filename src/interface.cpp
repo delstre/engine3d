@@ -2,6 +2,10 @@
 #include "config.hpp"
 #include "framebuffer.hpp"
 #include "scene.hpp"
+#include "transform.hpp"
+#include <glm/gtc/type_ptr.hpp>
+
+#include <refl.hpp>
 
 #include <sstream>
 
@@ -288,6 +292,12 @@ void Interface::GetObjectsInfo(Engine::Scene* scene) {
     ImGui::End();
 }
 
+template <typename T>
+void print_bases()
+{
+}
+
+
 void Interface::ObjectInspector(Engine::Scene* scene) const {
     ImGui::Begin("Object inspector");
 
@@ -307,20 +317,48 @@ void Interface::ObjectInspector(Engine::Scene* scene) const {
             ImGui::EndPopup();
         }
 
-        for (const auto& comp : pSelectedObject->GetComponents()) {
+        for (Engine::Component* pComponent : pSelectedObject->GetComponents()) {
             ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 
             std::stringstream addressStream;
-            addressStream << std::hex << reinterpret_cast<std::uintptr_t>(comp);
+            addressStream << std::hex << reinterpret_cast<std::uintptr_t>(pComponent);
             std::string addressString = addressStream.str();
 
-            std::string name = comp->GetTypeName() + " (Address: " + addressString + ")";
+            std::string name = pComponent->GetTypeName() + " (Address: " + addressString + ")";
 
             if (ImGui::TreeNode(name.c_str())) {
-                if (ImGui::Button("Remove component")) {
-                    pSelectedObject->RemoveComponent(comp->GetTypeName());
-                }
-                comp->InterfaceUpdate();
+                refl::util::for_each(refl::reflect(*pComponent).members, [&](auto member) {
+                    using type_desc = refl::descriptor::type_descriptor<decltype(member(*pComponent))>;
+                    using value_type = typename type_desc::type;
+                    
+                    if constexpr (std::is_same<value_type, bool&>::value) {
+                        ImGui::Checkbox(std::string(member.name).c_str(), &member(*pComponent));
+                    }
+                });
+
+                //constexpr auto type = refl::reflect<Engine::Component>();
+                //if constexpr (type.declared_bases.size) {
+                    //refl::util::for_each(refl::util::reflect_types(type.declared_bases), [pComponent](auto t) {
+                        //using type_desc = refl::descriptor::type_descriptor<decltype(t)>;
+                        //type_desc* pTemplate = dynamic_cast<type_desc>(pComponent);
+                        //if (pTemplate != nullptr) {
+                            //refl::util::for_each(refl::reflect(*pTemplate).members, [&](auto member) {
+                                //using type_desc = refl::descriptor::type_descriptor<decltype(member(*pTemplate))>;
+                                //using value_type = typename type_desc::type;
+                                    
+                                //if constexpr (std::is_same<value_type, glm::vec3&>::value) {
+                                    //ImGui::SliderFloat3(std::string(member.name).c_str(), glm::value_ptr(member(*pTemplate)), -100.0f, 100.0f);
+                                //}
+                            //});
+                        //}
+                    //});
+                //}
+
+                //for (const auto& entry : TypeRegistry::getTypeMap()) {
+                    //std::cout << typeid(entry.second).name() << std::endl;
+                //}
+
+                pComponent->UpdateInterface();
                 ImGui::TreePop();
             }
         }
@@ -391,6 +429,15 @@ void Interface::GetResourceManager(Engine::Scene* scene) const {
     ImGui::End();
 }
 
+void Interface::GetFiles() const {
+    ImGui::Begin("Files");
+
+    for (const auto& file : pProject->GetFiles()) {
+        ImGui::Text(file.c_str());
+    }
+
+    ImGui::End();
+}
 
 void Interface::ShowExampleAppSimpleOverlay() const {
     static int location = 0;
@@ -977,6 +1024,8 @@ void Interface::Render(GLuint64 elapsed_time) {
         ObjectInspector(scene);
         GetModelManager(scene);
     }
+
+    GetFiles();
 
 
     if (Config::InterfaceDebugActive) {

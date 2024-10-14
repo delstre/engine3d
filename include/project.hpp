@@ -15,6 +15,8 @@ namespace Engine {
             bool IncludeFile(std::string path);
             Scene* GetScene();
 
+            std::vector<std::string> GetFiles();
+
         private:
             Window* pWindow;
             Scene* pScene;

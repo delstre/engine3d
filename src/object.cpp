@@ -15,8 +15,10 @@ Object::Object(const std::string& name) {
 };
 
 void Object::AddComponent(const std::string& name) {
-    Engine::Component* component = pComponentManager->CreateComponent(this, name);
+    Engine::Component* component = static_cast<Engine::Component*>(pComponentManager->CreateComponent(name));
     if (component) {
+        component->Start();
+        component->SetParent(this);
         components.push_back(component);
     } else {
         std::cerr << "Failed to create component: " << name << std::endl;
@@ -25,7 +27,9 @@ void Object::AddComponent(const std::string& name) {
 
 void Object::RemoveComponent(const std::string& name) {
     for (auto it = components.begin(); it != components.end(); ++it) {
-        if ((*it)->GetTypeName() == name) {
+        Engine::Component* component = dynamic_cast<Engine::Component*>(*it);
+        if (component->GetTypeName() == name) {
+            component->End();
             components.erase(it);
             break;
         }
@@ -38,6 +42,19 @@ T* Object::GetComponent() {
         T* result = dynamic_cast<T*>(component);
         if (result) {
             return result;
+        }
+    }
+    return nullptr;
+}
+
+template <typename T>
+T* Object::GetComponent(const std::string& name) {
+    for (Engine::Component* component: components) {
+        if (component->GetTypeName() == name) {
+            T* result = dynamic_cast<T*>(component);
+            if (result) {
+                return result;
+            }
         }
     }
     return nullptr;
@@ -56,12 +73,12 @@ void Object::SetENV(const Envy& env) {
 }
 
 void Object::Update() {
-    for (const auto& component: components) {
-        if (!component) {
+    for (Engine::Component* pComponent: components) {
+        if (!pComponent) {
             continue;
         }
 
-        component->Update();
+        pComponent->UpdateComponent();
     }
 }
 
@@ -84,7 +101,11 @@ template Engine::Transform* Object::GetComponent<Engine::Transform>();
 template Renderer::ModelRender* Object::GetComponent<Renderer::ModelRender>();
 
 extern "C" {
-    void* GetTransform(void* obj) {
-        return obj;
-    }
+    //void* GetTransform(void* obj) {
+        //return obj->GetComponent<Engine::Transform>();
+    //}
+
+    //void* GetPosition(void* transform) {
+        //return static_cast<Engine::Transform*>(transform)->GetPositionPtr();
+    //}
 }

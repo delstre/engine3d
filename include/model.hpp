@@ -3,6 +3,7 @@
 #include <vector>
 #include <GL/glew.h>
 
+#include "regclass.hpp"
 #include <shaderprogram.hpp>
 #include <component.hpp>
 
@@ -36,8 +37,10 @@ namespace Renderer {
             glm::vec3 GetMinBounds();
             glm::vec3 GetMaxBounds();
 
-            void Update() override;
-            void InterfaceUpdate() override;
+            void Update();
+            void InterfaceUpdate();
+            void Start();
+            void End();
         protected:
             GLuint texture;
 
@@ -54,3 +57,7 @@ namespace Renderer {
             bool hasTextureCoords;
     };
 }
+
+//using namespace Renderer;
+//using namespace Engine;
+//REGISTER_TYPE(ModelRender, Component);

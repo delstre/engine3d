@@ -1,6 +1,6 @@
 #include <boost/concept_check.hpp>
 #include <project.hpp>
-#include <cscomponent.hpp>
+#include <icomponent.hpp>
 #include <transform.hpp>
 
 #include "fstream"
@@ -113,6 +113,8 @@ bool Project::Load(std::string path) {
     return true;
 }
 
+class Base {};
+
 bool Project::IncludeFile(std::string path) {
     void* handle = dlopen(path.c_str(), RTLD_LAZY);
     if (!handle) {
@@ -122,7 +124,7 @@ bool Project::IncludeFile(std::string path) {
         std::cout << "Opened library: " << path << std::endl;
     }
 
-    using create_t = void* (*)();
+    using create_t = IComponent* (*)();
     using destroy_t = void (*)(void*);
 
     // Загружаем функцию create
@@ -153,12 +155,13 @@ bool Project::IncludeFile(std::string path) {
         return false;
     }
 
-    pScene->pComponentManager->RegisterComponent("CustomComponent", [handle, create](Renderer::Object* obj) {
-        CSComponent* comp = new CSComponent;
-        comp->SetHandler(handle, create());
-        comp->SetParent(obj);
-        return comp;
-    });
+    std::string name = path;
+    name = name.substr(name.find_last_of("/\\") + 1);
+    name = name.substr(0, name.find_first_of("."));
+
+    pScene->pComponentManager->RegisterComponent(name, [create]() {
+        return create();
+    }); 
 
     files.push_back(path);
 
@@ -169,4 +172,6 @@ Scene* Project::GetScene() {
     return pScene;
 }
 
-
+std::vector<std::string> Project::GetFiles() {
+    return files;
+}

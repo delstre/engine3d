@@ -1,7 +1,7 @@
 #include "scene.hpp"
 #include <csignal>
 #include <typeinfo>
-#include <cscomponent.hpp>
+#include <icomponent.hpp>
 
 using namespace Engine;
 

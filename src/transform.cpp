@@ -1,8 +1,10 @@
 #include <transform.hpp>
 #include <iostream>
 #include <glm/gtc/type_ptr.hpp>
+#include <imgui.h>
 
 using namespace Engine;
+
     
 glm::vec3& Transform::GetPosition() {
     return position;
@@ -28,6 +30,9 @@ void Transform::SetAngle(glm::vec3 angle) {
     this->angle = angle;
 }
 
+void Transform::Start() {}
+void Transform::End() {}
+
 void Transform::Update() {
     matrix = glm::mat4(1.0f);
     matrix = glm::translate(matrix, position);
@@ -41,26 +46,18 @@ void Transform::InterfaceUpdate() {
     ImGui::SliderFloat3("Angle", glm::value_ptr(angle), -180.0f, 180.0f);
 }
 
-std::string GetTypeName() {
-    return "Transform";
-}
-
 extern "C" {
-    struct Positions {
-        double x;
-        int y;
-        int z;
-    };
+    void* GetTransform(void* obj) {
+        if (obj != nullptr) {
+            return static_cast<Renderer::Object*>(obj)->GetComponent<Transform>();
+        } else {
+            return 0;
+        }
+    }
 
-    void* GetX(void* obj) {
-        Transform* tr = static_cast<Renderer::Object*>(obj)->GetComponent<Transform>();
-
-        if (tr) {
-            Positions* p = new Positions;
-            p->x = tr->GetPosition().x;
-            p->y = tr->GetPosition().y;
-            p->z = tr->GetPosition().z;
-            return p;
+    void* GetPosition(void* transform) {
+        if (transform != nullptr) {
+            return static_cast<Transform*>(transform)->GetPositionPtr();
         } else {
             return 0;
         }

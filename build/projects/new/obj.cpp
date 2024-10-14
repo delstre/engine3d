@@ -14,34 +14,23 @@ MyClass::~MyClass() {
 
 double ticks = 0;
 void MyClass::Update() {
-    std::cout << parent << std::endl;
-    //Engine::Transform* transform = GetComponent<Engine::Transform>();
-    //if (transform != nullptr) {
-        //std::cout << transform->GetPosition().x << std::endl;
-        //transform->GetPosition().x = sin(ticks) * 2;
-    //} else {
-        //std::cout << "err" << std::endl;
-    //}
-    //ticks += 0.1;
-}
+    ///
+    ////Engine::Transform* transform = GetComponent<Engine::Transform>();
+    ////if (transform != nullptr) {
+        ////std::cout << transform->GetPosition().x << std::endl;
+        ////transform->GetPosition().x = sin(ticks) * 2;
+    ////} else {
+        ////std::cout << "err" << std::endl;
+    ////}
+    
+    if (ticks > 10) {
+        std::cout << a << std::endl;
+        ticks = 0;
+    }
 
-void MyClass::InterfaceUpdate() {
-
+    ticks += 0.1;
 }
+void MyClass::Start() {}
+void MyClass::End() {}
 
-// Функции для создания и уничтожения объектов MyClass
-extern "C" MyClass* Create() {
-    return new MyClass();
-}
-
-extern "C" void Destroy(MyClass* object) {
-    delete object;
-}
-
-extern "C" void Update(MyClass* object) {
-    object->Update();
-}
-
-extern "C" void SetParent(MyClass* object, Renderer::Object* parent) {
-    static_cast<Engine::Component*>(object)->SetParent(parent);
-}
+REGCLASS(MyClass)

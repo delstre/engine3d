@@ -3,13 +3,13 @@ CXX = g++
 
 ENGINE_DIR = ../../../
 
-CXXFLAGS = -Wall -fPIC -I$(ENGINE_DIR)include -I$(ENGINE_DIR)lib/imgui
+CXXFLAGS = -Wall -fPIC -I$(ENGINE_DIR)include
 
 # Цели
 TARGET = obj.so
 
 # Исходные файлы
-SRCS = obj.cpp $(wildcard $(ENGINE_DIR)src/*cpp)
+SRCS = obj.cpp $(wildcard $(ENGINE_DIR)src/*.cpp)
 
 # Объектные файлы
 OBJS = $(SRCS:.cpp=.o)

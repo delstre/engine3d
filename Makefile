@@ -1,10 +1,10 @@
 CXX = g++
-CXXFLAGS = -fPIC -g -std=c++17 -Wall -Wformat -Ilib/nfd/src/include
+CXXFLAGS = -fPIC -g -std=c++20 -Wall -Wformat -Ilib/nfd/src/include
 
 CC = gcc
-CFLAGS = -fPIC -g -O2 -Wall -Ilib/nfd/src/include
+CFLAGS = -fPIC -g -ggdb -O0 -Wall -Ilib/nfd/src/include
 
-INCLUDES = -Iinclude -Ilib/imgui -Ilib/nfd/src/include
+INCLUDES = -Iinclude -Ilib/imgui -Ilib/nfd/src/include -Ilib/refl-cpp/include
 LIBS = `pkg-config --libs glfw3 gtk+-3.0 gdk-3.0` -lglfw -lGL -lGLU -lGLEW -lIL -lILU -lpthread
 
 SRCS_CPP = $(wildcard src/*.cpp)

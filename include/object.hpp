@@ -13,6 +13,7 @@
 #include <componentmanager.hpp>
 
 namespace Engine {
+    class IComponent;
     class Component;
     class ComponentManager;
 }
@@ -33,6 +34,9 @@ namespace Renderer {
 
             template <typename T>
             T* GetComponent();
+
+            template <typename T>
+            T* GetComponent(const std::string& name);
 
             std::vector<Engine::Component*>& GetComponents();
 

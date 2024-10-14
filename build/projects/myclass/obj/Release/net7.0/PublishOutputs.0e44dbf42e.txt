@@ -1,3 +1,0 @@
-/home/delstre-/cnt/prj/vxl/build/projects/myclass/bin/Release/net7.0/publish/myclass.dll
-/home/delstre-/cnt/prj/vxl/build/projects/myclass/bin/Release/net7.0/publish/myclass.deps.json
-/home/delstre-/cnt/prj/vxl/build/projects/myclass/bin/Release/net7.0/publish/myclass.pdb

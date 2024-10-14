@@ -1,27 +1,46 @@
 #pragma once
 
-#include <imgui.h>
+#include "regclass.hpp"
+#include <icomponent.hpp>
 #include <object.hpp>
+
+#include <refl.hpp>
+
+#include <map>
 
 namespace Renderer {
     class Object;
 }
 
 namespace Engine {
-    class Transform;
-
-    class Component {
+    class Component : public IComponent {
         public:
-            virtual ~Component() {}
-            virtual void Update() = 0;
-            virtual void InterfaceUpdate() = 0;
-            virtual void SetParent(Renderer::Object* parent);
+            ~Component() {}
+            void SetParent(Renderer::Object* parent);
+            void UpdateInterface();
 
-            template <typename T> T* GetComponent();
-            virtual std::string GetTypeName() const;
+            void UpdateComponent() override;
+            virtual void Start() override;
+            virtual void End() override;
 
-        protected:
+            virtual void Update();
+            
+            void SetEnable(bool enable);
+
+            template<typename T>
+            T* GetComponent();
+            std::string GetTypeName() const;
+
             Renderer::Object* parent = nullptr;
+            bool isEnabled = true;
+
     };
 }
+
+REFL_AUTO(
+    type(Engine::Component),
+    field(isEnabled)
+);
+
+REGISTER_BASE(Engine::Component);
 

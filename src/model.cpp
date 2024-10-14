@@ -5,10 +5,14 @@
 #include <iostream>
 
 #include <cfloat>
+#include <imgui.h>
 
 using namespace Renderer;
 
-ModelRender::ModelRender(std::vector<Vertex> vertices, std::vector<GLuint> indices) : vertices(vertices), indices(indices) {
+ModelRender::ModelRender(std::vector<Vertex> vertices, std::vector<GLuint> indices) {
+    this->vertices = vertices;
+    this->indices = indices;
+
     glGenVertexArrays(1, &vao);
 
     glGenBuffers(1, &vbo);
@@ -141,3 +145,6 @@ void ModelRender::InterfaceUpdate() {
     ImGui::Text("Vertices: %d", vertices.size());
     ImGui::Text("Indices: %d", indices.size());
 }
+
+void ModelRender::Start() {}
+void ModelRender::End() {}

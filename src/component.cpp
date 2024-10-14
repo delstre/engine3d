@@ -1,11 +1,36 @@
-#include "component.hpp"
+#include <component.hpp>
 #include <transform.hpp>
 
 using namespace Engine;
 
+void Component::UpdateComponent() {
+    if (isEnabled) {
+        Update();
+    }
+}
+
+void Component::Start() {
+    if (isEnabled) {
+        Start();
+    }
+}
+
+void Component::End() {
+    if (isEnabled) {
+        End();
+    }
+}
+
+void Component::Update() {}
+void Component::UpdateInterface() {}
+
 void Component::SetParent(Renderer::Object* parent) { 
     if (this->parent == nullptr)
         this->parent = parent; 
+}
+
+void Component::SetEnable(bool enable) {
+    isEnabled = enable;
 }
 
 template <typename T>
@@ -16,30 +41,8 @@ T* Component::GetComponent() {
     return parent->template GetComponent<T>(); 
 }
 
-template Transform* Component::GetComponent<Transform>();
-
 std::string Component::GetTypeName() const {
     return typeid(*this).name();
 }
 
-class ConcreteComponent : public Component {
-    void Update() override {}
-    void InterfaceUpdate() override {}
-    void SetParent(Renderer::Object* parent) override {}
-};
-
-
-
-extern "C" {
-    Component* CreateComponent() {
-        return new ConcreteComponent();
-    }
-
-    void DestroyComponent(Component* component) {
-        delete component;
-    }
-
-    void SetParentComponent(Component* component, void* parent) {
-        component->SetParent(static_cast<Renderer::Object*>(parent));
-    }
-}
+template Transform* Component::GetComponent<Transform>();
