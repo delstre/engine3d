@@ -1,7 +1,11 @@
-[submodule "thirdparty/imgui"]
+[submodule "lib/imgui"]
 	path = lib/imgui
 	url = https://github.com/ocornut/imgui
 	branch = docking
 [submodule "lib/nfd"]
 	path = lib/nfd
 	url = https://github.com/mlabbe/nativefiledialog.git
+[submodule "lib/refl-cpp"]
+	path = lib/refl-cpp
+	url = https://github.com/veselink1/refl-cpp.git
+
