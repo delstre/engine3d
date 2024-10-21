@@ -3,7 +3,6 @@
 #include <vector>
 #include <GL/glew.h>
 
-#include "regclass.hpp"
 #include <shaderprogram.hpp>
 #include <component.hpp>
 
@@ -16,7 +15,7 @@ namespace Renderer {
 
     class ModelRender : public Engine::Component {
         public:
-            ModelRender() {};
+            ModelRender() : Engine::Component() {};
             ModelRender(std::vector<Vertex> vertices, std::vector<GLuint> indices);
             ModelRender(const ModelRender& other) = default;
             ModelRender(ModelRender&& other) = default;
@@ -57,7 +56,3 @@ namespace Renderer {
             bool hasTextureCoords;
     };
 }
-
-//using namespace Renderer;
-//using namespace Engine;
-//REGISTER_TYPE(ModelRender, Component);

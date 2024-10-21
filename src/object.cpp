@@ -3,7 +3,7 @@
 #include <IL/il.h>
 
 #include <object.hpp>
-#include <modelinstance.hpp>
+#include <model.hpp>
 #include <transform.hpp>
 #include <iostream>
 #include <memory>

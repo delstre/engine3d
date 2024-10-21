@@ -9,7 +9,7 @@
 
 using namespace Renderer;
 
-ModelRender::ModelRender(std::vector<Vertex> vertices, std::vector<GLuint> indices) {
+ModelRender::ModelRender(std::vector<Vertex> vertices, std::vector<GLuint> indices) : Engine::Component() {
     this->vertices = vertices;
     this->indices = indices;
 

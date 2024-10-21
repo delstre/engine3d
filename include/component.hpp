@@ -1,12 +1,13 @@
 #pragma once
 
-#include "regclass.hpp"
 #include <icomponent.hpp>
 #include <object.hpp>
+#include <reflection.hpp>
 
-#include <refl.hpp>
+#include <cassert>
+#include <vector>
+#include <memory>
 
-#include <map>
 
 namespace Renderer {
     class Object;
@@ -15,7 +16,8 @@ namespace Renderer {
 namespace Engine {
     class Component : public IComponent {
         public:
-            ~Component() {}
+            ~Component() = default;
+            Component() { Init(); }
             void SetParent(Renderer::Object* parent);
             void UpdateInterface();
 
@@ -31,16 +33,16 @@ namespace Engine {
             T* GetComponent();
             std::string GetTypeName() const;
 
-            Renderer::Object* parent = nullptr;
-            bool isEnabled = true;
+            DECLARE_CLASS_VARIABLE(Renderer::Object*, parent, nullptr);
+            DECLARE_CLASS_VARIABLE(bool, isEnabled, true);
+
+            DECLARE_VARIABLES_VECTOR();
+
+            DECLARE_CLASS_VARIABLES(
+                REGISTER_CLASS_VARIABLE(Renderer::Object*, parent);
+                REGISTER_CLASS_VARIABLE(bool, isEnabled);
+            )
+
 
     };
 }
-
-REFL_AUTO(
-    type(Engine::Component),
-    field(isEnabled)
-);
-
-REGISTER_BASE(Engine::Component);
-

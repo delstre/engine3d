@@ -5,8 +5,6 @@
 #include "transform.hpp"
 #include <glm/gtc/type_ptr.hpp>
 
-#include <refl.hpp>
-
 #include <sstream>
 
 #include <clocale>
@@ -327,36 +325,19 @@ void Interface::ObjectInspector(Engine::Scene* scene) const {
             std::string name = pComponent->GetTypeName() + " (Address: " + addressString + ")";
 
             if (ImGui::TreeNode(name.c_str())) {
-                refl::util::for_each(refl::reflect(*pComponent).members, [&](auto member) {
-                    using type_desc = refl::descriptor::type_descriptor<decltype(member(*pComponent))>;
-                    using value_type = typename type_desc::type;
-                    
-                    if constexpr (std::is_same<value_type, bool&>::value) {
-                        ImGui::Checkbox(std::string(member.name).c_str(), &member(*pComponent));
+                for (const auto& var : pComponent->variables) {
+                    if (var->type_name == "bool") {
+                        ImGui::Checkbox(var->name, static_cast<bool*>(var->ptr()));
+                    } else if (var->type_name == "glm::vec3") {
+                        ImGui::SliderFloat3(var->name, glm::value_ptr(*static_cast<glm::vec3*>(var->ptr())), -180.0f, 180.0f);
+                    } else if (var->type_name == "int") {
+                        ImGui::DragInt(var->name, static_cast<int*>(var->ptr()));
+                    } else if (var->type_name == "float") {
+                        ImGui::DragFloat(var->name, static_cast<float*>(var->ptr()), 0.01f);
+                    } else {
+                        ImGui::Text((var->type_name + var->name).c_str());
                     }
-                });
-
-                //constexpr auto type = refl::reflect<Engine::Component>();
-                //if constexpr (type.declared_bases.size) {
-                    //refl::util::for_each(refl::util::reflect_types(type.declared_bases), [pComponent](auto t) {
-                        //using type_desc = refl::descriptor::type_descriptor<decltype(t)>;
-                        //type_desc* pTemplate = dynamic_cast<type_desc>(pComponent);
-                        //if (pTemplate != nullptr) {
-                            //refl::util::for_each(refl::reflect(*pTemplate).members, [&](auto member) {
-                                //using type_desc = refl::descriptor::type_descriptor<decltype(member(*pTemplate))>;
-                                //using value_type = typename type_desc::type;
-                                    
-                                //if constexpr (std::is_same<value_type, glm::vec3&>::value) {
-                                    //ImGui::SliderFloat3(std::string(member.name).c_str(), glm::value_ptr(member(*pTemplate)), -100.0f, 100.0f);
-                                //}
-                            //});
-                        //}
-                    //});
-                //}
-
-                //for (const auto& entry : TypeRegistry::getTypeMap()) {
-                    //std::cout << typeid(entry.second).name() << std::endl;
-                //}
+                }
 
                 pComponent->UpdateInterface();
                 ImGui::TreePop();

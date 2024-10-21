@@ -3,7 +3,7 @@ CXX = g++
 
 ENGINE_DIR = ../../../
 
-CXXFLAGS = -Wall -fPIC -I$(ENGINE_DIR)include
+CXXFLAGS = -Wall -fPIC -I$(ENGINE_DIR)include -I$(ENGINE_DIR)lib/imgui -I$(ENGINE_DIR)lib/nfd/src/include
 
 # Цели
 TARGET = obj.so
@@ -27,6 +27,6 @@ $(TARGET): $(OBJS)
 
 # Очистка сгенерированных файлов
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -f obj.o obj.so
 
 .PHONY: all clean

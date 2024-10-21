@@ -36,7 +36,6 @@
 #include "interface.hpp"
 
 #include "model.hpp"
-#include "modelinstance.hpp"
 
 #include <algorithm>
 

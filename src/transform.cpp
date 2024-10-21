@@ -5,6 +5,7 @@
 
 using namespace Engine;
 
+Transform::Transform() : Component() { Init(); }
     
 glm::vec3& Transform::GetPosition() {
     return position;

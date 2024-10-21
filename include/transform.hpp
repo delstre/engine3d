@@ -1,7 +1,6 @@
 #pragma once
 
 #include <component.hpp>
-#include <regclass.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/vec3.hpp>
@@ -10,6 +9,7 @@ namespace Engine {
     class Transform : public Component {
         public:
             ~Transform() {};
+            Transform();
 
             glm::mat4& GetMatrix();
             glm::vec3& GetPosition();
@@ -23,27 +23,14 @@ namespace Engine {
             void InterfaceUpdate();
             void Start();
             void End();
-        private:
-            glm::vec3 position = glm::vec3(0.0, 0.0, 0.0);
-            glm::vec3 angle = glm::vec3(0.0, 0.0, 0.0);
+
+            DECLARE_CLASS_VARIABLE(glm::vec3, position, glm::vec3(0.0, 0.0, 0.0));
+            DECLARE_CLASS_VARIABLE(glm::vec3, angle, glm::vec3(0.0, 0.0, 0.0));
             glm::mat4 matrix = glm::mat4(1.0f);
+
+            DECLARE_CLASS_VARIABLES(
+                REGISTER_CLASS_VARIABLE(glm::vec3, position);
+                REGISTER_CLASS_VARIABLE(glm::vec3, angle);
+            )
     };
-
-    REGISTER_TYPE(Transform, Component);
 }
-
-
-REFL_AUTO(
-    type(Engine::Transform, bases<Engine::Component>), 
-    func(GetPosition, property("Position")),
-    func(GetAngle, property("Angle")),
-    field(isEnabled)
-);
-
-REFL_AUTO(
-    type(glm::vec3),
-    field(x),
-    field(y),
-    field(z)
-);
-
