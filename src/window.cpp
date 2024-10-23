@@ -61,11 +61,14 @@ void Window::Init() {
 
     pProject = new Engine::Project(this);
     pProject->Init();
-    pProject->LoadLast();
 
     #ifdef INTERFACE_DEBUG
+    pProject->LoadLast();
+
     pInterface = new Renderer::Interface(this);
     pInterface->SetProject(pProject);
+    #else
+    pProject->Load();
     #endif
 
     Render();

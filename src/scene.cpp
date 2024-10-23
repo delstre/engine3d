@@ -29,13 +29,19 @@ void Scene::Init(GLFWwindow* pWindow) {
     pController->AddCallback(GLFW_KEY_F2, true, [this]() {});
 
     // project initialize
-    pModelManager->ImportModel("projects/new/models/cube.obj");
+    // importing all models from dir?
+    pModelManager->SetPath(this->path);
+    pModelManager->ImportModel("models/cube.obj");
     
     pFbo = new Renderer::FrameBuffer(wid, hei);
     this->pWindow = pWindow;
     glEnable(GL_DEPTH_TEST);
 
     initialized = true;
+}
+
+void Scene::SetPath(std::string path) {
+    this->path = path;
 }
 
 Renderer::Camera* Scene::AddCamera(glm::vec3 position) {

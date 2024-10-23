@@ -16,9 +16,12 @@ namespace Engine {
             void LoadLast();
             bool IncludeFile(std::string path);
             void IncludeFiles();
+            bool CompileFiles();
             Scene* GetScene();
 
             std::string GetPath();
+
+            bool refresh_files = false;
 
         private:
             Window* pWindow;

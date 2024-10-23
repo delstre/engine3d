@@ -13,6 +13,7 @@ namespace Engine {
     class Scene {
         public:
             void Init(GLFWwindow* pWindow);
+            void SetPath(std::string path);
             void AddObject(Renderer::Object* obj);
             Renderer::Camera* AddCamera(glm::vec3 position); // maybe merge with object
 
@@ -36,6 +37,7 @@ namespace Engine {
             Engine::ComponentManager* pComponentManager = nullptr;
 
         private:
+            std::string path;
             std::vector<std::string> comps;
 
             Renderer::ModelManager* pModelManager = nullptr;

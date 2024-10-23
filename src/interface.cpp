@@ -12,6 +12,7 @@
 #include <iostream>
 #include <memory>
 
+#include <filesystem>
 #include <fstream>
 
 // Helpers macros
@@ -125,8 +126,6 @@ void Interface::GetSceneInfo(Engine::Scene* scene) const {
 
             float xoffset = ((windowPos.x + windowSize.x) / 2) - cursorX;
             float yoffset = ((windowPos.y + windowSize.y) / 2) - cursorY; // Invert Y-axis
-
-            std::cout << xoffset << " " << yoffset << std::endl;
 
             glfwSetCursorPos(pWindow->GetWindow(), (windowPos.x + windowSize.x) / 2, (windowPos.y + windowSize.y) / 2);
 
@@ -414,9 +413,23 @@ void Interface::GetResourceManager(Engine::Scene* scene) const {
 void Interface::GetFiles() const {
     ImGui::Begin("Files");
 
-    //for (const auto& file : pProject->GetFiles()) {
-        //ImGui::Text(file.c_str());
-    //}
+    static int selected = -1;
+    for (const auto& entry : std::filesystem::directory_iterator(pProject->GetPath())) {
+        if (ImGui::Selectable(entry.path().filename().string().c_str())) {
+            //system(("xdg-open " + entry.path().string()).c_str());
+        }
+
+        if (ImGui::BeginPopupContextItem()) // <-- use last item id as popup id
+        {
+            selected = (int) entry.path().filename().string().size();
+            ImGui::Text("This a popup for \"%s\"!", entry.path().filename().string().c_str());
+            if (ImGui::Button("Close"))
+                ImGui::CloseCurrentPopup();
+            ImGui::EndPopup();
+        }
+        ImGui::SetItemTooltip("Right-click to open popup");
+    }
+
 
     ImGui::End();
 }
@@ -958,12 +971,29 @@ void Interface::Render(GLuint64 elapsed_time) {
 
     Engine::Scene* scene = GetScene();
 
+    if (pProject->refresh_files) {
+        pProject->CompileFiles();
+        std::cout << "Refresh files" << std::endl;
+        pProject->refresh_files = false;
+    }
+
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New project")) {
-                pProject = new Engine::Project(pWindow);
-                pProject->Init();
-                SetProject(pProject);
+                nfdchar_t *outPath = NULL;
+                nfdresult_t result = NFD_PickFolder(NULL, &outPath);
+                if (result == NFD_OKAY) {
+                    pProject = new Engine::Project(pWindow);
+                    pProject->Init();
+                    pProject->Create(outPath);
+                    SetProject(pProject);
+
+                    free(outPath);
+                } else if (result == NFD_CANCEL) {
+                    std::cout << "err" << std::endl;
+                } else {
+                    std::cout << "unk err" << std::endl;
+                }
             }
 
             if (ImGui::MenuItem("Save project")) {
@@ -974,7 +1004,10 @@ void Interface::Render(GLuint64 elapsed_time) {
                 nfdchar_t *outPath = NULL;
                 nfdresult_t result = NFD_PickFolder(NULL, &outPath);
                 if (result == NFD_OKAY) {
+                    pProject = new Engine::Project(pWindow);
+                    pProject->Init();
                     pProject->Load(outPath);
+                    SetProject(pProject);
                     free(outPath);
                 } else if (result == NFD_CANCEL) {
                     std::cout << "err" << std::endl;
@@ -983,68 +1016,12 @@ void Interface::Render(GLuint64 elapsed_time) {
                 }
             }
 
-            if (ImGui::MenuItem("Compile Components")) {
-                std::thread t([&]() {
-                    system(("cp libengine.so " + pProject->GetPath() + "/libengine.so").c_str());
-                    system(("cp -r ../include " + pProject->GetPath() + "/").c_str());
-
-                    std::ofstream outFile(pProject->GetPath() + "/Makefile", std::ios::out);
-                    if (!outFile) {
-                        std::cerr << "Error to create!" << std::endl;
-                        return 0;
-                    }
-
-                    outFile << "CXX = g++\n";
-                    outFile << "CXXFLAGS = -Iinclude -L. -lGL -lIL -lGLEW -lglfw -lengine -Wl,-rpath=. -fPIC\n";
-                    outFile << "TARGET = components.so\n";
-                    outFile << "SRCS = $(wildcard *.cpp)\n";
-                    outFile << "OBJS = $(SRCS:.cpp=.o)\n";
-                    outFile << "all: $(TARGET)\n";
-                    outFile << "$(TARGET): $(OBJS)\n";
-                    outFile << "\t$(CXX) -shared -o $@ $^ $(CXXFLAGS)\n";
-                    outFile << "%.o: %.cpp\n";
-                    outFile << "\t$(CXX) -c -o $@ $< $(CXXFLAGS)\n";
-                    outFile << "clean:\n";
-                    outFile << "\trm -f $(TARGET) $(OBJS)\n";
-
-                    outFile.close();
-
-                    system(("make -C" + pProject->GetPath()).c_str());
-                    //system(("rm " + pProject->GetPath() + "Makefile").c_str());
-                    
-                    pProject->IncludeFiles(); 
-                    return 0;
-                });
-
-                t.join(); // !!!
+            if (ImGui::MenuItem("Components Refresh")) {
+                pProject->CompileFiles();
             }
-            
+
             if (ImGui::MenuItem("Run")) {
-                if (pProject->GetScene() == nullptr) {
-                    std::cout << "No scene to run" << std::endl;
-                }
-
-                std::thread t([]() {
-                    std::ofstream outFile("compile_program.cpp");
-                    if (!outFile) {
-                        std::cerr << "Error to compile!" << std::endl;
-                        return 1;
-                    }
-
-                    outFile << "#include <window.hpp>\n";
-                    outFile << "int main() {\n";
-                    outFile << "Engine::Window window(1280, 720, \"Game Window\");\n";
-                    outFile << "window.Init();\n";
-                    outFile << "return 0;\n";
-                    outFile << "}\n";
-
-                    outFile.close();
-
-                    system("g++ -L. -I../include -lGL -lIL -lGLEW -lglfw -lengine -Wl,-rpath=. compile_program.cpp -o program && ./program");
-                    system("rm program compile_program.cpp");
-                    return 0;
-                });
-                t.detach();
+                pProject->CompileAndRunApplication();
             }
 
             if (scene && ImGui::MenuItem("Load so file")) {

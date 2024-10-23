@@ -41,21 +41,3 @@ void Transform::Update() {
     matrix = glm::rotate(matrix, glm::radians(angle.y), glm::vec3(0.0f, 1.0f, 0.0f));
     matrix = glm::rotate(matrix, glm::radians(angle.z), glm::vec3(0.0f, 0.0f, 1.0f));
 } 
-
-extern "C" {
-    void* GetTransform(void* obj) {
-        if (obj != nullptr) {
-            return static_cast<Renderer::Object*>(obj)->GetComponent<Transform>();
-        } else {
-            return 0;
-        }
-    }
-
-    void* GetPosition(void* transform) {
-        if (transform != nullptr) {
-            return static_cast<Transform*>(transform)->GetPositionPtr();
-        } else {
-            return 0;
-        }
-    }
-}

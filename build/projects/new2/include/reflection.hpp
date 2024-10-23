@@ -1,0 +1,48 @@
+#include <cassert>
+#include <string>
+#include <functional>
+#include <vector>
+#include <algorithm>
+
+struct Variable {
+    std::string type_name = "";
+    const char* name = nullptr;
+    void* data = nullptr;
+
+    virtual ~Variable() = default;
+    virtual void*& ptr() = 0;
+};
+
+template<typename T>
+struct VariableImpl : public Variable {
+    std::function<T*&()> get;  // Getter function to retrieve the variable value
+
+    VariableImpl(const std::string& type_name, const char* name, void* data) {
+        this->data = data;
+        this->name = name;
+        this->type_name = type_name;
+    }
+
+    void*& ptr() override {
+        return data;
+    }
+};
+
+#define DECLARE(TYPE, NAME, VALUE) \
+TYPE NAME = VALUE; \
+variables.push_back(std::make_unique<VariableImpl<TYPE>>(# TYPE, # NAME, & NAME));
+
+#define DECLARE_CLASS_VARIABLE(TYPE, NAME, VALUE) \
+    TYPE NAME = VALUE; \
+
+#define REGISTER_CLASS_VARIABLE(TYPE, NAME) \
+    variables.push_back(std::make_unique<VariableImpl<TYPE>>(# TYPE, # NAME, & NAME)); \
+
+#define DECLARE_VARIABLES_VECTOR() \
+    std::vector<std::unique_ptr<Variable>> variables;
+
+#define DECLARE_CLASS_VARIABLES(...) \
+    private: \
+    void Init() { \
+        __VA_ARGS__; \
+    }

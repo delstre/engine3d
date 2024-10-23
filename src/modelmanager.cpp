@@ -9,6 +9,10 @@
 
 using namespace Renderer;
 
+void ModelManager::SetPath(std::string path) {
+    this->path = path;
+}
+
 void ModelManager::AddModel(std::string name, ModelRender* model) {
     models[name] = model;
 }
@@ -22,10 +26,12 @@ std::map<std::string, ModelRender*> ModelManager::GetModels() const {
 }
 
 bool ModelManager::ImportModel(const std::string& path) {
-    std::cout << "Importing model: " << path << std::endl;
-    std::ifstream file(path);
+    std::filesystem::path full_path = this->path + "/" + path;
+
+    std::cout << "Importing model: " << full_path << std::endl;
+    std::ifstream file(full_path);
     if (!file.is_open()) {
-        std::cerr << "Could not open the OBJ file: " << path << std::endl;
+        std::cerr << "Could not open the OBJ file: " << full_path << std::endl;
         return false;
     }
 
@@ -102,7 +108,7 @@ bool ModelManager::ImportModel(const std::string& path) {
     file.close();
 
     ModelRender* model = new ModelRender(vertices, indices);
-    model->SetShader(new ShaderProgram("../shaders/model.vert", "../shaders/model.frag"));
+    model->SetShader(new ShaderProgram((this->path + "/shaders/model.vert").c_str(), (this->path + "/shaders/model.frag").c_str()));
     model->SetRenderType(mode);
     AddModel("cube", model);
 
