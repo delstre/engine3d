@@ -1,32 +1,12 @@
-# Компилятор и флаги
 CXX = g++
-
-ENGINE_DIR = ../../../
-
-CXXFLAGS = -Wall -fPIC -I$(ENGINE_DIR)include -I$(ENGINE_DIR)lib/imgui -I$(ENGINE_DIR)lib/nfd/src/include
-
-# Цели
-TARGET = obj.so
-
-# Исходные файлы
-SRCS = obj.cpp $(wildcard $(ENGINE_DIR)src/*.cpp)
-
-# Объектные файлы
+CXXFLAGS = -Iinclude -L. -lGL -lIL -lGLEW -lglfw -lengine -Wl,-rpath=. -fPIC
+TARGET = components.so
+SRCS = $(wildcard *.cpp)
 OBJS = $(SRCS:.cpp=.o)
-
-# Правило по умолчанию
 all: $(TARGET)
-
-# Создание динамической библиотеки
 $(TARGET): $(OBJS)
-	$(CXX) -shared -o $@ $^
-
-# Компиляция .cpp в .o
+	$(CXX) -shared -o $@ $^ $(CXXFLAGS)
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# Очистка сгенерированных файлов
+	$(CXX) -c -o $@ $< $(CXXFLAGS)
 clean:
-	rm -f obj.o obj.so
-
-.PHONY: all clean
+	rm -f $(TARGET) $(OBJS)

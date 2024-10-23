@@ -61,7 +61,7 @@ void Window::Init() {
 
     pProject = new Engine::Project(this);
     pProject->Init();
-    pProject->Load("project.json");
+    pProject->LoadLast();
 
     #ifdef INTERFACE_DEBUG
     pInterface = new Renderer::Interface(this);

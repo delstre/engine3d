@@ -21,7 +21,7 @@ namespace Engine {
 
             void RegisterComponent(const std::string& name, std::function<IComponent*()> constructor);
             void RegisterComponents();
-            std::unordered_map<std::string, std::function<IComponent*()>> GetComponents();
+            std::unordered_map<std::string, std::function<IComponent*()>> GetConstructors();
             IComponent* CreateComponent(const std::string& name);
 
         private:
@@ -30,4 +30,4 @@ namespace Engine {
 }
 
 #define REGISTER_COMPONENT(NAME) \
-    ComponentManager::RegisterComponent(#NAME, []() { return new NAME(); })
+    ComponentManager::RegisterComponent(#NAME, []() { return new NAME(); }); \

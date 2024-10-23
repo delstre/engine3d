@@ -1,8 +1,8 @@
 #include "interface.hpp"
 #include "config.hpp"
 #include "framebuffer.hpp"
+#include "imgui.h"
 #include "scene.hpp"
-#include "transform.hpp"
 #include <glm/gtc/type_ptr.hpp>
 
 #include <thread>
@@ -11,6 +11,8 @@
 #include <clocale>
 #include <iostream>
 #include <memory>
+
+#include <fstream>
 
 // Helpers macros
 // We normally try to not use many helpers in imgui_demo.cpp in order to make code easier to copy and paste,
@@ -298,7 +300,7 @@ void Interface::ObjectInspector(Engine::Scene* scene) const {
             ImGui::OpenPopup("my_select_popup");
 
         if (ImGui::BeginPopup("my_select_popup")) {
-            for (const auto& [key, value] : scene->pComponentManager->GetComponents()) {
+            for (const auto& [key, value] : scene->pComponentManager->GetConstructors()) {
                 if (ImGui::Selectable(key.c_str())) {
                     pSelectedObject->AddComponent(key);
                 }
@@ -310,13 +312,20 @@ void Interface::ObjectInspector(Engine::Scene* scene) const {
         for (Engine::Component* pComponent : pSelectedObject->GetComponents()) {
             ImGui::SetNextItemOpen(true, ImGuiCond_Once);
 
+            if (pComponent == nullptr)
+                continue;
+
             std::stringstream addressStream;
             addressStream << std::hex << reinterpret_cast<std::uintptr_t>(pComponent);
             std::string addressString = addressStream.str();
 
-            std::string name = pComponent->GetTypeName() + " (Address: " + addressString + ")";
+            std::string name = " (Address: " + addressString + ")";
+            
 
             if (ImGui::TreeNode(name.c_str())) {
+                if (ImGui::Button("Remove component"))
+                    pSelectedObject->RemoveComponent(pComponent->GetTypeName());
+
                 for (const auto& var : pComponent->variables) {
                     if (var->type_name == "bool") {
                         ImGui::Checkbox(var->name, static_cast<bool*>(var->ptr()));
@@ -327,7 +336,7 @@ void Interface::ObjectInspector(Engine::Scene* scene) const {
                     } else if (var->type_name == "float") {
                         ImGui::InputFloat(var->name, static_cast<float*>(var->ptr()), 0.01f);
                     } else {
-                        ImGui::Text((var->type_name + var->name).c_str());
+                        //ImGui::Text((var->type_name + var->name).c_str());
                     }
                 }
 
@@ -405,9 +414,9 @@ void Interface::GetResourceManager(Engine::Scene* scene) const {
 void Interface::GetFiles() const {
     ImGui::Begin("Files");
 
-    for (const auto& file : pProject->GetFiles()) {
-        ImGui::Text(file.c_str());
-    }
+    //for (const auto& file : pProject->GetFiles()) {
+        //ImGui::Text(file.c_str());
+    //}
 
     ImGui::End();
 }
@@ -952,27 +961,88 @@ void Interface::Render(GLuint64 elapsed_time) {
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if (ImGui::MenuItem("New project")) {
-                SetProject(new Engine::Project(pWindow));
+                pProject = new Engine::Project(pWindow);
+                pProject->Init();
+                SetProject(pProject);
             }
 
             if (ImGui::MenuItem("Save project")) {
-                pProject->Save("project.json");
+                pProject->Save();
             }
 
             if (ImGui::MenuItem("Load project")) {
-                SetProject(new Engine::Project(pWindow));
-                if (pProject->Load("project.json")) {
-                    std::cout << "Loaded project project.json" << std::endl;
+                nfdchar_t *outPath = NULL;
+                nfdresult_t result = NFD_PickFolder(NULL, &outPath);
+                if (result == NFD_OKAY) {
+                    pProject->Load(outPath);
+                    free(outPath);
+                } else if (result == NFD_CANCEL) {
+                    std::cout << "err" << std::endl;
+                } else {
+                    std::cout << "unk err" << std::endl;
                 }
             }
 
+            if (ImGui::MenuItem("Compile Components")) {
+                std::thread t([&]() {
+                    system(("cp libengine.so " + pProject->GetPath() + "/libengine.so").c_str());
+                    system(("cp -r ../include " + pProject->GetPath() + "/").c_str());
+
+                    std::ofstream outFile(pProject->GetPath() + "/Makefile", std::ios::out);
+                    if (!outFile) {
+                        std::cerr << "Error to create!" << std::endl;
+                        return 0;
+                    }
+
+                    outFile << "CXX = g++\n";
+                    outFile << "CXXFLAGS = -Iinclude -L. -lGL -lIL -lGLEW -lglfw -lengine -Wl,-rpath=. -fPIC\n";
+                    outFile << "TARGET = components.so\n";
+                    outFile << "SRCS = $(wildcard *.cpp)\n";
+                    outFile << "OBJS = $(SRCS:.cpp=.o)\n";
+                    outFile << "all: $(TARGET)\n";
+                    outFile << "$(TARGET): $(OBJS)\n";
+                    outFile << "\t$(CXX) -shared -o $@ $^ $(CXXFLAGS)\n";
+                    outFile << "%.o: %.cpp\n";
+                    outFile << "\t$(CXX) -c -o $@ $< $(CXXFLAGS)\n";
+                    outFile << "clean:\n";
+                    outFile << "\trm -f $(TARGET) $(OBJS)\n";
+
+                    outFile.close();
+
+                    system(("make -C" + pProject->GetPath()).c_str());
+                    //system(("rm " + pProject->GetPath() + "Makefile").c_str());
+                    
+                    pProject->IncludeFiles(); 
+                    return 0;
+                });
+
+                t.join(); // !!!
+            }
+            
             if (ImGui::MenuItem("Run")) {
                 if (pProject->GetScene() == nullptr) {
                     std::cout << "No scene to run" << std::endl;
                 }
 
                 std::thread t([]() {
-                    system("g++ -L. -I../include -lGL -lIL -lGLEW -lglfw -lengine -Wl,-rpath=. projects/first/main.cpp -o nnn && ./nnn");
+                    std::ofstream outFile("compile_program.cpp");
+                    if (!outFile) {
+                        std::cerr << "Error to compile!" << std::endl;
+                        return 1;
+                    }
+
+                    outFile << "#include <window.hpp>\n";
+                    outFile << "int main() {\n";
+                    outFile << "Engine::Window window(1280, 720, \"Game Window\");\n";
+                    outFile << "window.Init();\n";
+                    outFile << "return 0;\n";
+                    outFile << "}\n";
+
+                    outFile.close();
+
+                    system("g++ -L. -I../include -lGL -lIL -lGLEW -lglfw -lengine -Wl,-rpath=. compile_program.cpp -o program && ./program");
+                    system("rm program compile_program.cpp");
+                    return 0;
                 });
                 t.detach();
             }

@@ -3,9 +3,12 @@
 #include <transform.hpp>
 #include <project.hpp>
 
-#include "fstream"
+#include <fstream>
+#include <filesystem>
 #include <boost/json/src.hpp>
 #include <boost/property_tree/json_parser.hpp>
+
+#include <cxxabi.h>
 
 using namespace Engine;
 
@@ -34,15 +37,8 @@ void Project::Init() {
     pWindow->SceneInit(pScene);
 }
 
-void Project::Save(std::string path) {
+void Project::Save() {
     boost::json::object json_obj;
-
-    boost::json::array jfiles;
-
-    for (std::string file : files) {
-        jfiles.push_back(boost::json::value(file));
-    }
-    json_obj["files"] = jfiles;
 
     boost::json::array jobjs;
 
@@ -53,7 +49,7 @@ void Project::Save(std::string path) {
 
     std::string json_str = boost::json::serialize(json_obj);
 
-    std::ofstream json_file("project.json");
+    std::ofstream json_file(path + "/project.json");
     if (json_file.is_open()) {
         json_file << json_str;  // Write the serialized JSON to the file
         json_file.close();
@@ -64,11 +60,31 @@ void Project::Save(std::string path) {
 }
 
 bool Project::Load(std::string path) {
-    std::ifstream json_file(path);
+    if (!std::filesystem::exists(path)) {
+        std::cerr << "No path! : " << path << std::endl;
+        return false;
+    }
+
+    std::string project_file = path;
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        if (entry.is_regular_file() && entry.path().filename() == "project.json") {
+            project_file = entry.path().string();
+            break;
+        }
+    }
+
+    if (!std::filesystem::exists(project_file)) {
+        std::cerr << "No project file! : " << project_file << std::endl;
+        return false;
+    }
+
+    std::ifstream json_file(project_file);
     if (!json_file.is_open()) {
         std::cerr << "Unable to open file" << std::endl;
         return false;
     }
+
+    this->path = path;
 
     std::string json_str((std::istreambuf_iterator<char>(json_file)),
                          std::istreambuf_iterator<char>());
@@ -82,13 +98,8 @@ bool Project::Load(std::string path) {
     }
 
     boost::json::object json_obj = json_val.as_object();
-    boost::json::array jfiles = json_obj["files"].as_array();
 
-    for (const auto& file : jfiles) {
-        if (!IncludeFile(file.as_string().c_str())) {
-            std::cerr << "Failed to include file: " << file.as_string() << std::endl;
-        };
-    }
+    IncludeFiles();
 
     if (auto* objects_value = json_obj.if_contains("objects")) {
         if (objects_value->is_array()) {
@@ -112,7 +123,18 @@ bool Project::Load(std::string path) {
     return true;
 }
 
+void Project::LoadLast() {
+    
+
+}
+
+std::map<std::string, void*> handles;
 bool Project::IncludeFile(std::string path) {
+    if (handles.find(path) != handles.end()) {
+        dlclose(handles[path]);
+        std::cout << "Already loaded: " << path << std::endl;
+    }
+
     void* handle = dlopen(path.c_str(), RTLD_LAZY);
     if (!handle) {
         std::cerr << "Cannot open library: " << dlerror() << std::endl;
@@ -121,10 +143,11 @@ bool Project::IncludeFile(std::string path) {
         std::cout << "Opened library: " << path << std::endl;
     }
 
+    dlerror();
+
     using create_t = IComponent* (*)();
     using destroy_t = void (*)(void*);
 
-    // Загружаем функцию create
     create_t create = (create_t) dlsym(handle, "Create");
     const char* dlsym_error = dlerror();
     if (dlsym_error) {
@@ -132,6 +155,8 @@ bool Project::IncludeFile(std::string path) {
         dlclose(handle);
         return false;
     }
+
+    std::cout << create << std::endl;
 
     // Загружаем функцию destroy
     destroy_t destroy = (destroy_t) dlsym(handle, "Destroy");
@@ -144,31 +169,45 @@ bool Project::IncludeFile(std::string path) {
 
     if (pScene == nullptr) {
         std::cerr << "No scene!" << std::endl;
+        dlclose(handle);
         return false;
     }
 
     if (pScene->pComponentManager == nullptr) {
         std::cerr << "No component manager!" << std::endl;
+        dlclose(handle);
         return false;
     }
 
-    std::string name = path;
-    name = name.substr(name.find_last_of("/\\") + 1);
-    name = name.substr(0, name.find_first_of("."));
-
-    pScene->pComponentManager->RegisterComponent(name, [create]() {
+    IComponent* pComponent = create();
+    char* demangledName = abi::__cxa_demangle(typeid(*pComponent).name(), nullptr, nullptr, nullptr);
+    pScene->pComponentManager->RegisterComponent(std::string(demangledName), [create] {
         return create();
     }); 
 
-    files.push_back(path);
+    handles[path] = handle;
 
     return true;
+}
+
+void Project::IncludeFiles() {
+    if (!std::filesystem::exists(path) || !std::filesystem::is_directory(path)) {
+        std::cout << "No path! : " << path << std::endl;
+    }
+
+    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+        if (entry.is_regular_file() && entry.path().extension() == ".so") {
+            if (!IncludeFile(entry.path().string())) {
+                std::cerr << "Failed to include file: " << entry.path().string() << std::endl;
+            };
+        }
+    }
 }
 
 Scene* Project::GetScene() {
     return pScene;
 }
 
-std::vector<std::string> Project::GetFiles() {
-    return files;
+std::string Project::GetPath() {
+    return path;
 }

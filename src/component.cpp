@@ -29,6 +29,10 @@ void Component::SetParent(Renderer::Object* parent) {
         this->parent = parent; 
 }
 
+Renderer::Object* Component::GetParent() const {
+    return parent;
+}
+
 void Component::SetEnable(bool enable) {
     isEnabled = enable;
 }

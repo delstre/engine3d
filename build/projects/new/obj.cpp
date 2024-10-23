@@ -13,8 +13,8 @@ MyClass::~MyClass() {
 
 double ticks = 0;
 void MyClass::Update() {
-    if (ticks > 10) {
-        std::cout << a << std::endl;
+    if (ticks > 1) {
+        std::cout << a << a << a << std::endl;
         ticks = 0;
     }
 

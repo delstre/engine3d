@@ -31,6 +31,7 @@ namespace Renderer {
 
             void AddComponent(const std::string& name);
             void RemoveComponent(const std::string& name);
+            void RemoveComponent(Engine::Component* component);
 
             template <typename T>
             T* GetComponent();

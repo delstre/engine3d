@@ -36,6 +36,10 @@ void Object::RemoveComponent(const std::string& name) {
     }
 }
 
+void Object::RemoveComponent(Engine::Component* component) {
+    components.erase(std::remove(components.begin(), components.end(), component), components.end());
+}
+
 template <typename T>
 T* Object::GetComponent() {
     for (const auto& component: components) {

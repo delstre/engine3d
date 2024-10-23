@@ -19,6 +19,7 @@ namespace Engine {
             ~Component() = default;
             Component() { Init(); }
             void SetParent(Renderer::Object* parent);
+            Renderer::Object* GetParent() const;
             void UpdateInterface();
 
             void UpdateComponent() override;

@@ -11,17 +11,19 @@ namespace Engine {
         public:
             Project(Window* pWindow);
             void Init();
-            void Save(std::string path);
+            void Save();
             bool Load(std::string path);
+            void LoadLast();
             bool IncludeFile(std::string path);
+            void IncludeFiles();
             Scene* GetScene();
 
-            std::vector<std::string> GetFiles();
+            std::string GetPath();
 
         private:
             Window* pWindow;
             Scene* pScene;
 
-            std::vector<std::string> files;
+            std::string path;
     };
 }

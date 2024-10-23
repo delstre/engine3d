@@ -3,10 +3,13 @@
 
 #include "componentmanager.hpp"
 
+#include <iostream>
+
 using namespace Engine;
 using namespace Renderer;
 
 void ComponentManager::RegisterComponent(const std::string& name, std::function<IComponent*()> constructor) {
+    std::cout << "Registering component: " << name << std::endl;
     constructors[name] = constructor;
 }
 
@@ -15,7 +18,7 @@ void ComponentManager::RegisterComponents() {
     REGISTER_COMPONENT(ModelRender);
 }
 
-std::unordered_map<std::string, std::function<IComponent*()>> ComponentManager::GetComponents() {
+std::unordered_map<std::string, std::function<IComponent*()>> ComponentManager::GetConstructors() {
     return constructors;
 }
 
