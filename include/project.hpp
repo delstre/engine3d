@@ -1,6 +1,7 @@
 #pragma once
 
 #include <window.hpp>
+#include <scene.hpp>
 
 #include <string>
 

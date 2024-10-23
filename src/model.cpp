@@ -2,8 +2,6 @@
 #include <transform.hpp>
 #include "object.hpp"
 
-#include <iostream>
-
 #include <cfloat>
 #include <imgui.h>
 
@@ -89,33 +87,13 @@ void ModelRender::SetModel(ModelRender* model) {
 }
 
 glm::vec3 ModelRender::GetMinBounds() {
-     glm::vec3 minBounds = glm::vec3(FLT_MAX);  // Инициализируем большими значениями
-
-    //for (size_t i = 0; i < vertices.size(); i += 3) {
-        //GLfloat x = points[i];
-        //GLfloat y = points[i + 1];
-        //GLfloat z = points[i + 2];
-
-        //if (x < minBounds.x) minBounds.x = x;
-        //if (y < minBounds.y) minBounds.y = y;
-        //if (z < minBounds.z) minBounds.z = z;
-    //}
+    glm::vec3 minBounds = glm::vec3(FLT_MAX);
 
     return minBounds;
 }
 
 glm::vec3 ModelRender::GetMaxBounds() {
-    glm::vec3 maxBounds = glm::vec3(-FLT_MAX);  // Инициализируем большими значениями
-
-    //for (size_t i = 0; i < points.size(); i += 3) {
-        //GLfloat x = points[i];
-        //GLfloat y = points[i + 1];
-        //GLfloat z = points[i + 2];
-
-        //if (x < maxBounds.x) maxBounds.x = x;
-        //if (y < maxBounds.y) maxBounds.y = y;
-        //if (z < maxBounds.z) maxBounds.z = z;
-    //}
+    glm::vec3 maxBounds = glm::vec3(-FLT_MAX);
 
     return maxBounds;
 }
@@ -139,11 +117,6 @@ void ModelRender::Update() {
     glBindVertexArray(vao);
     glDrawElements(renderType, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-}
-
-void ModelRender::InterfaceUpdate() {
-    ImGui::Text("Vertices: %d", vertices.size());
-    ImGui::Text("Indices: %d", indices.size());
 }
 
 void ModelRender::Start() {}

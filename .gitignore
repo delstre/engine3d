@@ -2,3 +2,6 @@
 tags
 build/imgui.ini
 build/proj
+build/nnn
+build/*.a
+build/*.so

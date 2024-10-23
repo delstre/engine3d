@@ -5,6 +5,7 @@
 #include "transform.hpp"
 #include <glm/gtc/type_ptr.hpp>
 
+#include <thread>
 #include <sstream>
 
 #include <clocale>
@@ -52,16 +53,7 @@ Interface::Interface(Engine::Window* window) {
 
 void Interface::SetProject(Engine::Project* pProject) {
     this->pProject = pProject;
-    pProject->Init();
-}
-
-void Interface::LoadProject() {
-    SetProject(new Engine::Project(pWindow));
-    if (pProject->Load("project.json")) {
-        std::cout << "Project loaded" << std::endl;
-    } else {
-        std::cout << "Failed to load project" << std::endl;
-    }
+    //pProject->Init();
 }
 
 Engine::Scene* Interface::GetScene() const {
@@ -329,11 +321,11 @@ void Interface::ObjectInspector(Engine::Scene* scene) const {
                     if (var->type_name == "bool") {
                         ImGui::Checkbox(var->name, static_cast<bool*>(var->ptr()));
                     } else if (var->type_name == "glm::vec3") {
-                        ImGui::SliderFloat3(var->name, glm::value_ptr(*static_cast<glm::vec3*>(var->ptr())), -180.0f, 180.0f);
+                        ImGui::InputFloat3(var->name, glm::value_ptr(*static_cast<glm::vec3*>(var->ptr())));
                     } else if (var->type_name == "int") {
-                        ImGui::DragInt(var->name, static_cast<int*>(var->ptr()));
+                        ImGui::InputInt(var->name, static_cast<int*>(var->ptr()));
                     } else if (var->type_name == "float") {
-                        ImGui::DragFloat(var->name, static_cast<float*>(var->ptr()), 0.01f);
+                        ImGui::InputFloat(var->name, static_cast<float*>(var->ptr()), 0.01f);
                     } else {
                         ImGui::Text((var->type_name + var->name).c_str());
                     }
@@ -972,6 +964,17 @@ void Interface::Render(GLuint64 elapsed_time) {
                 if (pProject->Load("project.json")) {
                     std::cout << "Loaded project project.json" << std::endl;
                 }
+            }
+
+            if (ImGui::MenuItem("Run")) {
+                if (pProject->GetScene() == nullptr) {
+                    std::cout << "No scene to run" << std::endl;
+                }
+
+                std::thread t([]() {
+                    system("g++ -L. -I../include -lGL -lIL -lGLEW -lglfw -lengine -Wl,-rpath=. projects/first/main.cpp -o nnn && ./nnn");
+                });
+                t.detach();
             }
 
             if (scene && ImGui::MenuItem("Load so file")) {

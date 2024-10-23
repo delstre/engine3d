@@ -1,7 +1,10 @@
 #pragma once
 
+#ifdef INTERFACE_DEBUG
 #include "interface.hpp"
-#include "scene.hpp"
+#endif
+
+#include <project.hpp>
 #include <GLFW/glfw3.h>
 
 namespace Renderer {
@@ -9,6 +12,8 @@ namespace Renderer {
 };
 
 namespace Engine {
+    class Scene;
+    class Project;
     class Window {
         public:
             Window(int width, int height, const char* title) : width(width), height(height), window_name(title) {};
@@ -30,6 +35,9 @@ namespace Engine {
             GLFWwindow* pWindow = nullptr;
             Scene* pScene = nullptr;
             ComponentManager* pComponentManager = nullptr;
+            Project* pProject = nullptr;
+            #ifdef INTERFACE_DEBUG
             Renderer::Interface* pInterface = nullptr;
+            #endif
     };
 }

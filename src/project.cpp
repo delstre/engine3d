@@ -1,7 +1,7 @@
 #include <boost/concept_check.hpp>
-#include <project.hpp>
 #include <icomponent.hpp>
 #include <transform.hpp>
+#include <project.hpp>
 
 #include "fstream"
 #include <boost/json/src.hpp>
@@ -86,7 +86,7 @@ bool Project::Load(std::string path) {
 
     for (const auto& file : jfiles) {
         if (!IncludeFile(file.as_string().c_str())) {
-            return false;
+            std::cerr << "Failed to include file: " << file.as_string() << std::endl;
         };
     }
 
@@ -95,7 +95,7 @@ bool Project::Load(std::string path) {
             boost::json::array jobjs = objects_value->as_array();
 
             for (const auto& jobj : jobjs) {
-                if (jobj.is_object()) { // Ensure each item is an object
+                if (jobj.is_object()) {
                     boost::json::object rjobj = jobj.as_object();
                     Renderer::Object* obj = new Renderer::Object(rjobj["name"].as_string().c_str());
                     pScene->AddObject(obj);
@@ -105,15 +105,12 @@ bool Project::Load(std::string path) {
                     boost::json::array ang = rjobj["angle"].as_array();
                     obj->GetComponent<Transform>()->SetAngle(glm::vec3(ang[0].as_double(), ang[1].as_double(), ang[2].as_double()));
                 }
-
             }
         }
     }
 
     return true;
 }
-
-class Base {};
 
 bool Project::IncludeFile(std::string path) {
     void* handle = dlopen(path.c_str(), RTLD_LAZY);

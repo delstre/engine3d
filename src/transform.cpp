@@ -42,11 +42,6 @@ void Transform::Update() {
     matrix = glm::rotate(matrix, glm::radians(angle.z), glm::vec3(0.0f, 0.0f, 1.0f));
 } 
 
-void Transform::InterfaceUpdate() {
-    ImGui::SliderFloat3("Position", glm::value_ptr(position), -10.0f, 10.0f);
-    ImGui::SliderFloat3("Angle", glm::value_ptr(angle), -180.0f, 180.0f);
-}
-
 extern "C" {
     void* GetTransform(void* obj) {
         if (obj != nullptr) {

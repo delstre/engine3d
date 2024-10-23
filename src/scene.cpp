@@ -100,7 +100,9 @@ void Scene::Render() {
 
     pController->ProcessInput();
 
+    #ifdef INTERFACE_DEBUG
     pFbo->Bind();
+    #endif
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -122,7 +124,9 @@ void Scene::Render() {
         objs[i]->Update();
     }
 
+    #ifdef INTERFACE_DEBUG
     pFbo->Unbind();
+    #endif
 }
 
 void Scene::SetFrameSize(int width, int height) {

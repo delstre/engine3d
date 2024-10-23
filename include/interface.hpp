@@ -28,7 +28,6 @@ namespace Renderer {
             Interface(Engine::Window* window);
 
             void SetProject(Engine::Project* project);
-            void LoadProject();
             Engine::Scene* GetScene() const;
 
             void GetDebugInfo() const;

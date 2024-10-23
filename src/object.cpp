@@ -99,13 +99,3 @@ void Object::Update() {
 
 template Engine::Transform* Object::GetComponent<Engine::Transform>();
 template Renderer::ModelRender* Object::GetComponent<Renderer::ModelRender>();
-
-extern "C" {
-    //void* GetTransform(void* obj) {
-        //return obj->GetComponent<Engine::Transform>();
-    //}
-
-    //void* GetPosition(void* transform) {
-        //return static_cast<Engine::Transform*>(transform)->GetPositionPtr();
-    //}
-}
