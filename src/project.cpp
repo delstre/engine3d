@@ -1,5 +1,6 @@
 #include <boost/concept_check.hpp>
 #include <icomponent.hpp>
+#include <model.hpp>
 #include <transform.hpp>
 #include <project.hpp>
 
@@ -11,6 +12,9 @@
 #include <cxxabi.h>
 #include <thread>
 #include <sys/stat.h>
+
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 
 using namespace Engine;
 
@@ -62,7 +66,7 @@ void Project::Create(std::string path) {
     }
 
     outFile << "CXX = g++\n";
-    outFile << "CXXFLAGS = -Iinclude -L. -lGL -lIL -lGLEW -lglfw -lengine -Wl,-rpath=. -fPIC\n";
+    outFile << "CXXFLAGS = -Iinclude -L. -lGL -lIL -lGLEW -lglfw -lengine -lboost_serialization -Wl,-rpath=. -fPIC\n";
     outFile << "SRCS = $(wildcard *.cpp)\n";
     outFile << "SOFILES = $(SRCS:.cpp=.so)\n";
     //outFile << "OBJS = $(SRCS:.cpp=.o)\n";
@@ -80,37 +84,25 @@ void Project::Create(std::string path) {
     outFile.close();
 
     std::ofstream json_file(path + "/project.json", std::ios::out);
-    if (json_file.is_open()) {
-        json_file << "{}";  // Write an empty JSON object to the file
-        json_file.close();
-        std::cout << "JSON data has been saved to project.json" << std::endl;
-    } else {
-        std::cerr << "Unable to open file for writing" << std::endl;
-    }
+    json_file.close();
 
     SetPath(path);
 }
 
 void Project::Save() {
-    boost::json::object json_obj;
-
-    boost::json::array jobjs;
-
-    for (Renderer::Object* obj : pScene->GetObjects()) {
-        jobjs.push_back(boost::json::object(ObjectToJSON(obj)));
+    std::ofstream outFile(path + "/scene.bin", std::ios::binary);
+    if (!outFile) {
+        std::cerr << "Error to save!" << std::endl;
+        return;
     }
-    json_obj["objects"] = jobjs;
 
-    std::string json_str = boost::json::serialize(json_obj);
+    boost::archive::binary_oarchive oa(outFile);
+    oa.register_type<Engine::Transform>();
+    oa.register_type<Engine::Model>();
+    oa << *pScene;
+    outFile.close();
 
-    std::ofstream json_file(path + "/project.json", std::ios::out);
-    if (json_file.is_open()) {
-        json_file << json_str;  // Write the serialized JSON to the file
-        json_file.close();
-        std::cout << "JSON data has been saved to project.json" << std::endl;
-    } else {
-        std::cerr << "Unable to open file for writing" << std::endl;
-    }
+    std::cout << "Saved" << std::endl;
 }
 
 void Project::CompileFiles() {
@@ -217,38 +209,17 @@ bool Project::Load(std::string path) {
         check_files.detach();
     #endif
 
-    std::string json_str((std::istreambuf_iterator<char>(json_file)),
-                         std::istreambuf_iterator<char>());
+    CompileFiles();
 
-    boost::json::error_code ec;
-    boost::json::value json_val = boost::json::parse(json_str, ec);
-
-    if (ec) {
-        std::cerr << "Failed to parse JSON: " << ec.message() << std::endl;
-        return false;
-    }
-
-    boost::json::object json_obj = json_val.as_object();
-
-    IncludeFiles();
-
-    if (auto* objects_value = json_obj.if_contains("objects")) {
-        if (objects_value->is_array()) {
-            boost::json::array jobjs = objects_value->as_array();
-
-            for (const auto& jobj : jobjs) {
-                if (jobj.is_object()) {
-                    boost::json::object rjobj = jobj.as_object();
-                    Renderer::Object* obj = new Renderer::Object(rjobj["name"].as_string().c_str());
-                    pScene->AddObject(obj);
-
-                    boost::json::array pos = rjobj["position"].as_array();
-                    obj->GetComponent<Transform>()->SetPosition(glm::vec3(pos[0].as_double(), pos[1].as_double(), pos[2].as_double()));
-                    boost::json::array ang = rjobj["angle"].as_array();
-                    obj->GetComponent<Transform>()->SetAngle(glm::vec3(ang[0].as_double(), ang[1].as_double(), ang[2].as_double()));
-                }
-            }
-        }
+    std::ifstream scene_file(path + "/scene.bin", std::ios::binary);
+    if (scene_file) {
+        boost::archive::binary_iarchive ia(scene_file);
+        ia.register_type<Engine::Transform>();
+        ia.register_type<Engine::Model>();
+        ia >> *pScene;
+        scene_file.close();
+    } else {
+        std::cerr << "Failed to load scene" << std::endl;
     }
 
 
@@ -299,7 +270,7 @@ bool Project::Load(std::string path) {
     return true;
 }
 
-void Project::LoadLast() {
+bool Project::LoadLast() {
     std::ifstream recent_file("recently_used.json");
     if (recent_file.is_open()) {
         boost::json::error_code ec;
@@ -311,7 +282,11 @@ void Project::LoadLast() {
             boost::json::array files = obj["files"].as_array();
             Load(files[files.size() - 1].as_string().c_str());
         }
+
+        return true;
     }
+
+    return false;
 }
 
 std::map<std::string, void*> handles;
@@ -359,15 +334,9 @@ bool Project::IncludeFile(std::string path) {
         return false;
     }
 
-    if (pScene->pComponentManager == nullptr) {
-        std::cerr << "No component manager!" << std::endl;
-        dlclose(handle);
-        return false;
-    }
-
     IComponent* pComponent = create();
     char* demangledName = abi::__cxa_demangle(typeid(*pComponent).name(), nullptr, nullptr, nullptr);
-    pScene->pComponentManager->RegisterComponent(std::string(demangledName), [create] {
+    Engine::ComponentManager::RegisterComponent(std::string(demangledName), [create] {
         return create();
     }); 
 

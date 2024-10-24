@@ -56,17 +56,21 @@ void Window::Init() {
     glfwSetWindowUserPointer(pWindow, this);
     glfwSetWindowSizeCallback(pWindow, staticWindowSizeCallback);
 
-    pComponentManager = new Engine::ComponentManager();
-    pComponentManager->RegisterComponents();
+    ComponentManager::RegisterComponents();
 
     pProject = new Engine::Project(this);
-    pProject->Init();
+    //pProject->Init();
 
     #ifdef INTERFACE_DEBUG
-    pProject->LoadLast();
-
     pInterface = new Renderer::Interface(this);
-    pInterface->SetProject(pProject);
+
+    if (pProject->LoadLast()) {
+        pInterface->SetProject(pProject);
+    } else {
+        pProject->Init();
+        pInterface->SetProject(pProject);
+    }
+
     #else
     pProject->Load();
     #endif
@@ -80,7 +84,6 @@ void Window::SceneInit(Scene* scene) {
     if (scene != nullptr) {
         scene->Init(GetWindow());
         scene->SetFrameSize(width, height);
-        scene->SetComponentManager(pComponentManager);
     }
 }
 

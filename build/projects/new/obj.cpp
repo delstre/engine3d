@@ -2,23 +2,27 @@
 #include <iostream>
 
 #include <cmath>
+#include <transform.hpp>
+
+#include <boost/serialization/export.hpp>
 
 MyClass::MyClass() : Engine::Component() {
     Init();
 }
 
-MyClass::~MyClass() {
+MyClass::~MyClass() = default;
 
-} 
-
-double ticks = 0;
 void MyClass::Update() {
-    if (ticks > 1) {
-        std::cout << a << a << a << std::endl;
-        ticks = 0;
+    auto transform = GetComponent<Engine::Transform>();
+    if (transform == nullptr) {
+        return;
     }
 
-    ticks += 0.1;
+    int _a = 100;
+
+    transform->GetPosition() = glm::vec3(cos(ticks) * a, sin(ticks) * b, sin(ticks) * c);
+
+    ticks += 0.05;
 }
 
 void MyClass::Start() {}
@@ -45,3 +49,5 @@ extern "C" {
         obj->End();
     }
 }
+
+BOOST_CLASS_EXPORT_GUID(MyClass, "MyClass")

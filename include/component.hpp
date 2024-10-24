@@ -1,13 +1,14 @@
 #pragma once
 
-#include <icomponent.hpp>
-#include <object.hpp>
-#include <reflection.hpp>
-
 #include <cassert>
-#include <vector>
-#include <memory>
 
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+
+#include <icomponent.hpp>
+#include <reflection.hpp>
+#include <object.hpp>
 
 namespace Renderer {
     class Object;
@@ -16,7 +17,7 @@ namespace Renderer {
 namespace Engine {
     class Component : public IComponent {
         public:
-            ~Component() = default;
+            virtual ~Component() = default;
             Component() { Init(); }
             void SetParent(Renderer::Object* parent);
             Renderer::Object* GetParent() const;
@@ -44,6 +45,16 @@ namespace Engine {
                 REGISTER_CLASS_VARIABLE(bool, isEnabled);
             )
 
+        private:
+            friend class boost::serialization::access;
 
+            template<class Archive>
+            void serialize(Archive& ar, const unsigned int version) {
+                ar & isEnabled;
+                ar & parent;
+            }
     };
 }
+
+BOOST_CLASS_EXPORT_KEY(Engine::Component)
+

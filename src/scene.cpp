@@ -1,12 +1,12 @@
-#include "scene.hpp"
+#include <scene.hpp>
 #include <csignal>
 #include <typeinfo>
 #include <icomponent.hpp>
+#include <modelmanager.hpp>
 
 using namespace Engine;
 
 void Scene::Init(GLFWwindow* pWindow) {
-    pModelManager = new Renderer::ModelManager();
     pResourceManager = new Renderer::ResourceManager();
     pController = new Engine::WindowController(pWindow); 
 
@@ -30,8 +30,8 @@ void Scene::Init(GLFWwindow* pWindow) {
 
     // project initialize
     // importing all models from dir?
-    pModelManager->SetPath(this->path);
-    pModelManager->ImportModel("models/cube.obj");
+    ModelManager::SetPath(this->path);
+    ModelManager::ImportModel("models/cube.obj");
     
     pFbo = new Renderer::FrameBuffer(wid, hei);
     this->pWindow = pWindow;
@@ -60,12 +60,18 @@ Renderer::Camera* Scene::AddCamera(glm::vec3 position) {
 }
 
 void Scene::AddObject(Renderer::Object* obj) {
-    obj->SetComponentManager(pComponentManager);
-    obj->AddComponent("Transform");
-    obj->AddComponent("ModelRender");
-    obj->GetComponent<Renderer::ModelRender>()->SetModel(pModelManager->GetModel("cube"));
+    std::cout << typeid(*obj).name() << " Created" << std::endl;
 
     objs.push_back(obj);
+}
+
+void Scene::DeleteObject(Renderer::Object* id) {
+    for (int i = 0; i < objs.size(); i++) {
+        if (objs[i] == id) {
+            objs.erase(objs.begin() + i);
+            break;
+        }
+    }
 }
 
 Renderer::Camera* Scene::GetActiveCamera() {
@@ -86,10 +92,6 @@ std::vector<GLuint> Scene::GetTextures() {
 
 std::vector<Renderer::Object*> Scene::GetObjects() {
     return objs;
-}
-
-Renderer::ModelManager* Scene::GetModelManager() {
-    return pModelManager;
 }
 
 Renderer::ResourceManager* Scene::GetResourceManager() {
@@ -147,6 +149,4 @@ Renderer::FrameBuffer* Scene::GetFrameBuffer() {
     return pFbo;
 }
 
-void Scene::SetComponentManager(Engine::ComponentManager* manager) {
-    pComponentManager = manager;
-}
+BOOST_CLASS_EXPORT(Engine::Scene)

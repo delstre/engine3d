@@ -16,7 +16,7 @@ namespace Engine {
             void Create(std::string path);
             void Load();
             bool Load(std::string path);
-            void LoadLast();
+            bool LoadLast();
             bool IncludeFile(std::string path);
             void IncludeFiles();
             void CompileFiles();

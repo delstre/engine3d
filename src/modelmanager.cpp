@@ -1,32 +1,32 @@
-#include "modelmanager.hpp"
-
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
 #include <filesystem>
 
+#include <structs.hpp>
+#include <modelmanager.hpp>
 
-using namespace Renderer;
+using namespace Engine;
 
-void ModelManager::SetPath(std::string path) {
-    this->path = path;
+void ModelManager::SetPath(std::string _path) {
+    path = _path;
 }
 
-void ModelManager::AddModel(std::string name, ModelRender* model) {
+void ModelManager::AddModel(std::string name, Renderer::Mesh* model) {
     models[name] = model;
 }
 
-ModelRender* ModelManager::GetModel(const std::string& name) const { 
+Renderer::Mesh* ModelManager::GetModel(const std::string& name) { 
     return models.at(name);
 }
 
-std::map<std::string, ModelRender*> ModelManager::GetModels() const {
+std::map<std::string, Renderer::Mesh*> ModelManager::GetModels() {
     return models;
 }
 
-bool ModelManager::ImportModel(const std::string& path) {
-    std::filesystem::path full_path = this->path + "/" + path;
+bool ModelManager::ImportModel(const std::string& _path) {
+    std::filesystem::path full_path = path + "/" + _path;
 
     std::cout << "Importing model: " << full_path << std::endl;
     std::ifstream file(full_path);
@@ -39,7 +39,7 @@ bool ModelManager::ImportModel(const std::string& path) {
     std::vector<glm::vec2> tempTexCoords;
     std::vector<glm::vec3> tempNormals;
 
-    std::vector<Vertex> vertices;  // Vector to hold vertex data
+    std::vector<Renderer::Vertex> vertices;  // Vector to hold vertex data
     std::vector<GLuint> indices;    // Vector to hold indices
 
     GLenum mode = GL_TRIANGLES;
@@ -87,7 +87,7 @@ bool ModelManager::ImportModel(const std::string& path) {
                 unsigned int ni = normalIndex[i] - 1;
 
                 // Создаем вершину
-                Vertex vertex;
+                Renderer::Vertex vertex;
                 vertex.position = tempVertices[vi];
                 vertex.texCoord = tempTexCoords[ti];
                 vertex.normal = tempNormals[ni];
@@ -107,10 +107,11 @@ bool ModelManager::ImportModel(const std::string& path) {
 
     file.close();
 
-    ModelRender* model = new ModelRender(vertices, indices);
-    model->SetShader(new ShaderProgram((this->path + "/shaders/model.vert").c_str(), (this->path + "/shaders/model.frag").c_str()));
-    model->SetRenderType(mode);
-    AddModel("cube", model);
+    Renderer::Mesh* mesh = new Renderer::Mesh(vertices, indices);
+    mesh->SetShader(new Renderer::ShaderProgram((path + "/shaders/model.vert").c_str(), (path + "/shaders/model.frag").c_str()));
+    mesh->SetRenderType(mode);
+    mesh->name = name;
+    AddModel(name, mesh);
 
     return true;
 }

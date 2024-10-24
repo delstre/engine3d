@@ -34,8 +34,6 @@ namespace Engine {
 
             void Render();
 
-            Engine::ComponentManager* pComponentManager = nullptr;
-
         private:
             std::string path;
             std::vector<std::string> comps;

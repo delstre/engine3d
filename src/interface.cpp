@@ -208,9 +208,27 @@ void Interface::GetCameraInfo(Engine::Scene* scene) const {
 void Interface::GetObjectsInfo(Engine::Scene* scene) {
     ImGui::Begin("Objects");
 
-    if (ImGui::Button("Create object")) {
-        scene->AddObject(new Renderer::Object("new object"));
+    if (ImGui::Button("Create object"))
+        ImGui::OpenPopup("my_select_popup");
+
+    if (ImGui::BeginPopup("my_select_popup")) {
+        for (const auto& entry : std::filesystem::directory_iterator(pProject->GetPath())) {
+            if (entry.is_regular_file() && entry.path().extension() == ".bin") {
+                if (ImGui::Selectable(entry.path().filename().string().c_str())) {
+                    Renderer::Object* obj = new Renderer::Object(entry.path().filename().string());
+                    obj->LoadFromPrefab(entry.path().string());
+                    scene->AddObject(obj);
+                }
+            }
+        }
+
+        if (ImGui::Selectable("Empty Object")) {
+            scene->AddObject(new Renderer::Object("empty object"));
+        }
+        ImGui::EndPopup();
     }
+
+    
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("List of objects")) {
@@ -224,61 +242,25 @@ void Interface::GetObjectsInfo(Engine::Scene* scene) {
             std::string name = "Object: " + obj->name + " (Address: " + addressString + ")";
 
             if (ImGui::Selectable(name.c_str(), pSelectedObject == obj)) {
-                pSelectedObject = obj;
+                if (ImGui::IsMouseReleased(1) && ImGui::IsItemHovered()) {
+                    // Открываем попап при отпускании правой кнопки мыши
+                    ImGui::OpenPopup("my_select");
+                } else if (ImGui::IsMouseReleased(0)) {
+                    pSelectedObject = obj;
+                }
+
+                if (ImGui::BeginPopup("my_select")) {
+                    if (ImGui::Selectable("Delete")) {
+                        scene->DeleteObject(obj);
+                    }
+                    ImGui::EndPopup();
+                }
             }
             ImGui::PopID();
         }
 
         ImGui::TreePop();
     }
-
-
-    //if (ImGui::Button("Create object")) {
-        //Renderer::Object* obj = new Renderer::Object("new object");
-        //scene->AddObject(obj);
-    //}
-
-    //std::vector<Renderer::Object*> pObjects = scene->GetObjects();
-    //for (int i = 0; i < pObjects.size(); i++) {
-        //ImGui::Text("Object %d", pObjects.at(i));
-        //ImGui::PushID(i);
-
-        //if (pObjects.at(i)->GetModelInstance() != nullptr) {
-            //if (ImGui::TreeNode("Model Instance")) {
-                //for (glm::mat4 mat : pObjects.at(i)->GetModelInstance()->GetMatrixes()) {
-                    //ImGui::Text("Matrix %d", invisible);
-                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[0][0], mat[0][1], mat[0][2], mat[0][3]);
-                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[1][0], mat[1][1], mat[1][2], mat[1][3]);
-                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[2][0], mat[2][1], mat[2][2], mat[2][3]);
-                    //ImGui::Text("%.6f %.6f %.6f %.6f", mat[3][0], mat[3][1], mat[3][2], mat[3][3]);
-                    //invisible++;
-                //}
-
-                //ImGui::TreePop();
-            //}
-        //} else if (pObjects.at(i)->GetModel() != nullptr) {
-            //if (ImGui::TreeNode("Model")) {
-                //for (Vertex vertex : pObjects.at(i)->GetModel()->GetVertices()) {
-                    //ImGui::Text("Vertex %d", invisible);
-                    //ImGui::Text("position: %.6f %.6f %.6f", vertex.position.x, vertex.position.y, vertex.position.z);
-                    //ImGui::Text("normal: %.6f %.6f %.6f", vertex.normal.x, vertex.normal.y, vertex.normal.z);
-                    //ImGui::Text("texcoord: %.6f %.6f", vertex.texCoord.x, vertex.texCoord.y);
-                    //invisible++;
-                //}
-                //ImGui::TreePop();
-            //}
-        //}
-
-        //if (ImGui::TreeNode("Position")) {
-            //ImGui::DragFloat("x", &pObjects.at(i)->position.x, 0.05f);
-            //ImGui::DragFloat("y", &pObjects.at(i)->position.y, 0.05f);
-            //ImGui::DragFloat("z", &pObjects.at(i)->position.z, 0.05f);
-            //pObjects.at(i)->UpdatePosition();
-            //ImGui::TreePop();
-        //}
-
-        //ImGui::PopID(); 
-    //}
 
     ImGui::End();
 }
@@ -295,11 +277,21 @@ void Interface::ObjectInspector(Engine::Scene* scene) const {
     if (pSelectedObject != nullptr) {
         ImGui::Text("Name: %s", pSelectedObject->name.c_str());
 
+        ImGui::SameLine();
+
+        if (ImGui::Button("Delete object"))
+            scene->DeleteObject(pSelectedObject);
+        
+
+        if (ImGui::Button("Save as prefab"))
+            pSelectedObject->SaveAsPrefab(pProject->GetPath());
+
+
         if (ImGui::Button("Add component"))
             ImGui::OpenPopup("my_select_popup");
 
         if (ImGui::BeginPopup("my_select_popup")) {
-            for (const auto& [key, value] : scene->pComponentManager->GetConstructors()) {
+            for (const auto& [key, value] : Engine::ComponentManager::GetConstructors()) {
                 if (ImGui::Selectable(key.c_str())) {
                     pSelectedObject->AddComponent(key);
                 }
@@ -334,6 +326,21 @@ void Interface::ObjectInspector(Engine::Scene* scene) const {
                         ImGui::InputInt(var->name, static_cast<int*>(var->ptr()));
                     } else if (var->type_name == "float") {
                         ImGui::InputFloat(var->name, static_cast<float*>(var->ptr()), 0.01f);
+                    } else if (var->type_name == "Renderer::Mesh*") {
+                        ImGui::Text("Mesh: %s", *static_cast<Renderer::Mesh**>(var->ptr()));
+                        if (ImGui::Button("Select Mesh"))
+                            ImGui::OpenPopup("my_select_popup");
+
+                        if (ImGui::BeginPopup("my_select_popup")) {
+                            for (const auto& [key, value] : Engine::ModelManager::GetModels()) {
+                                if (ImGui::Selectable(key.c_str())) {
+                                    *static_cast<Renderer::Mesh**>(var->ptr()) = value;
+                                }
+                            }
+
+                            ImGui::EndPopup();
+                        }
+
                     } else {
                         //ImGui::Text((var->type_name + var->name).c_str());
                     }
@@ -349,8 +356,6 @@ void Interface::ObjectInspector(Engine::Scene* scene) const {
 }
 
 void Interface::GetModelManager(Engine::Scene* scene) const {
-    Renderer::ModelManager* pModelManager = scene->GetModelManager();
-
     ImGui::Begin("ModelManager", nullptr, ImGuiWindowFlags_MenuBar);
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
@@ -359,7 +364,7 @@ void Interface::GetModelManager(Engine::Scene* scene) const {
                 nfdchar_t *outPath = NULL;
                 nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath);
                 if (result == NFD_OKAY) {
-                    pModelManager->ImportModel(outPath);
+                    Engine::ModelManager::ImportModel(outPath);
                     free(outPath);
                 } else if (result == NFD_CANCEL) {
                     std::cout << "err" << std::endl;
@@ -413,22 +418,22 @@ void Interface::GetResourceManager(Engine::Scene* scene) const {
 void Interface::GetFiles() const {
     ImGui::Begin("Files");
 
-    static int selected = -1;
-    for (const auto& entry : std::filesystem::directory_iterator(pProject->GetPath())) {
-        if (ImGui::Selectable(entry.path().filename().string().c_str())) {
-            //system(("xdg-open " + entry.path().string()).c_str());
-        }
+    //static int selected = -1;
+    //for (const auto& entry : std::filesystem::directory_iterator(pProject->GetPath())) {
+        //if (ImGui::Selectable(entry.path().filename().string().c_str())) {
+            ////system(("xdg-open " + entry.path().string()).c_str());
+        //}
 
-        if (ImGui::BeginPopupContextItem()) // <-- use last item id as popup id
-        {
-            selected = (int) entry.path().filename().string().size();
-            ImGui::Text("This a popup for \"%s\"!", entry.path().filename().string().c_str());
-            if (ImGui::Button("Close"))
-                ImGui::CloseCurrentPopup();
-            ImGui::EndPopup();
-        }
-        ImGui::SetItemTooltip("Right-click to open popup");
-    }
+        //if (ImGui::BeginPopupContextItem()) // <-- use last item id as popup id
+        //{
+            //selected = (int) entry.path().filename().string().size();
+            //ImGui::Text("This a popup for \"%s\"!", entry.path().filename().string().c_str());
+            //if (ImGui::Button("Close"))
+                //ImGui::CloseCurrentPopup();
+            //ImGui::EndPopup();
+        //}
+        //ImGui::SetItemTooltip("Right-click to open popup");
+    //}
 
 
     ImGui::End();

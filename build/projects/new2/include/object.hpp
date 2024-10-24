@@ -15,7 +15,6 @@
 namespace Engine {
     class IComponent;
     class Component;
-    class ComponentManager;
 }
 
 namespace Renderer {
@@ -41,8 +40,6 @@ namespace Renderer {
 
             std::vector<Engine::Component*>& GetComponents();
 
-            void SetComponentManager(Engine::ComponentManager* manager);
-
             void SetENV(const Envy& env);
 
             void Update();
@@ -50,7 +47,6 @@ namespace Renderer {
             std::string name;
             Envy env;
         private:
-            Engine::ComponentManager* pComponentManager = nullptr;
             std::vector<Engine::Component*> components;
 
 

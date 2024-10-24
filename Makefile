@@ -11,7 +11,7 @@ endif
 CFLAGS = -fPIC -g -ggdb -O0 -Wall -Ilib/nfd/src/include
 
 INCLUDES = -Iinclude -Ilib/imgui -Ilib/nfd/src/include -Ilib/refl-cpp/include
-LIBS = `pkg-config --libs glfw3 gtk+-3.0 gdk-3.0` -lglfw -lGL -lGLU -lGLEW -lIL -lILU -lpthread
+LIBS = `pkg-config --libs glfw3 gtk+-3.0 gdk-3.0` -lglfw -lGL -lGLU -lGLEW -lIL -lILU -lpthread -lboost_serialization
 
 SRCS_CPP := $(wildcard src/*.cpp)
 ifeq ($(MAKECMDGOALS), lib)

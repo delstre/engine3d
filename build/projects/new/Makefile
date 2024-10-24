@@ -1,12 +1,9 @@
 CXX = g++
-CXXFLAGS = -Iinclude -L. -lGL -lIL -lGLEW -lglfw -lengine -Wl,-rpath=. -fPIC
-TARGET = components.so
+CXXFLAGS = -Iinclude -L. -lGL -lIL -lGLEW -lglfw -lengine -lboost_serialization -Wl,-rpath=. -fPIC -rdynamic
 SRCS = $(wildcard *.cpp)
-OBJS = $(SRCS:.cpp=.o)
-all: $(TARGET)
-$(TARGET): $(OBJS)
+SOFILES = $(SRCS:.cpp=.so)
+all: $(SOFILES)
+%.so: %.cpp
 	$(CXX) -shared -o $@ $^ $(CXXFLAGS)
-%.o: %.cpp
-	$(CXX) -c -o $@ $< $(CXXFLAGS)
 clean:
-	rm -f $(TARGET) $(OBJS)
+	rm -f $(SOFILES)

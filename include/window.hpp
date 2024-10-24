@@ -34,7 +34,6 @@ namespace Engine {
 
             GLFWwindow* pWindow = nullptr;
             Scene* pScene = nullptr;
-            ComponentManager* pComponentManager = nullptr;
             Project* pProject = nullptr;
             #ifdef INTERFACE_DEBUG
             Renderer::Interface* pInterface = nullptr;

@@ -9,6 +9,7 @@ namespace Renderer {
             ModelManager() = default;
             ~ModelManager() = default;
 
+            void SetPath(std::string path);
             void AddModel(std::string name, ModelRender* model);
             ModelRender* GetModel(const std::string& name) const;
             std::map<std::string, ModelRender*> GetModels() const;
@@ -17,5 +18,7 @@ namespace Renderer {
 
         private:
             std::map<std::string, ModelRender*> models;
+
+            std::string path;
     };
 }

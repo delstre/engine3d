@@ -1,8 +1,7 @@
 #include <cassert>
 #include <string>
-#include <functional>
 #include <vector>
-#include <algorithm>
+#include <memory>
 
 struct Variable {
     std::string type_name = "";
@@ -15,8 +14,6 @@ struct Variable {
 
 template<typename T>
 struct VariableImpl : public Variable {
-    std::function<T*&()> get;  // Getter function to retrieve the variable value
-
     VariableImpl(const std::string& type_name, const char* name, void* data) {
         this->data = data;
         this->name = name;
@@ -44,5 +41,10 @@ variables.push_back(std::make_unique<VariableImpl<TYPE>>(# TYPE, # NAME, & NAME)
 #define DECLARE_CLASS_VARIABLES(...) \
     private: \
     void Init() { \
+        __VA_ARGS__; \
+    }
+
+#define REGISTER_CLASS_INTERFACE(...)\
+    void UpdateInterface() { \
         __VA_ARGS__; \
     }

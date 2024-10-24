@@ -1,5 +1,9 @@
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/export.hpp>
+
 #include <transform.hpp>
-#include <iostream>
+
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 
@@ -41,3 +45,6 @@ void Transform::Update() {
     matrix = glm::rotate(matrix, glm::radians(angle.y), glm::vec3(0.0f, 1.0f, 0.0f));
     matrix = glm::rotate(matrix, glm::radians(angle.z), glm::vec3(0.0f, 0.0f, 1.0f));
 } 
+
+
+BOOST_CLASS_EXPORT_GUID(Engine::Transform, "Engine::Transform")

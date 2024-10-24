@@ -15,7 +15,7 @@ void ComponentManager::RegisterComponent(const std::string& name, std::function<
 
 void ComponentManager::RegisterComponents() {
     REGISTER_COMPONENT(Transform);
-    REGISTER_COMPONENT(ModelRender);
+    REGISTER_COMPONENT(Model);
 }
 
 std::unordered_map<std::string, std::function<IComponent*()>> ComponentManager::GetConstructors() {

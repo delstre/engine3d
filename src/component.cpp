@@ -1,4 +1,8 @@
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+
 #include <component.hpp>
+BOOST_CLASS_EXPORT_IMPLEMENT(Engine::Component)
 #include <transform.hpp>
 
 using namespace Engine;

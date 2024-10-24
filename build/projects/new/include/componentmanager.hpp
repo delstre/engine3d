@@ -5,7 +5,6 @@
 #include <string>
 
 #include <object.hpp>
-#include <component.hpp>
 
 namespace Renderer {
     class Object;

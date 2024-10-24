@@ -1,58 +1,46 @@
 #pragma once
 
-#include <vector>
 #include <GL/glew.h>
 
 #include <shaderprogram.hpp>
 #include <component.hpp>
+#include <mesh.hpp>
+#include <modelmanager.hpp>
 
-namespace Renderer {
-    struct Vertex {
-        glm::vec3 position;
-        glm::vec3 normal;
-        glm::vec2 texCoord;
-    };
-
-    class ModelRender : public Engine::Component {
+namespace Engine {
+    class Model: public Engine::Component {
         public:
-            ModelRender() : Engine::Component() {};
-            ModelRender(std::vector<Vertex> vertices, std::vector<GLuint> indices);
-            ModelRender(const ModelRender& other) = default;
-            ModelRender(ModelRender&& other) = default;
-            ModelRender& operator=(const ModelRender& other);
-            ModelRender& operator=(ModelRender&& other) = default;
-            ~ModelRender();
+            Model() { Init(); };
+            ~Model() = default;
 
-            void UpdateVertices(std::vector<Vertex> points);
-            void UpdateIndices(std::vector<GLuint> faces);
-
-            std::vector<Vertex> GetVertices();
-
-            void SetRenderType(GLenum renderType);
-            void SetShader(ShaderProgram* shader);
-
-            void SetModel(ModelRender* model);
-
-            glm::vec3 GetMinBounds();
-            glm::vec3 GetMaxBounds();
+            void SetModel(Renderer::Mesh* mesh);
 
             void Update();
             void InterfaceUpdate();
             void Start();
             void End();
-        protected:
-            GLuint texture;
 
-            GLuint vao;
-            ShaderProgram* pShader = nullptr;
+            DECLARE_CLASS_VARIABLE(Renderer::Mesh*, mesh, nullptr);
 
-            GLuint vbo, ebo;
-            std::vector<Vertex> vertices;
-            std::vector<GLuint> indices;
+            DECLARE_CLASS_VARIABLES(
+                REGISTER_CLASS_VARIABLE(Renderer::Mesh*, mesh);
+            )
+        private:
+            friend class boost::serialization::access;
 
-            GLenum renderType = GL_TRIANGLES;
+            template<class Archive>
+            void save(Archive& ar, const unsigned int version) const {
+                ar & boost::serialization::base_object<Component>(*this);
+                ar & mesh; // only obj
+            }
 
-            bool hasNormals;
-            bool hasTextureCoords;
+            template<class Archive>
+            void load(Archive& ar, const unsigned int version) {
+                ar & boost::serialization::base_object<Component>(*this);
+                ar & mesh;
+                this->mesh = ModelManager::GetModel(mesh->name);
+            }
+
+            BOOST_SERIALIZATION_SPLIT_MEMBER()
     };
 }

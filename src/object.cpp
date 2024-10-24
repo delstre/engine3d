@@ -6,7 +6,10 @@
 #include <model.hpp>
 #include <transform.hpp>
 #include <iostream>
-#include <memory>
+#include <fstream>
+
+#include <boost/archive/binary_iarchive.hpp>
+#include <boost/archive/binary_oarchive.hpp>
 
 using namespace Renderer;
 
@@ -15,7 +18,7 @@ Object::Object(const std::string& name) {
 };
 
 void Object::AddComponent(const std::string& name) {
-    Engine::Component* component = static_cast<Engine::Component*>(pComponentManager->CreateComponent(name));
+    Engine::Component* component = static_cast<Engine::Component*>(Engine::ComponentManager::CreateComponent(name));
     if (component) {
         component->Start();
         component->SetParent(this);
@@ -23,6 +26,12 @@ void Object::AddComponent(const std::string& name) {
     } else {
         std::cerr << "Failed to create component: " << name << std::endl;
     }
+}
+
+void Object::AddComponent(Engine::Component& component) {
+    component.Start();
+    component.SetParent(this);
+    components.push_back(&component);
 }
 
 void Object::RemoveComponent(const std::string& name) {
@@ -37,7 +46,6 @@ void Object::RemoveComponent(const std::string& name) {
 }
 
 void Object::RemoveComponent(Engine::Component* component) {
-    components.erase(std::remove(components.begin(), components.end(), component), components.end());
 }
 
 template <typename T>
@@ -68,8 +76,33 @@ std::vector<Engine::Component*>& Object::GetComponents() {
     return components;
 }
 
-void Object::SetComponentManager(Engine::ComponentManager* manager) {
-    pComponentManager = manager;
+
+void Object::SaveAsPrefab(const std::string& path) {
+    std::ofstream obj_file(path + "/myobject.bin", std::ios::binary);
+    if (!obj_file) {
+        std::cerr << "Failed to load object: " << path + "/myobject.bin" << std::endl;
+        return;
+    }
+
+    boost::archive::binary_oarchive oa(obj_file);
+    oa.register_type<Engine::Transform>();
+    oa.register_type<Engine::Model>();
+    oa << *this;
+    obj_file.close();
+}
+
+void Object::LoadFromPrefab(const std::string& path) {
+    std::ifstream obj_file(path, std::ios::binary);
+    if (!obj_file) {
+        std::cerr << "Failed to load object: " << path + "/myobject.bin" << std::endl;
+        return;
+    }
+
+    boost::archive::binary_iarchive ia(obj_file);
+    ia.register_type<Engine::Transform>();
+    ia.register_type<Engine::Model>();
+    ia >> *this;
+    obj_file.close();
 }
 
 void Object::SetENV(const Envy& env) {
@@ -102,4 +135,4 @@ void Object::Update() {
 //}
 
 template Engine::Transform* Object::GetComponent<Engine::Transform>();
-template Renderer::ModelRender* Object::GetComponent<Renderer::ModelRender>();
+template Engine::Model* Object::GetComponent<Engine::Model>();
