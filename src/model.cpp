@@ -1,9 +1,6 @@
 #include <model.hpp>
 #include <transform.hpp>
-#include "object.hpp"
-
-#include <cfloat>
-#include <imgui.h>
+#include <mesh.hpp>
 
 using namespace Engine;
 

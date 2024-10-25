@@ -28,12 +28,12 @@ void Component::End() {
 void Component::Update() {}
 void Component::UpdateInterface() {}
 
-void Component::SetParent(Renderer::Object* parent) { 
+void Component::SetParent(Engine::Object* parent) { 
     if (this->parent == nullptr)
         this->parent = parent; 
 }
 
-Renderer::Object* Component::GetParent() const {
+Engine::Object* Component::GetParent() const {
     return parent;
 }
 

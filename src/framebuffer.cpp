@@ -1,4 +1,5 @@
-#include "framebuffer.hpp"
+#include <framebuffer.hpp>
+#include <GL/glew.h>
 
 using namespace Renderer;
 

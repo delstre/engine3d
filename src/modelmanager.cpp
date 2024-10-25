@@ -1,11 +1,16 @@
+#include <structs.hpp>
+#include <modelmanager.hpp>
+#include <mesh.hpp>
+#include <shaderprogram.hpp>
+
+#include <GL/glew.h>
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
 
 #include <filesystem>
-
-#include <structs.hpp>
-#include <modelmanager.hpp>
+#include <vector>
 
 using namespace Engine;
 

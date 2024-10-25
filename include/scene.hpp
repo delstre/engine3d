@@ -1,49 +1,51 @@
 #pragma once
 
-#include "framebuffer.hpp"
-#include "object.hpp"
-#include "camera.hpp"
-#include "resourcemanager.hpp"
-#include "controller.hpp"
+#include <object.hpp>
 
-#include <dlfcn.h>
+#include <GLFW/glfw3.h>
+#include <glm/vec3.hpp>
 
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/vector.hpp>
 
+namespace Renderer {
+    class FrameBuffer;
+}
+
 namespace Engine {
+    class Object;
+    class Camera;
+    class WindowController;
+
     class Scene {
         public:
             void Init(GLFWwindow* pWindow);
             void SetPath(std::string path);
-            void AddObject(Renderer::Object* obj);
-            void DeleteObject(Renderer::Object* id);
-            Renderer::Camera* AddCamera(glm::vec3 position); // maybe merge with object
+            void AddObject(Engine::Object* obj);
+            void DeleteObject(Engine::Object* id);
+            Engine::Camera* AddCamera(glm::vec3 position); // maybe merge with object
 
-            Renderer::Camera* GetActiveCamera();
+            Engine::Camera* GetActiveCamera();
 
             void SetFrameSize(int width, int height);
             Renderer::FrameBuffer* GetFrameBuffer();
 
             std::vector<GLuint> GetTextures();
 
-            std::vector<Renderer::Object*> GetObjects();
-
-            Renderer::ResourceManager* GetResourceManager();
+            std::vector<Engine::Object*> GetObjects();
 
             void Render();
         private:
             std::string path;
             std::vector<std::string> comps;
 
-            Renderer::ResourceManager* pResourceManager = nullptr;
             Renderer::FrameBuffer* pFbo = nullptr;
-            Renderer::Camera* pActiveCamera = nullptr;
+            Engine::Camera* pActiveCamera = nullptr;
             Engine::WindowController* pController = nullptr; 
             GLFWwindow* pWindow = nullptr;
             
-            std::vector<Renderer::Object*> objs;
-            std::vector<Renderer::Object*> render;
+            std::vector<Engine::Object*> objs;
+            std::vector<Engine::Object*> render;
 
             bool initialized = false;
 
@@ -53,13 +55,5 @@ namespace Engine {
             void serialize(Archive& ar, const unsigned int version) {
                 ar & objs;
             }
-
-            //template<class Archive>
-            //void load(Archive& ar, const unsigned int version) {
-                //std::cout << "Loading Scene" << std::endl;
-                //for (Renderer::Object* obj: objs) {
-                    //AddObject(obj);
-                //}
-            //}
     };
 }

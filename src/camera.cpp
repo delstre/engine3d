@@ -1,24 +1,7 @@
-#include "camera.hpp"
+#include <camera.hpp>
+#include <object.hpp>
 
-#include <glm/vec2.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <math.h>
-
-#include <GLFW/glfw3.h>
-
-#include <iostream>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
-
-#include <vector>
-
-#include <glm/gtc/type_ptr.hpp>
-
-#include <cfloat>
-
-using namespace Renderer;
+using namespace Engine;
 
 Camera::Camera(GLFWwindow* window) {
     pWindow = window;

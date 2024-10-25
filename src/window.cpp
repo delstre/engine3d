@@ -1,8 +1,11 @@
-#include "window.hpp"
+#include <window.hpp>
+#include <componentmanager.hpp>
+#include <scene.hpp>
 
-#include <iostream>
 #include <GL/glew.h>
 #include <IL/il.h>
+
+#include <iostream>
 
 using namespace Engine;
 

@@ -1,4 +1,6 @@
-#include "line.hpp"
+#include <line.hpp>
+#include <shaderprogram.hpp>
+
 #include <glm/ext/matrix_transform.hpp>
 
 using namespace Renderer;

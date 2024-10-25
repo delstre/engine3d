@@ -1,12 +1,11 @@
 #pragma once
 
-#include <window.hpp>
-#include <scene.hpp>
-
 #include <string>
 
 namespace Engine {
     class Window;
+    class Scene;
+
     class Project {
         public:
             Project(Window* pWindow);

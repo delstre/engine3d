@@ -29,7 +29,7 @@ long Debug::GetMemoryUsage() {
     return usage.ru_maxrss;
 }
 
-double Debug::GetFPS() const {
+double Debug::GetFPS() {
     return fps;
 }
 

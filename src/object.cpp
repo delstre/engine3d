@@ -1,17 +1,19 @@
+#include <object.hpp>
+#include <model.hpp>
+#include <transform.hpp>
+#include <componentmanager.hpp>
+
+#include <iostream>
+#include <fstream>
+
 #include <glm/vec2.hpp>
 #include <glm/mat4x4.hpp>
 #include <IL/il.h>
 
-#include <object.hpp>
-#include <model.hpp>
-#include <transform.hpp>
-#include <iostream>
-#include <fstream>
-
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 
-using namespace Renderer;
+using namespace Engine;
 
 Object::Object(const std::string& name) {
     this->name = name;
@@ -105,7 +107,7 @@ void Object::LoadFromPrefab(const std::string& path) {
     obj_file.close();
 }
 
-void Object::SetENV(const Envy& env) {
+void Object::SetENV(const Renderer::Envy& env) {
     this->env = env;
 }
 
@@ -119,7 +121,7 @@ void Object::Update() {
     }
 }
 
-//Renderer::ModelInstance* Renderer::TranslateModelsToInstance(std::vector<Renderer::Object*>& objects, int start, int end) {
+//Renderer::ModelInstance* Renderer::TranslateModelsToInstance(std::vector<Engine::Object*>& objects, int start, int end) {
     //int size = objects.size();
     //std::vector<glm::mat4> matrixes;
     //std::vector<uint> textures;

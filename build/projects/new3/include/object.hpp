@@ -66,5 +66,5 @@ namespace Renderer {
             }
     };
 
-    //ModelInstance* TranslateModelsToInstance(std::vector<Renderer::Object*>& objects, int start, int end);
+    //ModelInstance* TranslateModelsToInstance(std::vector<Engine::Object*>& objects, int start, int end);
 }

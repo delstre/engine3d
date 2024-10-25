@@ -1,17 +1,13 @@
 #pragma once
 
-#include <glm/vec3.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/mat4x4.hpp>
-#include <GL/glew.h>
+#include <structs.hpp>
 
 #include <string>
 #include <vector>
 
-#include <structs.hpp>
-
-#include <component.hpp>
-#include <componentmanager.hpp>
+#include <glm/vec3.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/mat4x4.hpp>
 
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/vector.hpp>
@@ -21,7 +17,10 @@ namespace Engine {
     class Component;
 }
 
-namespace Renderer {
+namespace Engine {
+    class IComponent;
+    class Component;
+
     class Object {
         public:
             Object() {};
@@ -40,7 +39,7 @@ namespace Renderer {
 
             std::vector<Engine::Component*>& GetComponents();
 
-            void SetENV(const Envy& env);
+            void SetENV(const Renderer::Envy& env);
 
             void SaveAsPrefab(const std::string& path);
             void LoadFromPrefab(const std::string& path);
@@ -48,7 +47,7 @@ namespace Renderer {
             void Update();
 
             std::string name;
-            Envy env;
+            Renderer::Envy env;
         private:
             std::vector<Engine::Component*> components;
 
@@ -61,5 +60,5 @@ namespace Renderer {
             }
     };
 
-    //ModelInstance* TranslateModelsToInstance(std::vector<Renderer::Object*>& objects, int start, int end);
+    //ModelInstance* TranslateModelsToInstance(std::vector<Engine::Object*>& objects, int start, int end);
 }

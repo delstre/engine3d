@@ -1,8 +1,11 @@
 #pragma once
 
 #include <map>
+#include <string>
 
-#include <mesh.hpp>
+namespace Renderer {
+    class Mesh;
+}
 
 namespace Engine {
     namespace ModelManager {

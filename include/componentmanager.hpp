@@ -4,14 +4,10 @@
 #include <functional>
 #include <string>
 
-#include <object.hpp>
-#include <component.hpp>
-
-namespace Renderer {
-    class Object;
-}
-
 namespace Engine {
+    class Object;
+    class IComponent;
+
     namespace ComponentManager {
         void RegisterComponent(const std::string& name, std::function<IComponent*()> constructor);
         void RegisterComponents();

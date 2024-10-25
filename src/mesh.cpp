@@ -1,4 +1,5 @@
 #include <mesh.hpp>
+#include <shaderprogram.hpp>
 
 using namespace Renderer;
 

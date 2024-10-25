@@ -1,8 +1,5 @@
 #pragma once
 
-#include "shaderprogram.hpp"
-#include <glm/vec2.hpp>
-
 #include <math.h>
 
 #include <GLFW/glfw3.h>
@@ -11,9 +8,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 
-#include "object.hpp"
+#include <iostream>
+#include <glm/gtc/type_ptr.hpp>
+#include <cfloat>
 
-namespace Renderer {
+namespace Engine {
+    class Object;
+
     class Camera {
         public:
             Camera() = delete;
@@ -67,7 +68,6 @@ namespace Renderer {
             void ProcessKeyboardInput(int direction, float deltaTime);
 
             void Control(GLFWwindow* window, float deltaTime);
-            GLuint vao, vbo;
     };
 }
 

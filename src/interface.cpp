@@ -1,17 +1,29 @@
-#include "interface.hpp"
-#include "config.hpp"
-#include "framebuffer.hpp"
-#include "imgui.h"
-#include "scene.hpp"
+#include <interface.hpp>
+#include <config.hpp>
+#include <framebuffer.hpp>
+#include <scene.hpp>
+#include <window.hpp>
+#include <debug.hpp>
+#include <camera.hpp>
+#include <component.hpp>
+#include <mesh.hpp>
+#include <modelmanager.hpp>
+#include <componentmanager.hpp>
+#include <resourcemanager.hpp>
+
+#include <nfd.h>
+
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+
 #include <glm/gtc/type_ptr.hpp>
 
 #include <thread>
 #include <sstream>
-
 #include <clocale>
 #include <iostream>
 #include <memory>
-
 #include <filesystem>
 #include <fstream>
 
@@ -64,9 +76,6 @@ Engine::Scene* Interface::GetScene() const {
 }
 
 void Interface::GetDebugInfo() const {
-    if (pDebug == nullptr)
-        return;
-
     ImGuiIO& io = ImGui::GetIO();
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::CollapsingHeader("Debug")) {
@@ -77,9 +86,9 @@ void Interface::GetDebugInfo() const {
 
         ImGui::Text("Mouse capture: %b", io.WantCaptureMouse);
         ImGui::Text("Render Time %f", elapsed_time / 1e6);
-        ImGui::Text("GPU Usage %f", pDebug->GetGPUMemoryUsage());
-        ImGui::Text("Memory Usage %d", pDebug->GetMemoryUsage());
-        ImGui::Text("FPS %f", pDebug->GetFPS());
+        ImGui::Text("GPU Usage %f", Engine::Debug::GetGPUMemoryUsage());
+        ImGui::Text("Memory Usage %d", Engine::Debug::GetMemoryUsage());
+        ImGui::Text("FPS %f", Engine::Debug::GetFPS());
     }
 }
 
@@ -129,7 +138,7 @@ void Interface::GetSceneInfo(Engine::Scene* scene) const {
 
             glfwSetCursorPos(pWindow->GetWindow(), (windowPos.x + windowSize.x) / 2, (windowPos.y + windowSize.y) / 2);
 
-            Camera* pCamera = scene->GetActiveCamera();
+            Engine::Camera* pCamera = scene->GetActiveCamera();
             pCamera->ProcessMouseMovement(-xoffset, yoffset);
         }
 
@@ -163,7 +172,7 @@ void Interface::GetSceneInfo(Engine::Scene* scene) const {
 void Interface::GetCameraInfo(Engine::Scene* scene) const {
     ImGui::Begin("Camera");
 
-    Camera* pCamera = scene->GetActiveCamera();
+    Engine::Camera* pCamera = scene->GetActiveCamera();
 
     if (ImGui::TreeNode("Position")) {
         ImGui::SliderFloat("x", &pCamera->position.x, -100.0f, 100.0f);
@@ -215,7 +224,7 @@ void Interface::GetObjectsInfo(Engine::Scene* scene) {
         for (const auto& entry : std::filesystem::directory_iterator(pProject->GetPath())) {
             if (entry.is_regular_file() && entry.path().extension() == ".bin") {
                 if (ImGui::Selectable(entry.path().filename().string().c_str())) {
-                    Renderer::Object* obj = new Renderer::Object(entry.path().filename().string());
+                    Engine::Object* obj = new Engine::Object(entry.path().filename().string());
                     obj->LoadFromPrefab(entry.path().string());
                     scene->AddObject(obj);
                 }
@@ -223,7 +232,7 @@ void Interface::GetObjectsInfo(Engine::Scene* scene) {
         }
 
         if (ImGui::Selectable("Empty Object")) {
-            scene->AddObject(new Renderer::Object("empty object"));
+            scene->AddObject(new Engine::Object("empty object"));
         }
         ImGui::EndPopup();
     }
@@ -232,7 +241,7 @@ void Interface::GetObjectsInfo(Engine::Scene* scene) {
 
     ImGui::SetNextItemOpen(true, ImGuiCond_Once);
     if (ImGui::TreeNode("List of objects")) {
-        for (Renderer::Object* obj : scene->GetObjects()) {
+        for (Engine::Object* obj : scene->GetObjects()) {
             ImGui::PushID(obj);
             
             std::stringstream addressStream;
@@ -385,8 +394,6 @@ void Interface::GetModelManager(Engine::Scene* scene) const {
 }
 
 void Interface::GetResourceManager(Engine::Scene* scene) const {
-    Renderer::ResourceManager* pResourceManager = scene->GetResourceManager();
-
     ImGui::Begin("ResourceManager", nullptr, ImGuiWindowFlags_MenuBar);
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
@@ -395,7 +402,7 @@ void Interface::GetResourceManager(Engine::Scene* scene) const {
                 nfdchar_t *outPath = NULL;
                 nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath);
                 if (result == NFD_OKAY) {
-                    pResourceManager->CreateTexture(outPath);
+                    Engine::ResourceManager::CreateTexture(outPath);
                     free(outPath);
                 } else if (result == NFD_CANCEL) {
                     std::cout << "err" << std::endl;
@@ -408,7 +415,7 @@ void Interface::GetResourceManager(Engine::Scene* scene) const {
         ImGui::EndMenuBar();
     }
 
-    for (auto const [key, value] : pResourceManager->MapTextures) {
+    for (auto const [key, value] : Engine::ResourceManager::MapTextures) {
         ImGui::Text("Texture [%d]: %s", value, key.c_str());
     }
 
@@ -1068,7 +1075,7 @@ void Interface::Render(GLuint64 elapsed_time) {
         ImGui::Begin("Debug");
 
         GetDebugInfo();
-        pDebug->CounterFPS();
+        Engine::Debug::CounterFPS();
         GetConfigInfo();
         ImGui::Separator();
 

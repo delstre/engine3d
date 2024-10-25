@@ -1,11 +1,18 @@
 #pragma once
 
-#include <GL/glew.h>
-
-#include <shaderprogram.hpp>
 #include <component.hpp>
-#include <mesh.hpp>
 #include <modelmanager.hpp>
+#include <mesh.hpp>
+
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+#include <boost/serialization/split_member.hpp>
+
+namespace Renderer {
+    class ShaderProgram;
+    class Mesh;
+}
 
 namespace Engine {
     class Model: public Engine::Component {

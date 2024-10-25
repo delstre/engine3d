@@ -1,17 +1,17 @@
 #pragma once
 
-#include <GL/glew.h>
-#include <vector>
-
 #include <structs.hpp>
 
-#include <shaderprogram.hpp>
+#include <GL/glew.h>
+
+#include <vector>
 
 #include <boost/serialization/serialization.hpp>
 #include <boost/serialization/string.hpp>
 
-
 namespace Renderer {
+    class ShaderProgram;
+
     class Mesh {
         public:
             Mesh() = default;

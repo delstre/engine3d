@@ -3,22 +3,27 @@
 #include <model.hpp>
 #include <transform.hpp>
 #include <project.hpp>
+#include <scene.hpp>
+#include <window.hpp>
+#include <componentmanager.hpp>
 
 #include <fstream>
 #include <filesystem>
-#include <boost/json/src.hpp>
-#include <boost/property_tree/json_parser.hpp>
-
-#include <cxxabi.h>
+#include <iostream>
 #include <thread>
+
+#include <dlfcn.h>
+#include <cxxabi.h>
 #include <sys/stat.h>
 
+#include <boost/json/src.hpp>
+#include <boost/property_tree/json_parser.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 
 using namespace Engine;
 
-boost::json::object ObjectToJSON(Renderer::Object* obj) {
+boost::json::object ObjectToJSON(Engine::Object* obj) {
     boost::json::object json_obj;
     json_obj["name"] = boost::json::value(obj->name);
     

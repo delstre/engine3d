@@ -1,13 +1,12 @@
-#include "resourcemanager.hpp"
+#include <resourcemanager.hpp>
+
 #include <GL/glew.h>
 #include <IL/il.h>
 
 #include <string>
 #include <iostream>
 
-using namespace Renderer;
-
-ResourceManager::ResourceManager() {}
+using namespace Engine;
 
 void ResourceManager::CreateTexture(std::string filename) {
     glGenTextures(1, &textureID);
