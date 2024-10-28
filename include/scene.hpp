@@ -1,7 +1,5 @@
 #pragma once
 
-#include <object.hpp>
-
 #include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
 
@@ -25,16 +23,25 @@ namespace Engine {
             void DeleteObject(Engine::Object* id);
             Engine::Camera* AddCamera(glm::vec3 position); // maybe merge with object
 
-            Engine::Camera* GetActiveCamera();
-
             void SetFrameSize(int width, int height);
+
+            bool IsHitByRay(glm::vec3 origin, glm::vec3 direction, Object* obj);
+            bool IsHitByRay(glm::vec3 origin, glm::vec3 direction, float& tNear, float& tFar);
+
+            Engine::Camera* GetActiveCamera();
             Renderer::FrameBuffer* GetFrameBuffer();
-
             std::vector<GLuint> GetTextures();
-
             std::vector<Engine::Object*> GetObjects();
+            GLFWwindow* GetWindow();
+
+            float GetAspectRatio();
 
             void Render();
+            int width;
+            int height;
+
+            std::vector<Engine::Object*> objs;
+
         private:
             std::string path;
             std::vector<std::string> comps;
@@ -44,16 +51,8 @@ namespace Engine {
             Engine::WindowController* pController = nullptr; 
             GLFWwindow* pWindow = nullptr;
             
-            std::vector<Engine::Object*> objs;
             std::vector<Engine::Object*> render;
 
             bool initialized = false;
-
-            friend class boost::serialization::access;
-
-            template<class Archive>
-            void serialize(Archive& ar, const unsigned int version) {
-                ar & objs;
-            }
     };
 }

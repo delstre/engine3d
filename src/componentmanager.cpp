@@ -10,6 +10,9 @@ using namespace Renderer;
 
 void ComponentManager::RegisterComponent(const std::string& name, std::function<IComponent*()> constructor) {
     std::cout << "Registering component: " << name << std::endl;
+    if (constructors.find(name) != constructors.end()) {
+        constructors.erase(name);
+    }
     constructors[name] = constructor;
 }
 

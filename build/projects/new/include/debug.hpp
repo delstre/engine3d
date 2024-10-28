@@ -5,28 +5,20 @@
 #include <memory>
 
 namespace Engine {
-    class Debug {
-        public:
-            template<typename... Args>
-            void Log(Args&&... args);
+    namespace Debug {
+        template<typename... Args>
+        void Log(Args&&... args);
 
-            GLfloat GetGPUMemoryUsage();
-            long GetMemoryUsage();
+        GLfloat GetGPUMemoryUsage();
+        long GetMemoryUsage();
 
-            double GetFPS() const;
+        double GetFPS();
 
-            void CounterFPS();
+        void CounterFPS();
 
-            // Problem: Debug* == nullptr?
-            static std::shared_ptr<Debug> GetInstance() {
-                static std::shared_ptr<Debug> instance(new Debug());
-                return instance;
-            }
-
-        private:
-            double fps;
-            int frameCount = 0;
-            double lastTime;
+        static double fps;
+        static int frameCount = 0;
+        static double lastTime;
     };
 }
 

@@ -1,8 +1,11 @@
-#include "shaderprogram.hpp"
+#include <GL/glew.h>
+#include <glm/vec3.hpp>
+#include <glm/mat4x4.hpp>
 
 #include <vector>
 
 namespace Renderer {
+    class ShaderProgram;
     class Line {
         public:
             Line() = delete;

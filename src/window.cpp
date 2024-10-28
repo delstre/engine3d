@@ -1,8 +1,8 @@
+#include <GL/glew.h>
 #include <window.hpp>
 #include <componentmanager.hpp>
 #include <scene.hpp>
 
-#include <GL/glew.h>
 #include <IL/il.h>
 
 #include <iostream>
@@ -125,4 +125,8 @@ void Window::Render() {
 
 GLFWwindow* Window::GetWindow() {
     return pWindow;
+}
+
+float Window::GetAspectRatio() {
+    return (float)width / (float)height;
 }

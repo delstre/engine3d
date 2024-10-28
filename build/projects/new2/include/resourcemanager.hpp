@@ -2,20 +2,16 @@
 
 #include <map>
 #include <string>
-#include <GL/glew.h>
 #include <vector>
 
-namespace Renderer {
-    class ResourceManager {
-        public:
-        ResourceManager();
-
+namespace Engine {
+    namespace ResourceManager {
         void CreateTexture(std::string str);
-        GLuint GetTexture(std::string str);
-        std::vector<GLuint> GetTextures();
+        uint GetTexture(std::string str);
+        std::vector<uint> GetTextures();
 
-        std::map<std::string, GLuint> MapTextures;
-        std::vector<GLuint> VecTextures = { 0 };
-        GLuint textureID;
+        static std::map<std::string, uint> MapTextures;
+        static std::vector<uint> VecTextures = { 0 };
+        static uint textureID;
     };
 }

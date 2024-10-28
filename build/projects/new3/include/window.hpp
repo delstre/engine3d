@@ -26,15 +26,15 @@ namespace Engine {
             void Render();
 
             GLFWwindow* GetWindow();
+            float GetAspectRatio();
 
-        private:
             int width;
             int height;
+        private:
             const char* window_name;
 
             GLFWwindow* pWindow = nullptr;
             Scene* pScene = nullptr;
-            ComponentManager* pComponentManager = nullptr;
             Project* pProject = nullptr;
             #ifdef INTERFACE_DEBUG
             Renderer::Interface* pInterface = nullptr;

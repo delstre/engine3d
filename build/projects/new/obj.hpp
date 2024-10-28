@@ -18,6 +18,7 @@ class MyClass : public Engine::Component {
         DECLARE_CLASS_VARIABLE(int, a, 10)
         DECLARE_CLASS_VARIABLE(int, b, 10)
         DECLARE_CLASS_VARIABLE(int, c, 10)
+        DECLARE_CLASS_VARIABLE(int, a1, 10)
         DECLARE_CLASS_VARIABLE(bool, d, false)
 
         DECLARE_CLASS_VARIABLES(

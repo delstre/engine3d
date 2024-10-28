@@ -1,26 +1,19 @@
 #pragma once
 
-#include <cassert>
-
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/export.hpp>
-
 #include <icomponent.hpp>
-#include <reflection.hpp>
 #include <object.hpp>
 
-namespace Renderer {
-    class Object;
-}
+#include <cassert>
 
 namespace Engine {
+    class Object;
+
     class Component : public IComponent {
         public:
-            ~Component() = default;
+            virtual ~Component() = default;
             Component() { Init(); }
-            void SetParent(Renderer::Object* parent);
-            Renderer::Object* GetParent() const;
+            void SetParent(Engine::Object* parent);
+            Engine::Object* GetParent() const;
             void UpdateInterface();
 
             void UpdateComponent() override;
@@ -35,22 +28,17 @@ namespace Engine {
             T* GetComponent();
             std::string GetTypeName() const;
 
-            DECLARE_CLASS_VARIABLE(Renderer::Object*, parent, nullptr);
+            virtual void serialize(std::ofstream& ofs) const;
+            virtual void deserialize(std::ifstream& ifs);
+
+            DECLARE_CLASS_VARIABLE(Engine::Object*, parent, nullptr);
             DECLARE_CLASS_VARIABLE(bool, isEnabled, true);
 
             DECLARE_VARIABLES_VECTOR();
 
             DECLARE_CLASS_VARIABLES(
-                REGISTER_CLASS_VARIABLE(Renderer::Object*, parent);
+                REGISTER_CLASS_VARIABLE(Engine::Object*, parent);
                 REGISTER_CLASS_VARIABLE(bool, isEnabled);
             )
-
-        private:
-            friend class boost::serialization::access;
-
-            template<class Archive>
-            void serialize(Archive& ar, const unsigned int version) {
-                ar & isEnabled;
-            }
     };
 }

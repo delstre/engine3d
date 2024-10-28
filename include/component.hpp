@@ -1,14 +1,9 @@
 #pragma once
 
 #include <icomponent.hpp>
-#include <reflection.hpp>
 #include <object.hpp>
 
 #include <cassert>
-
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/export.hpp>
 
 namespace Engine {
     class Object;
@@ -42,16 +37,5 @@ namespace Engine {
                 REGISTER_CLASS_VARIABLE(Engine::Object*, parent);
                 REGISTER_CLASS_VARIABLE(bool, isEnabled);
             )
-
-        private:
-            friend class boost::serialization::access;
-
-            template<class Archive>
-            void serialize(Archive& ar, const unsigned int version) {
-                ar & isEnabled;
-                ar & parent;
-            }
     };
 }
-
-BOOST_CLASS_EXPORT_KEY(Engine::Component)

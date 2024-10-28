@@ -19,4 +19,6 @@ namespace Engine {
 }
 
 #define REGISTER_COMPONENT(NAME) \
-    Engine::ComponentManager::RegisterComponent(#NAME, []() { return new NAME(); }); \
+    NAME* NAME##_PTR = new NAME(); \
+    Engine::ComponentManager::RegisterComponent(NAME##_PTR->GetTypeName(), []() { return new NAME(); }); \
+    delete NAME##_PTR; \

@@ -1,3 +1,4 @@
+#include <object.hpp>
 #include <scene.hpp>
 #include <icomponent.hpp>
 #include <modelmanager.hpp>
@@ -54,7 +55,7 @@ Engine::Camera* Scene::AddCamera(glm::vec3 position) {
         return nullptr;
     }
 
-    Engine::Camera* cam = new Engine::Camera(pWindow);
+    Engine::Camera* cam = new Engine::Camera(this);
     cam->yaw = 0.0f;
     cam->pitch = 0.0f;
     cam->speed = 10.5f;
@@ -79,6 +80,10 @@ void Scene::DeleteObject(Engine::Object* id) {
     }
 }
 
+bool Scene::IsHitByRay(glm::vec3 origin, glm::vec3 direction, Object* obj) {
+    return obj->IsHitByRay(origin, direction);
+}
+
 Engine::Camera* Scene::GetActiveCamera() {
     if (pActiveCamera == nullptr) {
         pActiveCamera = AddCamera(glm::vec3(0, 0, 0));
@@ -87,12 +92,20 @@ Engine::Camera* Scene::GetActiveCamera() {
     return pActiveCamera;
 }
 
+Renderer::FrameBuffer* Scene::GetFrameBuffer() {
+    return pFbo;
+}
+
 std::vector<GLuint> Scene::GetTextures() {
     return Engine::ResourceManager::GetTextures();
 }
 
 std::vector<Engine::Object*> Scene::GetObjects() {
     return objs;
+}
+
+GLFWwindow* Scene::GetWindow() {
+    return pWindow;
 }
 
 // bind and unbind for final application need to remove!
@@ -135,6 +148,9 @@ void Scene::Render() {
 }
 
 void Scene::SetFrameSize(int width, int height) {
+    this->width = width;
+    this->height = height;
+
     if (pFbo == nullptr) {
         pFbo = new Renderer::FrameBuffer(width, height);
     }
@@ -142,8 +158,7 @@ void Scene::SetFrameSize(int width, int height) {
     pFbo->RescaleFrameBuffer(width, height);
 }
 
-Renderer::FrameBuffer* Scene::GetFrameBuffer() {
-    return pFbo;
-}
 
-BOOST_CLASS_EXPORT(Engine::Scene)
+float Scene::GetAspectRatio() {
+    return pFbo->GetAspectRatio();
+}

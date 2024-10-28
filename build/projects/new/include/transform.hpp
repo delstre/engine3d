@@ -33,4 +33,4 @@ namespace Engine {
                 REGISTER_CLASS_VARIABLE(glm::vec3, angle);
             )
     };
-}
+};

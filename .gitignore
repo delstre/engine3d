@@ -2,6 +2,7 @@
 tags
 build/imgui.ini
 build/proj
+build/projects/*
 build/nnn
 build/*.a
 build/*.so

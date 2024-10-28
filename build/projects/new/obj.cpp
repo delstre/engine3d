@@ -14,18 +14,17 @@ MyClass::~MyClass() = default;
 
 void MyClass::Update() {
     auto transform = GetComponent<Engine::Transform>();
-    if (transform == nullptr) {
-        return;
-    }
 
     int _a = 100;
 
     transform->GetPosition() = glm::vec3(cos(ticks) * a, sin(ticks) * b, sin(ticks) * c);
 
-    ticks += 0.05;
+    ticks += 0.01;
 }
 
-void MyClass::Start() {}
+void MyClass::Start() {
+    std::cout << "Start" << std::endl;
+}
 void MyClass::End() {}
 
 extern "C" {
@@ -50,4 +49,4 @@ extern "C" {
     }
 }
 
-BOOST_CLASS_EXPORT_GUID(MyClass, "MyClass")
+BOOST_CLASS_EXPORT(MyClass)

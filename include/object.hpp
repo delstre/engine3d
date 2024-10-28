@@ -9,8 +9,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
 
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/vector.hpp>
+#include <reflection.hpp>
 
 namespace Engine {
     class IComponent;
@@ -23,10 +22,10 @@ namespace Engine {
 
     class Object {
         public:
-            Object() {};
+            Object();
             Object(const std::string& name);
 
-            void AddComponent(const std::string& name);
+            Component* AddComponent(const std::string& name);
             void AddComponent(Engine::Component& component);
             void RemoveComponent(const std::string& name);
             void RemoveComponent(Engine::Component* component);
@@ -36,8 +35,9 @@ namespace Engine {
 
             template <typename T>
             T* GetComponent(const std::string& name);
-
             std::vector<Engine::Component*>& GetComponents();
+            
+            bool IsHitByRay(const glm::vec3& origin, const glm::vec3& direction);
 
             void SetENV(const Renderer::Envy& env);
 
@@ -46,18 +46,16 @@ namespace Engine {
 
             void Update();
 
-            std::string name;
             Renderer::Envy env;
-        private:
             std::vector<Engine::Component*> components;
 
-            friend class boost::serialization::access;
+            DECLARE_CLASS_VARIABLE(std::string, name, "MyObject");
 
-            template<class Archive>
-            void serialize(Archive& ar, const unsigned int version) {
-                ar & name;
-                ar & components;
-            }
+            DECLARE_VARIABLES_VECTOR()
+
+            DECLARE_CLASS_VARIABLES(
+                REGISTER_CLASS_VARIABLE(std::string, name);
+            )
     };
 
     //ModelInstance* TranslateModelsToInstance(std::vector<Engine::Object*>& objects, int start, int end);

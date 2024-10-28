@@ -1,7 +1,6 @@
 #pragma once
+
 #include <iostream>
-#include <GL/glew.h>
-#include <glm/glm.hpp>
 
 namespace Renderer {
     class FrameBuffer {
@@ -10,12 +9,16 @@ namespace Renderer {
             ~FrameBuffer();
             unsigned int getFrameTexture();
             void RescaleFrameBuffer(float width, float height);
+            float GetAspectRatio() const;
             void Bind() const;
             void Unbind() const;
         private:
             unsigned int fbo;
             unsigned int texture;
             unsigned int rbo;
+
+            float width;
+            float height;
     };
 }
 

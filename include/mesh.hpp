@@ -6,15 +6,14 @@
 
 #include <vector>
 
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/string.hpp>
+#include <reflection.hpp>
 
 namespace Renderer {
     class ShaderProgram;
 
     class Mesh {
         public:
-            Mesh() = default;
+            Mesh();
             Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices);
             ~Mesh();
 
@@ -28,23 +27,29 @@ namespace Renderer {
 
             std::vector<Vertex> GetVertices();
 
-            std::string name;
+            glm::vec3 GetMins();
+            glm::vec3 GetMaxs();
+
+            void SetColor(glm::vec3 color);
+            glm::vec3 GetColor();
+
+            DECLARE_CLASS_VARIABLE(std::string, name, "")
+
+            DECLARE_VARIABLES_VECTOR()
+
+            DECLARE_CLASS_VARIABLES(
+                REGISTER_CLASS_VARIABLE(std::string, name);
+            )
         private:
             GLuint vao;
             ShaderProgram* pShader = nullptr;
+
+            glm::vec3 color;
 
             GLuint vbo, ebo;
             std::vector<Vertex> vertices;
             std::vector<GLuint> indices;
 
             GLenum renderType = GL_TRIANGLES;
-
-            friend class boost::serialization::access;
-
-            template<class Archive>
-            void serialize(Archive& ar, const unsigned int version) {
-                ar & name;
-            }
-
     };
 }

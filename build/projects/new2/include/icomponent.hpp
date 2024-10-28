@@ -1,5 +1,9 @@
 #pragma once
 
+#include <boost/serialization/serialization.hpp>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/export.hpp>
+
 namespace Engine {
     class IComponent {
         public:

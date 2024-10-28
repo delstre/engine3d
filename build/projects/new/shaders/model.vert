@@ -8,7 +8,6 @@ uniform mat4 mvp;
 uniform mat4 model;
 
 out vec2 uv;
-out vec3 color;
 out vec3 position;
 out vec3 normals;
 

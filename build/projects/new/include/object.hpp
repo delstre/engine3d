@@ -1,35 +1,32 @@
 #pragma once
 
+#include <structs.hpp>
+
+#include <string>
+#include <vector>
+
 #include <glm/vec3.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/mat4x4.hpp>
-#include <GL/glew.h>
 
-#include <string>
-#include <memory>
-#include <vector>
-
-#include <component.hpp>
-#include <componentmanager.hpp>
+#include <reflection.hpp>
 
 namespace Engine {
     class IComponent;
     class Component;
-    class ComponentManager;
 }
 
-namespace Renderer {
-    struct Envy {
-        glm::vec3 viewpos;
-        glm::vec3 viewdir;
-        glm::mat4 mvp;
-    };
+namespace Engine {
+    class IComponent;
+    class Component;
 
     class Object {
         public:
+            Object();
             Object(const std::string& name);
 
-            void AddComponent(const std::string& name);
+            Component* AddComponent(const std::string& name);
+            void AddComponent(Engine::Component& component);
             void RemoveComponent(const std::string& name);
             void RemoveComponent(Engine::Component* component);
 
@@ -38,24 +35,28 @@ namespace Renderer {
 
             template <typename T>
             T* GetComponent(const std::string& name);
-
             std::vector<Engine::Component*>& GetComponents();
+            
+            bool IsHitByRay(const glm::vec3& origin, const glm::vec3& direction);
 
-            void SetComponentManager(Engine::ComponentManager* manager);
+            void SetENV(const Renderer::Envy& env);
 
-            void SetENV(const Envy& env);
+            void SaveAsPrefab(const std::string& path);
+            void LoadFromPrefab(const std::string& path);
 
             void Update();
 
-            std::string name;
-            Envy env;
-        private:
-            Engine::ComponentManager* pComponentManager = nullptr;
+            Renderer::Envy env;
             std::vector<Engine::Component*> components;
 
+            DECLARE_CLASS_VARIABLE(std::string, name, "MyObject");
 
+            DECLARE_VARIABLES_VECTOR()
 
+            DECLARE_CLASS_VARIABLES(
+                REGISTER_CLASS_VARIABLE(std::string, name);
+            )
     };
 
-    //ModelInstance* TranslateModelsToInstance(std::vector<Renderer::Object*>& objects, int start, int end);
+    //ModelInstance* TranslateModelsToInstance(std::vector<Engine::Object*>& objects, int start, int end);
 }

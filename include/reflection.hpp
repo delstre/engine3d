@@ -1,7 +1,11 @@
+#pragma once
+
 #include <cassert>
 #include <string>
-#include <vector>
 #include <memory>
+#include <vector>
+#include <fstream>
+#include <cstring>
 
 struct Variable {
     std::string type_name = "";
@@ -14,16 +18,25 @@ struct Variable {
 
 template<typename T>
 struct VariableImpl : public Variable {
-    VariableImpl(const std::string& type_name, const char* name, void* data) {
-        this->data = data;
-        this->name = name;
-        this->type_name = type_name;
-    }
+    VariableImpl();
+    VariableImpl(const std::string& type_name, const char* name, void* data);
 
-    void*& ptr() override {
+    void*& ptr() {
         return data;
     }
 };
+
+template<typename T>
+VariableImpl<T>::VariableImpl() {
+
+}
+
+template<typename T>
+VariableImpl<T>::VariableImpl(const std::string& type_name, const char* name, void* data) {
+    this->data = data;
+    this->name = name;
+    this->type_name = type_name;
+}
 
 #define DECLARE(TYPE, NAME, VALUE) \
 TYPE NAME = VALUE; \
@@ -41,10 +54,5 @@ variables.push_back(std::make_unique<VariableImpl<TYPE>>(# TYPE, # NAME, & NAME)
 #define DECLARE_CLASS_VARIABLES(...) \
     private: \
     void Init() { \
-        __VA_ARGS__; \
-    }
-
-#define REGISTER_CLASS_INTERFACE(...)\
-    void UpdateInterface() { \
         __VA_ARGS__; \
     }

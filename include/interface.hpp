@@ -28,6 +28,7 @@ namespace Renderer {
             void ObjectInspector(Engine::Scene* scene) const;
             void GetModelManager(Engine::Scene* scene) const;
             void GetResourceManager(Engine::Scene* scene) const;
+            void Console(Engine::Scene* scene) const;
             void GetFiles() const;
 
             void ShowExampleAppSimpleOverlay() const;

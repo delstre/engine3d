@@ -1,13 +1,13 @@
 #version 430
 
 in vec2 uv;
-in vec3 color;
 in vec3 position; 
 in vec3 normals;
 
 out vec4 frag_color;
 
 uniform sampler2D my_texture;
+uniform vec3 color;
 
 //uniform vec3 lightPos;
 //uniform vec3 viewDir;
@@ -62,7 +62,7 @@ vec3 light() {
 }
 
 void main() {
-    vec3 object_color = vec3(0.6, 0.6, 0.6);
+    vec3 object_color = color; // vec3(0.6, 0.6, 0.6);
 
     vec4 texColor = texture(my_texture, uv);
     if (texColor == vec4(0.0, 0.0, 0.0, 1.0)) {

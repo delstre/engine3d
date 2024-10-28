@@ -1,58 +1,37 @@
 #pragma once
 
-#include <vector>
-#include <GL/glew.h>
-
-#include <shaderprogram.hpp>
 #include <component.hpp>
+#include <modelmanager.hpp>
+#include <mesh.hpp>
 
 namespace Renderer {
-    struct Vertex {
-        glm::vec3 position;
-        glm::vec3 normal;
-        glm::vec2 texCoord;
-    };
+    class ShaderProgram;
+    class Mesh;
+}
 
-    class ModelRender : public Engine::Component {
+namespace Engine {
+    class Model: public Engine::Component {
         public:
-            ModelRender() : Engine::Component() {};
-            ModelRender(std::vector<Vertex> vertices, std::vector<GLuint> indices);
-            ModelRender(const ModelRender& other) = default;
-            ModelRender(ModelRender&& other) = default;
-            ModelRender& operator=(const ModelRender& other);
-            ModelRender& operator=(ModelRender&& other) = default;
-            ~ModelRender();
+            Model();
+            ~Model() {};
 
-            void UpdateVertices(std::vector<Vertex> points);
-            void UpdateIndices(std::vector<GLuint> faces);
-
-            std::vector<Vertex> GetVertices();
-
-            void SetRenderType(GLenum renderType);
-            void SetShader(ShaderProgram* shader);
-
-            void SetModel(ModelRender* model);
-
-            glm::vec3 GetMinBounds();
-            glm::vec3 GetMaxBounds();
+            void SetModel(Renderer::Mesh* mesh);
+            void SetColor(glm::vec3 color);
 
             void Update();
             void InterfaceUpdate();
             void Start();
             void End();
-        protected:
-            GLuint texture;
 
-            GLuint vao;
-            ShaderProgram* pShader = nullptr;
+            glm::vec3 GetPosition();
+            glm::mat4 GetMatrix();
+            glm::vec3 GetMins();
+            glm::vec3 GetMaxs();
 
-            GLuint vbo, ebo;
-            std::vector<Vertex> vertices;
-            std::vector<GLuint> indices;
+            DECLARE_CLASS_VARIABLE(Renderer::Mesh*, mesh, nullptr);
 
-            GLenum renderType = GL_TRIANGLES;
-
-            bool hasNormals;
-            bool hasTextureCoords;
+            DECLARE_CLASS_VARIABLES(
+                REGISTER_CLASS_VARIABLE(Renderer::Mesh*, mesh);
+            )
     };
 }

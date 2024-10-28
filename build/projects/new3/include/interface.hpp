@@ -1,28 +1,17 @@
 #pragma once
 
-#include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
+#include <GL/glew.h>
 #include <memory>
-#include <nfd.h>
-
-#include "camera.hpp"
-#include "object.hpp"
-#include "debug.hpp"
-
-#include "modelmanager.hpp"
-#include "resourcemanager.hpp"
-#include "framebuffer.hpp"
-
-#include "scene.hpp"
-#include "project.hpp"
 
 namespace Engine {
     class Window;
+    class Scene;
     class Project;
+    class Object;
 };
 
 namespace Renderer {
+    class FrameBuffer;
     class Interface {
         public:
             Interface(Engine::Window* window);
@@ -39,6 +28,7 @@ namespace Renderer {
             void ObjectInspector(Engine::Scene* scene) const;
             void GetModelManager(Engine::Scene* scene) const;
             void GetResourceManager(Engine::Scene* scene) const;
+            void Console(Engine::Scene* scene) const;
             void GetFiles() const;
 
             void ShowExampleAppSimpleOverlay() const;
@@ -46,8 +36,6 @@ namespace Renderer {
             void Render(GLuint64 elapsed_time);
 
         private:
-            std::shared_ptr<Engine::Debug> pDebug = Engine::Debug::GetInstance();
-
             Engine::Project* pProject = nullptr;
 
             FrameBuffer* pFrameBuffer = nullptr;
@@ -56,6 +44,6 @@ namespace Renderer {
 
             Engine::Window* pWindow = nullptr;
 
-            Renderer::Object* pSelectedObject = nullptr;
+            Engine::Object* pSelectedObject = nullptr;
     };
 }

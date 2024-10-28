@@ -5,10 +5,6 @@
 #include <glm/glm.hpp>
 #include <glm/vec3.hpp>
 
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/base_object.hpp>
-#include <boost/serialization/export.hpp>
-
 namespace Engine {
     class Transform : public Component {
         public:
@@ -36,13 +32,5 @@ namespace Engine {
                 REGISTER_CLASS_VARIABLE(glm::vec3, position);
                 REGISTER_CLASS_VARIABLE(glm::vec3, angle);
             )
-
-        private:
-            friend class boost::serialization::access;
-
-            template<class Archive>
-            void serialize(Archive& ar, const unsigned int version) {
-                ar & boost::serialization::base_object<Component>(*this);
-            }
     };
-}
+};

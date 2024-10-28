@@ -3,14 +3,17 @@
 
 using namespace Renderer;
 
-Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices) {
-    this->vertices = vertices;
-    this->indices = indices;
+Mesh::Mesh() {
+    Init();
 
     glGenVertexArrays(1, &vao);
-
     glGenBuffers(1, &vbo);
     glGenBuffers(1, &ebo);
+}
+
+Mesh::Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices) : Mesh() {
+    this->vertices = vertices;
+    this->indices = indices;
 
     glBindVertexArray(vao);
 
@@ -59,6 +62,14 @@ std::vector<Vertex> Mesh::GetVertices() {
     return vertices;
 }
 
+void Mesh::SetColor(glm::vec3 color) {
+    this->color = color;
+}
+
+glm::vec3 Mesh::GetColor() {
+    return color;
+}
+
 void Mesh::Render(Envy env, GLuint texture, glm::mat4 model) {
     if (pShader == nullptr) {
         return;
@@ -70,10 +81,27 @@ void Mesh::Render(Envy env, GLuint texture, glm::mat4 model) {
     pShader->setVector3("viewPos", env.viewpos);
     pShader->setVector3("viewDir", env.viewdir);
 
+    pShader->setVector3("color", color);
     pShader->setTexture("my_texture", texture);
     pShader->setMatrix4("model", model);
 
     glBindVertexArray(vao);
     glDrawElements(renderType, indices.size(), GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+}
+
+glm::vec3 Mesh::GetMins() {
+    glm::vec3 min = vertices[0].position;
+    for (int i = 1; i < vertices.size(); i++) {
+        min = glm::min(min, vertices[i].position);
+    }
+    return min;
+}
+
+glm::vec3 Mesh::GetMaxs() {
+    glm::vec3 max = vertices[0].position;
+    for (int i = 1; i < vertices.size(); i++) {
+        max = glm::max(max, vertices[i].position);
+    }
+    return max;
 }

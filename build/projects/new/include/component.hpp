@@ -2,24 +2,18 @@
 
 #include <icomponent.hpp>
 #include <object.hpp>
-#include <reflection.hpp>
 
 #include <cassert>
-#include <vector>
-#include <memory>
-
-
-namespace Renderer {
-    class Object;
-}
 
 namespace Engine {
+    class Object;
+
     class Component : public IComponent {
         public:
-            ~Component() = default;
+            virtual ~Component() = default;
             Component() { Init(); }
-            void SetParent(Renderer::Object* parent);
-            Renderer::Object* GetParent() const;
+            void SetParent(Engine::Object* parent);
+            Engine::Object* GetParent() const;
             void UpdateInterface();
 
             void UpdateComponent() override;
@@ -34,16 +28,14 @@ namespace Engine {
             T* GetComponent();
             std::string GetTypeName() const;
 
-            DECLARE_CLASS_VARIABLE(Renderer::Object*, parent, nullptr);
+            DECLARE_CLASS_VARIABLE(Engine::Object*, parent, nullptr);
             DECLARE_CLASS_VARIABLE(bool, isEnabled, true);
 
             DECLARE_VARIABLES_VECTOR();
 
             DECLARE_CLASS_VARIABLES(
-                REGISTER_CLASS_VARIABLE(Renderer::Object*, parent);
+                REGISTER_CLASS_VARIABLE(Engine::Object*, parent);
                 REGISTER_CLASS_VARIABLE(bool, isEnabled);
             )
-
-
     };
 }

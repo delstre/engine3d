@@ -6,11 +6,14 @@
 #include <scene.hpp>
 #include <window.hpp>
 #include <componentmanager.hpp>
+#include <executer.hpp>
+#include <archive.hpp>
 
 #include <fstream>
 #include <filesystem>
 #include <iostream>
 #include <thread>
+#include <map>
 
 #include <dlfcn.h>
 #include <cxxabi.h>
@@ -101,17 +104,15 @@ void Project::Save() {
         return;
     }
 
-    boost::archive::binary_oarchive oa(outFile);
-    oa.register_type<Engine::Transform>();
-    oa.register_type<Engine::Model>();
-    oa << *pScene;
+    OArchive ar(outFile);
+    ar << *pScene;
     outFile.close();
 
     std::cout << "Saved" << std::endl;
 }
 
 void Project::CompileFiles() {
-    system(("make -j16 -C" + GetPath()).c_str());
+    Engine::Execute(("make -j16 -C" + GetPath()).c_str());
     IncludeFiles(); 
 }
 
@@ -218,9 +219,7 @@ bool Project::Load(std::string path) {
 
     std::ifstream scene_file(path + "/scene.bin", std::ios::binary);
     if (scene_file) {
-        boost::archive::binary_iarchive ia(scene_file);
-        ia.register_type<Engine::Transform>();
-        ia.register_type<Engine::Model>();
+        IArchive ia(scene_file);
         ia >> *pScene;
         scene_file.close();
     } else {
@@ -294,14 +293,17 @@ bool Project::LoadLast() {
     return false;
 }
 
-std::map<std::string, void*> handles;
+static std::map<std::string, void*> handles;
 bool Project::IncludeFile(std::string path) {
+    setenv("LD_BIND_NOW", "1", 1);
+
     if (handles.find(path) != handles.end()) {
         dlclose(handles[path]);
-        std::cout << "Already loaded: " << path << std::endl;
+        handles.erase(path);
+        std::cout << "Closed library: " << path << std::endl;
     }
 
-    void* handle = dlopen(path.c_str(), RTLD_LAZY);
+    void* handle = dlopen(path.c_str(), RTLD_NOW | RTLD_LOCAL | RTLD_DEEPBIND);
     if (!handle) {
         std::cerr << "Cannot open library: " << dlerror() << std::endl;
         return false;
@@ -311,7 +313,7 @@ bool Project::IncludeFile(std::string path) {
 
     dlerror();
 
-    using create_t = IComponent* (*)();
+    using create_t = Component* (*)();
     using destroy_t = void (*)(void*);
 
     create_t create = (create_t) dlsym(handle, "Create");
@@ -319,6 +321,7 @@ bool Project::IncludeFile(std::string path) {
     if (dlsym_error) {
         std::cerr << "Cannot load symbol create: " << dlsym_error << std::endl;
         dlclose(handle);
+        handle = nullptr;
         return false;
     }
 
@@ -330,6 +333,7 @@ bool Project::IncludeFile(std::string path) {
     if (dlsym_error) {
         std::cerr << "Cannot load symbol destroy: " << dlsym_error << std::endl;
         dlclose(handle);
+        handle = nullptr;
         return false;
     }
 
@@ -339,13 +343,21 @@ bool Project::IncludeFile(std::string path) {
         return false;
     }
 
-    IComponent* pComponent = create();
-    char* demangledName = abi::__cxa_demangle(typeid(*pComponent).name(), nullptr, nullptr, nullptr);
-    Engine::ComponentManager::RegisterComponent(std::string(demangledName), [create] {
+    Component* pComponent = create();
+    if (pComponent == nullptr) {
+        std::cerr << "Failed to create component" << std::endl;
+        dlclose(handle);
+        handle = nullptr;
+        return false;
+    }
+
+    Engine::ComponentManager::RegisterComponent(pComponent->GetTypeName(), [create] {
         return create();
     }); 
 
     handles[path] = handle;
+
+    delete pComponent;
 
     return true;
 }

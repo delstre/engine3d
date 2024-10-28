@@ -1,12 +1,11 @@
 #pragma once
 
-#include <window.hpp>
-#include <scene.hpp>
-
 #include <string>
 
 namespace Engine {
     class Window;
+    class Scene;
+
     class Project {
         public:
             Project(Window* pWindow);
@@ -16,7 +15,7 @@ namespace Engine {
             void Create(std::string path);
             void Load();
             bool Load(std::string path);
-            void LoadLast();
+            bool LoadLast();
             bool IncludeFile(std::string path);
             void IncludeFiles();
             void CompileFiles();

@@ -11,12 +11,6 @@ namespace Engine {
             virtual void UpdateComponent() = 0;
             virtual void Start() = 0;
             virtual void End() = 0;
-        private:
-            friend class boost::serialization::access;
-
-            template<class Archive>
-            void serialize(Archive& ar, const unsigned int version) {}
-
     };
 }
 

@@ -1,9 +1,8 @@
-#include <boost/archive/text_oarchive.hpp>
-#include <boost/archive/text_iarchive.hpp>
-
 #include <component.hpp>
 BOOST_CLASS_EXPORT_IMPLEMENT(Engine::Component)
 #include <transform.hpp>
+#include <cxxabi.h>
+#include <serialize.hpp>
 
 using namespace Engine;
 
@@ -50,7 +49,9 @@ T* Component::GetComponent() {
 }
 
 std::string Component::GetTypeName() const {
-    return typeid(*this).name();
+    char* demangledName = abi::__cxa_demangle(typeid(*this).name(), nullptr, nullptr, nullptr);
+    return std::string(demangledName);
 }
+
 
 template Transform* Component::GetComponent<Transform>();

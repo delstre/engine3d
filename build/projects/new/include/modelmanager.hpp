@@ -1,24 +1,22 @@
 #pragma once
 
-#include "model.hpp"
 #include <map>
+#include <string>
 
 namespace Renderer {
-    class ModelManager {
-        public:
-            ModelManager() = default;
-            ~ModelManager() = default;
+    class Mesh;
+}
 
-            void SetPath(std::string path);
-            void AddModel(std::string name, ModelRender* model);
-            ModelRender* GetModel(const std::string& name) const;
-            std::map<std::string, ModelRender*> GetModels() const;
+namespace Engine {
+    namespace ModelManager {
+        void SetPath(std::string path);
+        void AddModel(std::string name, Renderer::Mesh* model);
+        Renderer::Mesh* GetModel(const std::string& name);
+        std::map<std::string, Renderer::Mesh*> GetModels();
 
-            bool ImportModel(const std::string& path);
+        bool ImportModel(const std::string& path);
 
-        private:
-            std::map<std::string, ModelRender*> models;
-
-            std::string path;
+        static std::map<std::string, Renderer::Mesh*> models;
+        static std::string path;
     };
 }
