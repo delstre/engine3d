@@ -4,6 +4,7 @@
 
 #include <string>
 #include <vector>
+#include <functional>
 
 #include <glm/vec3.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -45,6 +46,7 @@ namespace Engine {
             void LoadFromPrefab(const std::string& path);
 
             void Update();
+            std::function<void()> UpdateOverride;
 
             Renderer::Envy env;
             std::vector<Engine::Component*> components;

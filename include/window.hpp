@@ -28,6 +28,8 @@ namespace Engine {
             GLFWwindow* GetWindow();
             float GetAspectRatio();
 
+            Scene* GetScene() const;
+
             int width;
             int height;
         private:

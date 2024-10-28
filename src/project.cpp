@@ -74,25 +74,41 @@ void Project::Create(std::string path) {
     }
 
     outFile << "CXX = g++\n";
-    outFile << "CXXFLAGS = -Iinclude -L. -lGL -lIL -lGLEW -lglfw -lengine -lboost_serialization -Wl,-rpath=. -fPIC\n";
+    outFile << "CXXFLAGS = -Iinclude -L. -lGL -lIL -lGLEW -lglfw -lengine -Wl,-rpath=. -fPIC\n";
     outFile << "SRCS = $(wildcard *.cpp)\n";
     outFile << "SOFILES = $(SRCS:.cpp=.so)\n";
-    //outFile << "OBJS = $(SRCS:.cpp=.o)\n";
-    //outFile << "all: $(TARGET)\n";
-    //outFile << "$(TARGET): $(OBJS)\n";
-    //outFile << "\t$(CXX) -shared -o $@ $^ $(CXXFLAGS)\n";
-    //outFile << "%.o: %.cpp\n";
+    outFile << "TARGET = program\n";
     outFile << "all: $(SOFILES)\n";
+    outFile << "execute: $(TARGET)\n";
+    outFile << "\t./$(TARGET)\n";
     outFile << "%.so: %.cpp\n";
     outFile << "\t$(CXX) -shared -o $@ $^ $(CXXFLAGS)\n";
+    outFile << "$(TARGET): compile_program.cpp\n";
+    outFile << "\t$(CXX) compile_program.cpp -o $(TARGET) $(CXXFLAGS) && ./$(TARGET)\n";
     outFile << "clean:\n";
-    //outFile << "\trm -f $(TARGET) $(OBJS)\n";
     outFile << "\trm -f $(SOFILES)\n";
 
     outFile.close();
 
     std::ofstream json_file(path + "/project.json", std::ios::out);
     json_file.close();
+
+    std::ofstream compile_file(path + "/compile_program.cpp");
+    if (!compile_file) {
+        std::cerr << "Error to compile!" << std::endl;
+        return;
+    }
+
+    compile_file << "#include <window.hpp>\n";
+    compile_file << "int main() {\n";
+    compile_file << "\tEngine::Window window(1280, 720, \"Game Window\");\n";
+    compile_file << "\twindow.Init();\n";
+    compile_file << "\t// code ?;\n";
+    compile_file << "\twindow.Render();\n";
+    compile_file << "\treturn 0;\n";
+    compile_file << "}\n";
+
+    compile_file .close();
 
     SetPath(path);
 }
@@ -111,33 +127,19 @@ void Project::Save() {
     std::cout << "Saved" << std::endl;
 }
 
-void Project::CompileFiles() {
+// Нужно инициализировать а потом добавлять компонент на сцену
+// Только после этого можно будет изменять компонент
+void Project::CompileFiles(bool DeleteFile) {
+    if (DeleteFile) {
+        Engine::Execute(("make -C" + GetPath() + " clean").c_str());
+    }
     Engine::Execute(("make -j16 -C" + GetPath()).c_str());
     IncludeFiles(); 
 }
 
 void Project::CompileAndRunApplication() {
     std::thread t([&]() {
-        std::ofstream outFile("compile_program.cpp");
-        if (!outFile) {
-            std::cerr << "Error to compile!" << std::endl;
-            return 1;
-        }
-
-        outFile << "#include <window.hpp>\n";
-        outFile << "int main() {\n";
-        outFile << "Engine::Window window(1280, 720, \"Game Window\");\n";
-        outFile << "window.Init();\n";
-        outFile << "return 0;\n";
-        outFile << "}\n";
-
-        outFile.close();
-
-        std::string command = "g++ -L. -I../include -lGL -lIL -lGLEW -lglfw -lengine -Wl,-rpath=. compile_program.cpp -o " + GetPath() + "/program && cd " + GetPath() + " && ./program";
-
-        system(command.c_str());
-
-        system("rm compile_program.cpp");
+        system(("make -C" + GetPath() + " execute ").c_str());
         return 0;
     });
     t.detach();
@@ -215,7 +217,10 @@ bool Project::Load(std::string path) {
         check_files.detach();
     #endif
 
-    CompileFiles();
+
+    #ifdef INTERFACE_DEBUG
+    CompileFiles(true);
+    #endif
 
     std::ifstream scene_file(path + "/scene.bin", std::ios::binary);
     if (scene_file) {
@@ -225,6 +230,7 @@ bool Project::Load(std::string path) {
     } else {
         std::cerr << "Failed to load scene" << std::endl;
     }
+
 
 
     std::ifstream recent_file("recently_used.json");
@@ -326,16 +332,6 @@ bool Project::IncludeFile(std::string path) {
     }
 
     std::cout << create << std::endl;
-
-    // Загружаем функцию destroy
-    destroy_t destroy = (destroy_t) dlsym(handle, "Destroy");
-    dlsym_error = dlerror();
-    if (dlsym_error) {
-        std::cerr << "Cannot load symbol destroy: " << dlsym_error << std::endl;
-        dlclose(handle);
-        handle = nullptr;
-        return false;
-    }
 
     if (pScene == nullptr) {
         std::cerr << "No scene!" << std::endl;

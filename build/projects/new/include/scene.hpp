@@ -3,8 +3,9 @@
 #include <GLFW/glfw3.h>
 #include <glm/vec3.hpp>
 
-#include <boost/serialization/serialization.hpp>
-#include <boost/serialization/vector.hpp>
+#include <mutex>
+#include <vector>
+#include <string>
 
 namespace Renderer {
     class FrameBuffer;
@@ -40,7 +41,10 @@ namespace Engine {
             int width;
             int height;
 
+            std::vector<Engine::Object*> objs;
+
         private:
+            mutable std::mutex scene_mutex;
             std::string path;
             std::vector<std::string> comps;
 
@@ -49,7 +53,6 @@ namespace Engine {
             Engine::WindowController* pController = nullptr; 
             GLFWwindow* pWindow = nullptr;
             
-            std::vector<Engine::Object*> objs;
             std::vector<Engine::Object*> render;
 
             bool initialized = false;

@@ -76,11 +76,8 @@ void Window::Init() {
 
     #else
     pProject->Load();
+    pScene = pProject->GetScene();
     #endif
-
-    Render();
-
-    return;
 }
 
 void Window::SceneInit(Scene* scene) {
@@ -99,7 +96,7 @@ void Window::Render() {
         GLuint query;
         glGenQueries(1, &query);
 
-        Scene* pScene = pInterface->GetScene();
+        pScene = pInterface->GetScene();
         if (pScene != nullptr) {
             glBeginQuery(GL_TIME_ELAPSED, query);
             pScene->Render();
@@ -112,7 +109,6 @@ void Window::Render() {
         if (pInterface != nullptr)
             pInterface->Render(elapsed_time);
         #else
-        Scene* pScene = pProject->GetScene();
         if (pScene != nullptr) {
             pScene->Render();
         }
@@ -129,4 +125,8 @@ GLFWwindow* Window::GetWindow() {
 
 float Window::GetAspectRatio() {
     return (float)width / (float)height;
+}
+
+Scene* Window::GetScene() const {
+    return pScene;
 }

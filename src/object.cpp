@@ -168,6 +168,10 @@ void Object::Update() {
 
         pComponent->UpdateComponent();
     }
+
+    if (UpdateOverride) {
+        UpdateOverride();
+    }
 }
 
 //void Object::serialize(std::ofstream& ofs) const {

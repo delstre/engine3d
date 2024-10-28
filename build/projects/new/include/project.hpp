@@ -18,7 +18,7 @@ namespace Engine {
             bool LoadLast();
             bool IncludeFile(std::string path);
             void IncludeFiles();
-            void CompileFiles();
+            void CompileFiles(bool DeleteFile=false);
             void CompileAndRunApplication();
             Scene* GetScene();
 

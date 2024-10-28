@@ -18,12 +18,18 @@ struct Variable {
 
 template<typename T>
 struct VariableImpl : public Variable {
+    VariableImpl();
     VariableImpl(const std::string& type_name, const char* name, void* data);
 
     void*& ptr() {
         return data;
     }
 };
+
+template<typename T>
+VariableImpl<T>::VariableImpl() {
+
+}
 
 template<typename T>
 VariableImpl<T>::VariableImpl(const std::string& type_name, const char* name, void* data) {
@@ -50,9 +56,3 @@ variables.push_back(std::make_unique<VariableImpl<TYPE>>(# TYPE, # NAME, & NAME)
     void Init() { \
         __VA_ARGS__; \
     }
-
-#define REGISTER_CLASS_INTERFACE(...)\
-    void UpdateInterface() { \
-        __VA_ARGS__; \
-    }
-

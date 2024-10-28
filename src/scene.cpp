@@ -65,13 +65,14 @@ Engine::Camera* Scene::AddCamera(glm::vec3 position) {
     return cam;
 }
 
-void Scene::AddObject(Engine::Object* obj) {
-    std::cout << typeid(*obj).name() << " Created" << std::endl;
 
+void Scene::AddObject(Engine::Object* obj) {
+    std::lock_guard<std::mutex> lock(scene_mutex);
     objs.push_back(obj);
 }
 
 void Scene::DeleteObject(Engine::Object* id) {
+    std::lock_guard<std::mutex> lock(scene_mutex);
     for (int i = 0; i < objs.size(); i++) {
         if (objs[i] == id) {
             objs.erase(objs.begin() + i);
@@ -148,6 +149,7 @@ void Scene::Render() {
 }
 
 void Scene::SetFrameSize(int width, int height) {
+    std::lock_guard<std::mutex> lock(scene_mutex);
     this->width = width;
     this->height = height;
 

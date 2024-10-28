@@ -25,6 +25,10 @@ IArchive& operator>>(IArchive& ia, Variable& a) {
 
     if (a.type_name == "int") {
         ia >> *static_cast<int*>(a.data);
+    } else if (a.type_name == "float") {
+        ia >> *static_cast<float*>(a.data);
+    } else if (a.type_name == "bool") {
+        ia >> *static_cast<bool*>(a.data); 
     } else if (a.type_name == "std::string") {
         ia >> *static_cast<std::string*>(a.data);
     } else if (a.type_name == "glm::vec3") {
@@ -40,6 +44,10 @@ OArchive& operator<<(OArchive& oa, Variable const& a) {
 
     if (a.type_name == "int") {
         oa << *static_cast<int*>(a.data);
+    } else if (a.type_name == "float") {
+        oa << *static_cast<float*>(a.data);
+    } else if (a.type_name == "bool") {
+        oa << *static_cast<bool*>(a.data); 
     } else if (a.type_name == "std::string") {
         oa << *static_cast<std::string*>(a.data);
     } else if (a.type_name == "glm::vec3") {
