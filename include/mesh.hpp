@@ -1,36 +1,100 @@
 #pragma once
 
 #include <structs.hpp>
-
 #include <GL/glew.h>
-
 #include <vector>
-
 #include <reflection.hpp>
 
 namespace Renderer {
     class ShaderProgram;
 
+    /*
+    */
     class Mesh {
         public:
+            /*
+
+            */
             Mesh();
+
+            /*
+
+            */
             Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices);
+
+            /*
+
+            */
             ~Mesh();
 
-            void SetShader(ShaderProgram* shader);
-            void SetRenderType(GLenum renderType);
+            /*
 
-            void UpdateVertices(std::vector<Vertex> vertices);
-            void UpdateIndices(std::vector<GLuint> indices);
+            */
+            void AddVertex(const Vertex&);
 
-            void Render(Envy env, GLuint texture, glm::mat4 model);
+            /*
 
+            */
+            void RemoveVertices(const std::vector<int>&);
+    
+            /*
+
+            */
+            void SetShader(ShaderProgram *);
+
+            /*
+
+            */
+            ShaderProgram *GetShader();
+
+            /*
+
+            */
+            void UpdateVertices(std::vector<Vertex>);
+
+            /*
+
+            */
+            void UpdateIndices(std::vector<GLuint>);
+
+            /*
+
+            */
+            void Render(Envy, GLuint, glm::mat4);
+
+            /*
+
+            */
             std::vector<Vertex> GetVertices();
+            
+            /*
 
+            */
+            std::vector<Vertex>& GetVerticesRef();
+
+            /*
+
+            */
+            std::vector<GLuint> GetIndices();
+
+            /*
+
+            */
             glm::vec3 GetMins();
+
+            /*
+
+            */
             glm::vec3 GetMaxs();
 
-            void SetColor(glm::vec3 color);
+            /*
+
+            */
+            void SetColor(glm::vec3);
+
+            /*
+
+            */
             glm::vec3 GetColor();
 
             DECLARE_CLASS_VARIABLE(std::string, name, "")
@@ -43,13 +107,9 @@ namespace Renderer {
         private:
             GLuint vao;
             ShaderProgram* pShader = nullptr;
-
             glm::vec3 color;
-
             GLuint vbo, ebo;
             std::vector<Vertex> vertices;
             std::vector<GLuint> indices;
-
-            GLenum renderType = GL_TRIANGLES;
     };
 }

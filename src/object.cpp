@@ -133,18 +133,14 @@ bool Object::IsHitByRay(const glm::vec3& origin, const glm::vec3& dir) {
                 float t1 = (mins[i] - origin[i]) / dir[i];
                 float t2 = (maxs[i] - origin[i]) / dir[i];
 
-                // Убедимся, что t1 <= t2
                 if (t1 > t2) std::swap(t1, t2);
 
-                // Обновляем tMin и tMax
                 tMin = std::max(tMin, t1);
                 tMax = std::min(tMax, t2);
 
-                // Если в какой-то момент tMin становится больше tMax, пересечения нет
                 if (tMin > tMax)
                     return false;
             } else {
-                // Если направление луча параллельно оси и начальная точка не в пределах этой оси
                 if (origin[i] < mins[i] || origin[i] > maxs[i])
                     return false;
             }
@@ -174,60 +170,6 @@ void Object::Update() {
     }
 }
 
-//void Object::serialize(std::ofstream& ofs) const {
-    //for (auto& var : variables) {
-        //var->serialize(ofs);
-    //}
-
-    //size_t vec_size = components.size();
-    //ofs.write(reinterpret_cast<const char*>(&vec_size), sizeof(vec_size));
-
-    //for (const auto& ptr : components) {
-        //std::string type = ptr->GetTypeName();
-        //size_t type_len = type.length();
-        //ofs.write(reinterpret_cast<const char*>(&type_len), sizeof(type_len));
-        //ofs.write(type.c_str(), type_len);
-
-        //ptr->serialize(ofs);
-    //}
-
-//}
-
-//void Object::deserialize(std::ifstream& ifs) {
-    //for (auto& var : variables) {
-        //var->deserialize(ifs);
-    //}
-
-    //size_t vec_size;
-    //ifs.read(reinterpret_cast<char*>(&vec_size), sizeof(vec_size));
-    //components.resize(vec_size);
-
-    //for (size_t i = 0; i < vec_size; ++i) {
-        //size_t type_len;
-        //ifs.read(reinterpret_cast<char*>(&type_len), sizeof(type_len));
-        //std::string type(type_len, ' ');
-        //ifs.read(&type[0], type_len);
-
-        //std::cout << "Component: " << type << std::endl;
-        //AddComponent(type)->deserialize(ifs);
-    //}
-//}
-
-
-//Renderer::ModelInstance* Renderer::TranslateModelsToInstance(std::vector<Engine::Object*>& objects, int start, int end) {
-    //int size = objects.size();
-    //std::vector<glm::mat4> matrixes;
-    //std::vector<uint> textures;
-    //std::vector<glm::vec3> colors;
-
-    //for (int i = start; i < (end < size ? end : size); i++) {
-        //matrixes.push_back(objects[i]->GetMatrix());
-        //textures.push_back(objects[i]->GetTexture());
-        //colors.push_back(objects[i]->GetColor());
-    //}
-
-    //return new Renderer::ModelInstance(objects[start]->GetModel(), matrixes, textures, colors);
-//}
-
 template Engine::Transform* Object::GetComponent<Engine::Transform>();
 template Engine::Model* Object::GetComponent<Engine::Model>();
+template Renderer::Mesh* Object::GetComponent<Renderer::Mesh>();

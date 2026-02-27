@@ -18,18 +18,12 @@ void Camera::UpdateMVP() {
 glm::vec3 Camera::GetCursorDirection(double mouseX, double mouseY, double width, double height) {
     float x = (2.0f * mouseX) / width - 1.0f;
     float y = 1.0f - (2.0f * mouseY) / height;
-
-    glm::vec4 rayClip(x, y, -1.0f, 1.0f); // Z = -1 на ближней плоскости (viewing plane)
-
-    // Шаг 3: Преобразуем в пространство камеры (view space) с помощью обратной проекции
-    glm::vec4 rayEye = glm::inverse(projection) * rayClip;
-    rayEye = glm::vec4(rayEye.x, rayEye.y, -1.0f, 0.0f); // В пространстве камеры луч идет вдоль -Z
-
-    // Шаг 4: Преобразуем луч в мировое пространство (world space)
-    glm::vec3 rayWorld = glm::vec3(glm::inverse(view) * rayEye);
-    rayWorld = glm::normalize(rayWorld); // Нормализуем вектор направления
-
-    return rayWorld; // Это направление луча от камеры в мировом пространстве
+    glm::vec4 ray_nds(x, y, -1.0f, 1.0f);
+    glm::vec4 ray_eye = glm::inverse(projection) * ray_nds;
+    ray_eye.z = -1.0f; ray_eye.w = 0.0f;
+    glm::mat4 inv_view = glm::inverse(view);
+    glm::vec3 dir_world = glm::normalize(glm::vec3(inv_view * ray_eye));
+    return dir_world;
 } 
 
 void Camera::Think() {
@@ -44,7 +38,6 @@ void Camera::updateCameraVectors() {
     newFront.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     front = glm::normalize(newFront);
 
-    // Обновляем векторы right и up
     right = glm::normalize(glm::cross(front, worldUp));
     up = glm::normalize(glm::cross(right, front));
 }
@@ -56,7 +49,6 @@ void Camera::ProcessMouseMovement(float xoffset, float yoffset) {
     yaw += xoffset;
     pitch += yoffset;
 
-    // Ограничиваем угол поворота камеры по вертикали
     if (constrainPitch) {
         if (pitch > 89.0f)
             pitch = 89.0f;
@@ -71,13 +63,13 @@ void Camera::ProcessMouseMovement(float xoffset, float yoffset) {
 
 void Camera::ProcessKeyboardInput(int direction, float deltaTime) {
     float velocity = speed * deltaTime;
-    if (direction == GLFW_KEY_W) // Вперёд
+    if (direction == GLFW_KEY_W)
         position += front * velocity;
-    if (direction == GLFW_KEY_S) // Назад
+    if (direction == GLFW_KEY_S)
         position -= front * velocity;
-    if (direction == GLFW_KEY_A) // Влево
+    if (direction == GLFW_KEY_A)
         position -= right * velocity;
-    if (direction == GLFW_KEY_D) // Вправо
+    if (direction == GLFW_KEY_D)
         position += right * velocity;
 }
 

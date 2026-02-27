@@ -42,8 +42,8 @@ void Mesh::SetShader(ShaderProgram* shader) {
     pShader = shader;
 }
 
-void Mesh::SetRenderType(GLenum renderType) {
-    this->renderType = renderType;
+ShaderProgram *Mesh::GetShader() {
+    return pShader;
 }
 
 void Mesh::UpdateVertices(std::vector<Vertex> vertices) {
@@ -62,6 +62,14 @@ std::vector<Vertex> Mesh::GetVertices() {
     return vertices;
 }
 
+std::vector<Vertex>& Mesh::GetVerticesRef() {
+    return vertices;
+}
+
+std::vector<GLuint> Mesh::GetIndices() {
+    return indices;
+}
+
 void Mesh::SetColor(glm::vec3 color) {
     this->color = color;
 }
@@ -75,18 +83,23 @@ void Mesh::Render(Envy env, GLuint texture, glm::mat4 model) {
         return;
     }
 
+    glPointSize(8.0f);
     pShader->useProgram();
 
     pShader->setMatrix4("mvp", env.mvp);
     pShader->setVector3("viewPos", env.viewpos);
     pShader->setVector3("viewDir", env.viewdir);
+    pShader->setUint("selectTriangle", env.selectTriangle);
+    pShader->setVector3("highlightColor", env.highlightColor);
+    pShader->setVector3("highlightColor_Vertex", env.highlightColor_Vertex);
 
     pShader->setVector3("color", color);
     pShader->setTexture("my_texture", texture);
     pShader->setMatrix4("model", model);
 
     glBindVertexArray(vao);
-    glDrawElements(renderType, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawArrays(GL_POINTS, 0, vertices.size());
     glBindVertexArray(0);
 }
 

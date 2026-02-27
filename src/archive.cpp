@@ -59,7 +59,9 @@ OArchive& operator<<(OArchive& oa, Variable const& a) {
 
 template<typename T>
 OArchive& operator<<(OArchive& oa, const std::unique_ptr<T>& ptr) {
-    if (ptr) {
+    bool exists = (ptr != nullptr);
+    oa << exists;
+    if (exists) {
         oa << *ptr;
     }
     return oa;
@@ -67,8 +69,13 @@ OArchive& operator<<(OArchive& oa, const std::unique_ptr<T>& ptr) {
 
 template<typename T>
 IArchive& operator>>(IArchive& ia, std::unique_ptr<T>& ptr) {
-    if (ptr) {
+    bool exists;
+    ia >> exists;
+    if (exists) {
+        ptr = std::make_unique<T>();
         ia >> *ptr;
+    } else {
+        ptr.reset();
     }
     return ia;
 }
@@ -93,85 +100,57 @@ IArchive& operator>>(IArchive& ia, bool& b) {
 }
 
 template<typename T>
-IArchive& operator>>(IArchive& ia, std::vector<T>& a) {
-    size_t len;
-    ia >> len;
-    a.resize(len);
-
-    for (size_t i = 0; i < len; ++i) {
-        ia >> a[i];
-    }
-
-    return ia;
-}
-
-template<typename T>
 OArchive& operator<<(OArchive& oa, const std::vector<T>& a) {
     size_t len = a.size();
     oa << len;
     for (size_t i = 0; i < len; ++i) {
-        oa << a[i];
+        if (!a[i]) throw std::runtime_error("Null pointer in vector");
+        oa << *a[i];
     }
-
     return oa;
 }
 
 template<typename T>
-IArchive& operator>>(IArchive& ia, std::vector<T*>& a) {
+IArchive& operator>>(IArchive& ia, std::vector<T>& a) {
     size_t len;
     ia >> len;
     a.resize(len);
-
     for (size_t i = 0; i < len; ++i) {
+        if (!a[i]) throw std::runtime_error("Null pointer in vector");
         ia >> *a[i];
     }
-
     return ia;
-}
-
-template<typename T>
-OArchive& operator<<(OArchive& oa, const std::vector<T*>& a) {
-    size_t len = a.size();
-    oa << len;
-    for (size_t i = 0; i < len; ++i) {
-        oa << *a[i];
-    }
-
-    return oa;
 }
 
 IArchive& operator>>(IArchive& ia, Engine::Model* a) {
+    if (!a) throw std::runtime_error("Attempt to read into null Model pointer");
     std::string _name;
-
     ia >> _name;
     a->mesh = Engine::ModelManager::GetModel(_name);
-
     return ia;
 }
 
-OArchive& operator<<(OArchive& oa, Engine::Model* const& a) {
+OArchive& operator<<(OArchive& oa, const Engine::Model* a) {
+    if (!a) throw std::runtime_error("Attempt to write null Model pointer");
     oa << a->mesh->name;
-
     return oa;
 }
 
 IArchive& operator>>(IArchive& ia, Engine::Component* a) {
+    if (!a) throw std::runtime_error("Attempt to read into null Component pointer");
     ia >> a->variables;
-
     if (auto b = dynamic_cast<Engine::Model*>(a)) {
         ia >> b;
     }
-
     return ia;
 }
 
 OArchive& operator<<(OArchive& oa, Engine::Component* const& a) {
+    if (!a) throw std::runtime_error("Attempt to write null Component pointer");
     oa << a->variables;
-
-    if (auto b = dynamic_cast<Engine::Model*>(a)) {
+    if (auto b = dynamic_cast<const Engine::Model*>(a)) {
         oa << b;
     }
-
     return oa;
 }
 
@@ -180,6 +159,7 @@ IArchive& operator>>(IArchive& ia, Engine::Object& a) {
 
     size_t len;
     ia >> len;
+
     for (size_t i = 0; i < len; ++i) {
         std::string name;
         ia >> name;
@@ -196,6 +176,7 @@ OArchive& operator<<(OArchive& oa, const Engine::Object& a) {
     oa << a.components.size();
     for (auto& component : a.components) {
         oa << component->GetTypeName();
+        // TODO POINTER??
         oa << component;
     }
 

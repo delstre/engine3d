@@ -1,7 +1,9 @@
+#include <transform.hpp>
+#include <mesh.hpp>
+#include <model.hpp>
 #include <object.hpp>
 #include <scene.hpp>
 #include <icomponent.hpp>
-#include <modelmanager.hpp>
 #include <controller.hpp>
 #include <framebuffer.hpp>
 #include <camera.hpp>
@@ -10,8 +12,10 @@
 #include <csignal>
 #include <typeinfo>
 #include <iostream>
+#include <sstream>
 
 using namespace Engine;
+using namespace Renderer;
 
 void Scene::Init(GLFWwindow* pWindow) {
     pController = new Engine::WindowController(pWindow); 
@@ -34,16 +38,12 @@ void Scene::Init(GLFWwindow* pWindow) {
 
     pController->AddCallback(GLFW_KEY_F2, true, [this]() {});
 
-    // project initialize
-    // importing all models from dir?
-    ModelManager::SetPath(this->path);
-    ModelManager::ImportModel("models/cube.obj");
-    
     pFbo = new Renderer::FrameBuffer(wid, hei);
     this->pWindow = pWindow;
     glEnable(GL_DEPTH_TEST);
 
     initialized = true;
+    selectedObject = NULL;
 }
 
 void Scene::SetPath(std::string path) {
@@ -81,8 +81,74 @@ void Scene::DeleteObject(Engine::Object* id) {
     }
 }
 
-bool Scene::IsHitByRay(glm::vec3 origin, glm::vec3 direction, Object* obj) {
-    return obj->IsHitByRay(origin, direction);
+std::string vec3_to_str(const glm::vec3& v) {
+    std::stringstream ss;
+    ss << "(" << v.x << ", " << v.y << ", " << v.z << ")";
+    return ss.str();
+}
+
+
+Intersection Scene::Raycast(const Ray& worldRay)
+{
+    Intersection closest;
+    closest.hit = false;
+    closest.distance = std::numeric_limits<float>::max();
+
+    for (auto& object : GetObjects()) {
+        Model *model = object->GetComponent<Model>();
+        Transform *form = object->GetComponent<Transform>();
+        std::cout << "Object pos: (" << form->position.x << "," << form->position.y << "," << form->position.z << ")" << std::endl;
+
+        
+        if (form == NULL || model == NULL)
+        {
+            std::cout << "Model or Transforfm not found!" << std::endl;
+            continue;
+        }
+
+        const glm::mat4& modelMatrix = form->GetMatrix();
+
+        Mesh *mesh = model->GetMesh();
+        if (mesh == NULL) 
+        {
+            std::cout << "Mesh not found!" << std::endl;
+            continue;
+        }
+
+        const auto& vertices = mesh->GetVertices();
+        const auto& indices = mesh->GetIndices();
+
+        for (size_t i = 0; i < indices.size(); i += 3) {
+            glm::vec3 v0 = glm::vec3(modelMatrix * glm::vec4(vertices[indices[i]].position, 1.0f));
+            glm::vec3 v1 = glm::vec3(modelMatrix * glm::vec4(vertices[indices[i+1]].position, 1.0f));
+            glm::vec3 v2 = glm::vec3(modelMatrix * glm::vec4(vertices[indices[i+2]].position, 1.0f));
+
+            float t, u, v;
+            if (rayTriangleIntersect(worldRay, v0, v1, v2, t, u, v)) {
+                float w = 1.0f - u - v;
+
+                int nearestVertex = 0;
+                float maxCoord = w;
+                if (u > maxCoord) { maxCoord = u; nearestVertex = 1; }
+                if (v > maxCoord) { maxCoord = v; nearestVertex = 2; }
+
+                int vertexIdx = indices[i + nearestVertex];
+
+                if (t < closest.distance) {
+                    closest.hit = true;
+                    closest.distance = t;
+                    closest.point = worldRay.origin + worldRay.direction * t;
+                    closest.barycentric = glm::vec3(w, u, v);
+                    closest.triangleIndex = i / 3;
+                    closest.localPosition = vertices[vertexIdx].position;
+                    closest.mesh = mesh;
+                    closest.object = object;
+                }
+
+            }
+        }
+    }
+    return closest;
 }
 
 Engine::Camera* Scene::GetActiveCamera() {
@@ -124,6 +190,7 @@ void Scene::Render() {
     #endif
 
     glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+    glColor3f(0.4,0.4,0.4);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     Engine::Camera* cam = GetActiveCamera();
@@ -139,6 +206,9 @@ void Scene::Render() {
     env.viewdir = cam->front;
     env.mvp = cam->mvp;
     for (int i = 0; i < objs.size(); i++) {
+        env.highlightColor = selectMode == MODE_OBJECT && objs[i] == selectedObject ? glm::vec3(0.8f, 0.6f, 0.3f) : glm::vec3(0.6f, 0.6f, 0.6f); 
+        env.highlightColor_Vertex = selectMode == MODE_MESH && objs[i] == selectedObject ? glm::vec3(0.8f, 0.6f, 0.3f) : glm::vec3(0.6f, 0.6f, 0.6f); 
+        env.selectTriangle = selectMode == MODE_MESH && objs[i] == selectedObject ? triangleIndex : -1; 
         objs[i]->SetENV(env);
         objs[i]->Update();
     }
@@ -159,7 +229,6 @@ void Scene::SetFrameSize(int width, int height) {
 
     pFbo->RescaleFrameBuffer(width, height);
 }
-
 
 float Scene::GetAspectRatio() {
     return pFbo->GetAspectRatio();

@@ -6,6 +6,7 @@
 #include <scene.hpp>
 #include <window.hpp>
 #include <componentmanager.hpp>
+#include <modelmanager.hpp>
 #include <executer.hpp>
 #include <archive.hpp>
 
@@ -46,26 +47,36 @@ Project::Project(Window* pWindow) {
     this->pWindow = pWindow;
 }
 
-void Project::Init() {
-    pScene = new Scene();    
-    pWindow->SceneInit(pScene);
-}
+/*
+    Инициализация проекта
+    Создается сцена и добавляется в окно
+    
+    std::string path : путь до проекта
+*/
+void Project::Init(const std::string& path) {
+    ModelManager::SetPath(path);
+    ModelManager::ImportAllModels();
 
-void Project::SetPath(std::string path) {
-    this->path = path;
     pScene = new Scene();    
     pScene->SetPath(path);
     pWindow->SceneInit(pScene);
 }
 
-void Project::Create(std::string path) {
+void Project::Update() {
     try {
-        std::filesystem::copy_file("./libengine.so", path + "/libengine.so", std::filesystem::copy_options::overwrite_existing);
-        std::filesystem::copy("../include", path + "/include", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy_file(ENGINE_PATH "/libengine.so", folder_path + "/libengine.so", std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy(ENGINE_PATH "/include", folder_path + "/include", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy(ENGINE_PATH "/shaders", folder_path + "/shaders", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
+        std::filesystem::copy(ENGINE_PATH "/models", folder_path + "/models", std::filesystem::copy_options::recursive | std::filesystem::copy_options::overwrite_existing);
     } catch (const std::filesystem::filesystem_error& e) {
         std::cerr << "Error to copy: " << e.what() << std::endl;
         return;
     }
+}
+
+void Project::Create(const std::string& path) {
+    folder_path = path;
+    Update();
 
     std::ofstream outFile(path + "/Makefile", std::ios::out);
     if (!outFile) {
@@ -110,11 +121,11 @@ void Project::Create(std::string path) {
 
     compile_file .close();
 
-    SetPath(path);
+    Init(path);
 }
 
 void Project::Save() {
-    std::ofstream outFile(path + "/scene.bin", std::ios::binary);
+    std::ofstream outFile(folder_path + "/scene.bin", std::ios::binary);
     if (!outFile) {
         std::cerr << "Error to save!" << std::endl;
         return;
@@ -127,8 +138,6 @@ void Project::Save() {
     std::cout << "Saved" << std::endl;
 }
 
-// Нужно инициализировать а потом добавлять компонент на сцену
-// Только после этого можно будет изменять компонент
 void Project::CompileFiles(bool DeleteFile) {
     if (DeleteFile) {
         Engine::Execute(("make -C" + GetPath() + " clean").c_str());
@@ -145,16 +154,7 @@ void Project::CompileAndRunApplication() {
     t.detach();
 }
 
-void Project::Load() {
-    std::cout << "Loading project..." << std::endl;
-    system("pwd");
-
-    if (Load(".")) {
-        std::cout << "Project loaded" << std::endl;
-    }
-}
-
-bool Project::Load(std::string path) {
+bool Project::Load(const std::string& path) {
     if (!std::filesystem::exists(path)) {
         std::cerr << "No path! : " << path << std::endl;
         return false;
@@ -173,10 +173,14 @@ bool Project::Load(std::string path) {
         return false;
     }
 
-    SetPath(path);
+    folder_path = path;
+
+    Init(path);
 
     #ifdef INTERFACE_DEBUG
         std::cout << "Project path: " << path << std::endl;
+
+        /*
 
         std::mutex mtx;
         std::thread check_files([&]() {
@@ -202,7 +206,7 @@ bool Project::Load(std::string path) {
 
                     if (stat(filename.c_str(), &fileStat) != 0) {
                         std::cerr << "Не удалось получить информацию о файле: " << filename << std::endl;
-                        continue; // Если файл недоступен, продолжаем цикл
+                        continue;
                     }
 
                     if (mod.st_mtime != fileStat.st_mtime) {
@@ -215,11 +219,12 @@ bool Project::Load(std::string path) {
             }
         });
         check_files.detach();
+        */
     #endif
 
 
     #ifdef INTERFACE_DEBUG
-    CompileFiles(true);
+    //CompileFiles(true);
     #endif
 
     std::ifstream scene_file(path + "/scene.bin", std::ios::binary);
@@ -231,76 +236,11 @@ bool Project::Load(std::string path) {
         std::cerr << "Failed to load scene" << std::endl;
     }
 
-
-
-    std::ifstream recent_file("recently_used.json");
-    if (!recent_file.is_open()) {
-        boost::json::object obj;
-        boost::json::array files;
-
-        files.push_back(boost::json::value(path));
-        obj["files"] = files;
-
-        std::ofstream json_file("recently_used.json");
-        if (json_file.is_open()) {
-            json_file << boost::json::serialize(obj);
-            json_file.close();
-        } else {
-            std::cerr << "Unable to open file for writing" << std::endl;
-        }
-    } else {
-        boost::json::error_code ec;
-        boost::json::value json_val = boost::json::parse(recent_file, ec);
-
-        boost::json::object obj = json_val.as_object();
-        
-        if (obj.contains("files")) {
-            boost::json::array files = obj["files"].as_array();
-
-            for (const auto& file : files) {
-                if (file.as_string() == path) {
-                    recent_file.close();
-                    return true;
-                }
-            }
-
-            files.push_back(boost::json::value(path));
-            obj["files"] = files;
-        }
-
-        std::ofstream json_file("recently_used.json");
-        if (json_file.is_open()) {
-            json_file << boost::json::serialize(obj);
-            json_file.close();
-        } else {
-            std::cerr << "Unable to open file for writing" << std::endl;
-        }
-    }
-
     return true;
 }
 
-bool Project::LoadLast() {
-    std::ifstream recent_file("recently_used.json");
-    if (recent_file.is_open()) {
-        boost::json::error_code ec;
-        boost::json::value json_val = boost::json::parse(recent_file, ec);
-
-        boost::json::object obj = json_val.as_object();
-        
-        if (obj.contains("files")) {
-            boost::json::array files = obj["files"].as_array();
-            Load(files[files.size() - 1].as_string().c_str());
-        }
-
-        return true;
-    }
-
-    return false;
-}
-
 static std::map<std::string, void*> handles;
-bool Project::IncludeFile(std::string path) {
+bool Project::IncludeFile(const std::string& path) {
     setenv("LD_BIND_NOW", "1", 1);
 
     if (handles.find(path) != handles.end()) {
@@ -359,12 +299,12 @@ bool Project::IncludeFile(std::string path) {
 }
 
 void Project::IncludeFiles() {
-    if (!std::filesystem::exists(path) || !std::filesystem::is_directory(path)) {
-        std::cout << "No path! : " << path << std::endl;
+    if (!std::filesystem::exists(folder_path) || !std::filesystem::is_directory(folder_path)) {
+        std::cout << "No path! : " << folder_path << std::endl;
         return;
     }
 
-    for (const auto& entry : std::filesystem::directory_iterator(path)) {
+    for (const auto& entry : std::filesystem::directory_iterator(folder_path)) {
         if (entry.is_regular_file() && entry.path().extension() == ".so") {
             if (!IncludeFile(entry.path().string())) {
                 std::cerr << "Failed to include file: " << entry.path().string() << std::endl;
@@ -377,6 +317,6 @@ Scene* Project::GetScene() {
     return pScene;
 }
 
-std::string Project::GetPath() {
-    return path;
+const std::string& Project::GetPath() {
+    return folder_path;
 }

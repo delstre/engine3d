@@ -11,10 +11,14 @@ out vec2 uv;
 out vec3 color;
 out vec3 position;
 out vec3 normals;
+flat out int triangleID;
+flat out int vertexID;
 
 void main() {
     uv = vertex_uv;
     position = vertex_position;
     normals = vertex_normals;
+    triangleID = gl_VertexID / 3;
+    vertexID = gl_VertexID;
     gl_Position = mvp * model * vec4(vertex_position, 1.0);
 };

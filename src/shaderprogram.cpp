@@ -32,6 +32,9 @@ ShaderProgram::ShaderProgram(const char* vertexShader, const char* fragmentShade
         GLchar infoLog[1024];
         glGetShaderInfoLog(m_ID, 1024, nullptr, infoLog);
         std::cerr << "Shader link error\n" << infoLog << std::endl;
+        glDeleteShader(vertexShaderID);
+        glDeleteShader(fragmentShaderID);
+        exit(1); 
     } else {
         m_IsCompiled = true;
     }
@@ -78,15 +81,12 @@ char* ShaderProgram::readFromFile(const char* filename) {
     std::streamsize size = file.tellg();
     file.seekg(0, std::ios::beg);
 
-    // Выделение памяти для строки
-    char* buffer = new char[size + 1]; // Добавляем 1 для нулевого символа (строка C-style)
+    char* buffer = new char[size + 1];
 
-    // Чтение данных в буфер
     if (file.read(buffer, size)) {
-        buffer[size] = '\0'; // Добавляем нулевой символ в конец
+        buffer[size] = '\0';
     }
 
-    // Закрытие файла
     file.close();
 
     return buffer;

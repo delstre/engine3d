@@ -1,3 +1,4 @@
+#include <math_utils.hpp>
 #include <interface.hpp>
 #include <config.hpp>
 #include <framebuffer.hpp>
@@ -7,6 +8,7 @@
 #include <camera.hpp>
 #include <component.hpp>
 #include <mesh.hpp>
+#include <transform.hpp>
 #include <modelmanager.hpp>
 #include <componentmanager.hpp>
 #include <resourcemanager.hpp>
@@ -16,6 +18,7 @@
 #include <nfd.h>
 
 #include <imgui.h>
+#include <ImGuizmo.h>
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
@@ -70,10 +73,11 @@ Interface::Interface(Engine::Window* window) {
 
 void Interface::SetProject(Engine::Project* pProject) {
     this->pProject = pProject;
-    //pProject->Init();
 }
 
 Engine::Scene* Interface::GetScene() const {
+    if (!pProject)
+        return NULL;
     return pProject->GetScene();
 }
 
@@ -114,67 +118,203 @@ void Interface::GetSceneInfo(Engine::Scene* scene) const {
 
     ImGui::Begin("Scene");
 
+    ImGui::BeginChild("GameRender");
+
     ImVec2 mousePos = ImGui::GetMousePos();
     ImVec2 windowPos = ImGui::GetWindowPos();
     ImVec2 windowSize = ImGui::GetWindowSize();
 
-    // Check if the mouse is within the panel bounds
+    ImVec2 wsize = ImGui::GetWindowSize();
+    ImVec2 pos = ImGui::GetCursorScreenPos();
+
+    window_width = ImGui::GetContentRegionAvail().x;
+    window_height = ImGui::GetContentRegionAvail().y;
+
     bool isMouseInsidePanel = 
         mousePos.x >= windowPos.x && 
         mousePos.x <= windowPos.x + windowSize.x && 
         mousePos.y >= windowPos.y && 
         mousePos.y <= windowPos.y + windowSize.y;
 
-        if (isMouseInsidePanel) {
-            if (ImGui::IsMouseClicked(1)) {
-                mouseCapture = true;
-                glfwSetInputMode(pWindow->GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-                glfwSetCursorPos(pWindow->GetWindow(), (windowPos.x + windowSize.x) / 2, (windowPos.y + windowSize.y) / 2);
-            }
-        }
-
-        if (mouseCapture) {
-            double cursorX, cursorY;
-            glfwGetCursorPos(pWindow->GetWindow(), &cursorX, &cursorY);
-
-            float xoffset = ((windowPos.x + windowSize.x) / 2) - cursorX;
-            float yoffset = ((windowPos.y + windowSize.y) / 2) - cursorY; // Invert Y-axis
-
+    if (isMouseInsidePanel) {
+        if (ImGui::IsMouseClicked(1)) {
+            mouseCapture = true;
+            glfwSetInputMode(pWindow->GetWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
             glfwSetCursorPos(pWindow->GetWindow(), (windowPos.x + windowSize.x) / 2, (windowPos.y + windowSize.y) / 2);
-
-            Engine::Camera* pCamera = scene->GetActiveCamera();
-            pCamera->ProcessMouseMovement(-xoffset, yoffset);
         }
 
-        if (ImGui::IsMouseReleased(1)) { // Right mouse button released
-            mouseCapture = false;
-            glfwSetInputMode(pWindow->GetWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL); // Show the cursor again
-        }
+    }
+
+    if (mouseCapture) {
+        double cursorX, cursorY;
+        glfwGetCursorPos(pWindow->GetWindow(), &cursorX, &cursorY);
+
+        float xoffset = ((windowPos.x + windowSize.x) / 2) - cursorX;
+        float yoffset = ((windowPos.y + windowSize.y) / 2) - cursorY;
+
+        glfwSetCursorPos(pWindow->GetWindow(), (windowPos.x + windowSize.x) / 2, (windowPos.y + windowSize.y) / 2);
+
+        Engine::Camera* pCamera = scene->GetActiveCamera();
+        pCamera->ProcessMouseMovement(-xoffset, yoffset);
+    }
+
+    if (ImGui::IsMouseReleased(1)) {
+        mouseCapture = false;
+        glfwSetInputMode(pWindow->GetWindow(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    }
 
 
-        ImGui::BeginChild("GameRender");
+    pFbo->RescaleFrameBuffer(window_width, window_height);
+    glViewport(0, 0, window_width, window_height);
 
-        ImVec2 wsize = ImGui::GetWindowSize();
-        ImVec2 pos = ImGui::GetCursorScreenPos();
-
-        window_width = ImGui::GetContentRegionAvail().x;
-        window_height = ImGui::GetContentRegionAvail().y;
-
-        pFbo->RescaleFrameBuffer(window_width, window_height);
-        glViewport(0, 0, window_width, window_height);
-
-        ImGui::GetWindowDrawList()->AddImage(
+    ImGui::GetWindowDrawList()->AddImage(
             (ImTextureID)pFbo->getFrameTexture(),
             ImVec2(pos.x, pos.y),
             ImVec2(pos.x + window_width, pos.y + window_height),
             ImVec2(0, 1),
             ImVec2(1, 0)
-        );
+            );
+
+    if (ImGui::IsKeyPressed(ImGuiKey_Tab)) {
+        if (scene->selectMode == MODE_OBJECT)
+            scene->selectMode = MODE_MESH;
+        else if (scene->selectMode == MODE_MESH)
+            scene->selectMode = MODE_VERTEX;
+        else if (scene->selectMode == MODE_VERTEX)
+            scene->selectMode = MODE_OBJECT;
+        std::cout << "MODE: " << scene->selectMode << std::endl;
+
+    }
 
 
-        ImGui::EndChild();
+    if (isMouseInsidePanel && ImGui::IsMouseClicked(0)) {
+        double glfwX, glfwY;
+        glfwGetCursorPos(pWindow->GetWindow(), &glfwX, &glfwY);
+
+        float localX = glfwX - pos.x; 
+        float localY = glfwY - pos.y;
+
+        Engine::Camera* pCamera = scene->GetActiveCamera();
+        glm::vec3 rayDir = pCamera->GetCursorDirection(localX, localY, window_width, window_height);
+
+        Ray worldRay;
+        worldRay.origin = pCamera->position;
+        worldRay.direction = rayDir;
+
+        Intersection hit = scene->Raycast(worldRay);
+        if (hit.hit) {
+            if (scene->selectMode == MODE_OBJECT) {
+                scene->selectedObject = hit.object;
+                if (scene->selectedObject != hit.object) {
+                    scene->selectedVertexIndices.clear();
+                }
+            } else if (scene->selectMode == MODE_MESH) {
+                scene->selectedObject = hit.object;
+                scene->selectedMesh = hit.mesh;
+                scene->triangleIndex = hit.triangleIndex;
+                if (scene->selectedObject != hit.object) {
+                    scene->selectedVertexIndices.clear();
+                }
+            } else if (scene->selectMode == MODE_VERTEX) {
+                scene->selectedObject = hit.object;
+                scene->selectedMesh = hit.mesh;
+                scene->selectedVertexIndices = collectVerticesAtPosition(hit.mesh, hit.localPosition);
+            }
+        }
+    }
+
+    if (scene->selectedObject && scene->selectMode == MODE_OBJECT) {
+        Engine::Transform* transform = scene->selectedObject->GetComponent<Engine::Transform>();
+        if (!transform) return;
+
+        glm::mat4 modelMatrix = transform->GetMatrix();
+
+        Engine::Camera* cam = scene->GetActiveCamera();
+        glm::mat4 view = cam->view;
+        glm::mat4 proj = cam->projection;
+
+        ImGuizmo::BeginFrame();
+        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
+
+        static ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
+        if (ImGui::IsKeyPressed(ImGuiKey_T)) currentGizmoOperation = ImGuizmo::TRANSLATE;
+        if (ImGui::IsKeyPressed(ImGuiKey_R)) currentGizmoOperation = ImGuizmo::ROTATE;
+        if (ImGui::IsKeyPressed(ImGuiKey_S)) currentGizmoOperation = ImGuizmo::SCALE;
+
+        ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj),
+                currentGizmoOperation, ImGuizmo::LOCAL,
+                glm::value_ptr(modelMatrix));
+
+        if (ImGuizmo::IsUsing()) {
+            glm::vec3 translation, angle, scale;
+            ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(modelMatrix),
+                    glm::value_ptr(translation),
+                    glm::value_ptr(angle),
+                    glm::value_ptr(scale));
+            transform->position = translation;
+        }
+    }
+
+    if (scene->selectedMesh && scene->selectMode == MODE_VERTEX && !scene->selectedVertexIndices.empty()) {
+        Engine::Transform* objTransform = scene->selectedObject->GetComponent<Engine::Transform>();
+        glm::mat4 modelMatrix = objTransform ? objTransform->GetMatrix() : glm::mat4(1.0f);
+
+        Engine::Camera* cam = scene->GetActiveCamera();
+        glm::mat4 view = cam->view;
+        glm::mat4 proj = cam->projection;
+
+        auto& vertices = scene->selectedMesh->GetVerticesRef();
+        glm::vec3 localPos = scene->selectedMesh->GetVertices()[scene->selectedVertexIndices[0]].position;
+
+        glm::vec3 worldPos = glm::vec3(modelMatrix * glm::vec4(localPos, 1.0f));
+
+        glm::mat4 vertexMatrix = glm::translate(glm::mat4(1.0f), worldPos);
+        glm::mat4 inverseModel = glm::inverse(modelMatrix);
+
+        ImGuizmo::BeginFrame();
+        ImGuizmo::SetOrthographic(false);
+        ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImGuizmo::SetRect(windowPos.x, windowPos.y, windowSize.x, windowSize.y);
+
+        static ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
+        if (ImGui::IsKeyPressed(ImGuiKey_T)) currentGizmoOperation = ImGuizmo::TRANSLATE;
+        if (ImGui::IsKeyPressed(ImGuiKey_R)) currentGizmoOperation = ImGuizmo::ROTATE;
+        if (ImGui::IsKeyPressed(ImGuiKey_S)) currentGizmoOperation = ImGuizmo::SCALE;
+
+        ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(proj),
+                ImGuizmo::TRANSLATE, ImGuizmo::LOCAL,
+                glm::value_ptr(vertexMatrix));
+
+        if (ImGuizmo::IsUsing()) {
+            glm::vec3 newWorldPos(vertexMatrix[3]);
+            glm::vec3 deltaWorld = newWorldPos - worldPos;
+            glm::vec3 deltaLocal = glm::vec3(inverseModel * glm::vec4(deltaWorld, 0.0f));
+
+            for (int idx : scene->selectedVertexIndices) {
+                vertices[idx].position += deltaLocal;
+            }
+
+            scene->selectedMesh->UpdateVertices(vertices);
+
+        }
+    }
+
+
+    ImGui::EndChild();
 
     ImGui::End();
+}
+
+void Interface::GetGizmo(Engine::Scene* scene) 
+{
 }
 
 void Interface::GetCameraInfo(Engine::Scene* scene) const {
@@ -231,12 +371,14 @@ void Interface::GetObjectsInfo(Engine::Scene* scene) {
         ImGui::OpenPopup("my_select_popup");
 
     if (ImGui::BeginPopup("my_select_popup")) {
-        for (const auto& entry : std::filesystem::directory_iterator(pProject->GetPath())) {
-            if (entry.is_regular_file() && entry.path().extension() == ".bin") {
-                if (ImGui::Selectable(entry.path().filename().string().c_str())) {
-                    Engine::Object* obj = new Engine::Object(entry.path().filename().string());
-                    obj->LoadFromPrefab(entry.path().string());
-                    scene->AddObject(obj);
+        if (pProject->GetPath() != "") {
+            for (const auto& entry : std::filesystem::directory_iterator(pProject->GetPath())) {
+                if (entry.is_regular_file() && entry.path().extension() == ".bin") {
+                    if (ImGui::Selectable(entry.path().filename().string().c_str())) {
+                        Engine::Object* obj = new Engine::Object(entry.path().filename().string());
+                        obj->LoadFromPrefab(entry.path().string());
+                        scene->AddObject(obj);
+                    }
                 }
             }
         }
@@ -281,7 +423,6 @@ void Interface::GetObjectsInfo(Engine::Scene* scene) {
 
             if (ImGui::Selectable(name.c_str(), pSelectedObject == obj)) {
                 if (ImGui::IsMouseReleased(1) && ImGui::IsItemHovered()) {
-                    // Открываем попап при отпускании правой кнопки мыши
                     ImGui::OpenPopup("my_select");
                 } else if (ImGui::IsMouseReleased(0)) {
                     pSelectedObject = obj;
@@ -356,17 +497,17 @@ void Interface::ObjectInspector(Engine::Scene* scene) const {
                     pSelectedObject->RemoveComponent(pComponent->GetTypeName());
 
                 for (const auto& var : pComponent->variables) {
+                    if (!var) continue;
 
                     if (var->type_name == "bool") {
-                        ImGui::Checkbox(var->name, static_cast<bool*>(var->ptr()));
+                        ImGui::Checkbox(var->name.c_str(), static_cast<bool*>(var->ptr()));
                     } else if (var->type_name == "glm::vec3") {
-                        ImGui::InputFloat3(var->name, glm::value_ptr(*static_cast<glm::vec3*>(var->ptr())));
+                        ImGui::InputFloat3(var->name.c_str(), glm::value_ptr(*static_cast<glm::vec3*>(var->ptr())));
                     } else if (var->type_name == "int") {
-                        ImGui::InputInt(var->name, static_cast<int*>(var->ptr()));
+                        ImGui::InputInt(var->name.c_str(), static_cast<int*>(var->ptr()));
                     } else if (var->type_name == "float") {
-                        ImGui::InputFloat(var->name, static_cast<float*>(var->ptr()), 0.01f);
+                        ImGui::InputFloat(var->name.c_str(), static_cast<float*>(var->ptr()), 0.01f);
                     } else if (var->type_name == "Renderer::Mesh*") {
-                        //ImGui::Text("Mesh: %s", *static_cast<Renderer::Mesh**>(var->ptr()));
                         if (ImGui::Button("Select Mesh"))
                             ImGui::OpenPopup("my_select_popup");
 
@@ -403,7 +544,7 @@ void Interface::GetModelManager(Engine::Scene* scene) const {
                 nfdchar_t *outPath = NULL;
                 nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath);
                 if (result == NFD_OKAY) {
-                    Engine::ModelManager::ImportModel(outPath);
+                    //Engine::ModelManager::ImportModel(outPath);
                     free(outPath);
                 } else if (result == NFD_CANCEL) {
                     std::cout << "err" << std::endl;
@@ -497,7 +638,7 @@ void Interface::ShowExampleAppSimpleOverlay() const {
     {
         const float PAD = 10.0f;
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImVec2 work_pos = viewport->WorkPos; // Use work area to avoid menu-bar/task-bar, if any!
+        ImVec2 work_pos = viewport->WorkPos;
         ImVec2 work_size = viewport->WorkSize;
         ImVec2 window_pos, window_pos_pivot;
         window_pos.x = (location & 1) ? (work_pos.x + work_size.x - PAD) : (work_pos.x + PAD);
@@ -510,11 +651,10 @@ void Interface::ShowExampleAppSimpleOverlay() const {
     }
     else if (location == -2)
     {
-        // Center window
         ImGui::SetNextWindowPos(ImGui::GetMainViewport()->GetCenter(), ImGuiCond_Always, ImVec2(0.5f, 0.5f));
         window_flags |= ImGuiWindowFlags_NoMove;
     }
-    ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
+    ImGui::SetNextWindowBgAlpha(0.35f);
     if (ImGui::Begin("Example: Simple overlay", nullptr, window_flags)) {
         GetDebugInfo();
     }
@@ -574,7 +714,7 @@ void Interface::Render(GLuint64 elapsed_time) {
 
     Engine::Scene* scene = GetScene();
 
-    if (pProject->refresh_files) {
+    if (pProject && pProject->refresh_files) {
         pProject->CompileFiles();
         std::cout << "Refresh files" << std::endl;
         pProject->refresh_files = false;
@@ -586,57 +726,65 @@ void Interface::Render(GLuint64 elapsed_time) {
                 nfdchar_t *outPath = NULL;
                 nfdresult_t result = NFD_PickFolder(NULL, &outPath);
                 if (result == NFD_OKAY) {
-                    pProject = new Engine::Project(pWindow);
-                    pProject->Init();
-                    pProject->Create(outPath);
-                    SetProject(pProject);
-
+                    std::string project_file = std::string(outPath) + "/project.json";
+                    if (!std::filesystem::exists(project_file)) {
+                        delete pProject;
+                        pProject = new Engine::Project(pWindow);
+                        pProject->Create(outPath);
+                        SetProject(pProject);
+                    } else {
+                        std::cout << "Project is valid!" << std::endl;
+                    }
                     free(outPath);
                 } else if (result == NFD_CANCEL) {
-                    std::cout << "err" << std::endl;
-                } else {
-                    std::cout << "unk err" << std::endl;
+                    std::cout << "NativeFileDialog error" << std::endl;
                 }
-            }
-
-            if (ImGui::MenuItem("Save project")) {
-                pProject->Save();
             }
 
             if (ImGui::MenuItem("Load project")) {
                 nfdchar_t *outPath = NULL;
                 nfdresult_t result = NFD_PickFolder(NULL, &outPath);
                 if (result == NFD_OKAY) {
+                    delete pProject;
                     pProject = new Engine::Project(pWindow);
-                    pProject->Init();
                     pProject->Load(outPath);
                     SetProject(pProject);
                     free(outPath);
                 } else if (result == NFD_CANCEL) {
-                    std::cout << "err" << std::endl;
-                } else {
-                    std::cout << "unk err" << std::endl;
+                    std::cout << "NativeFileDialog error" << std::endl;
                 }
             }
 
-            if (ImGui::MenuItem("Components Refresh")) {
-                pProject->CompileFiles();
-            }
+            if (pProject) 
+            {
+                if (ImGui::MenuItem("Update project")) 
+                    pProject->Update();
 
-            if (ImGui::MenuItem("Run")) {
-                pProject->CompileAndRunApplication();
-            }
+                if (ImGui::MenuItem("Save project"))
+                    pProject->Save();
 
-            if (scene && ImGui::MenuItem("Load so file")) {
-                nfdchar_t *outPath = NULL;
-                nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath);
-                if (result == NFD_OKAY) {
-                    pProject->IncludeFile(outPath);
-                    free(outPath);
-                } else if (result == NFD_CANCEL) {
-                    std::cout << "err" << std::endl;
-                } else {
-                    std::cout << "unk err" << std::endl;
+                if (ImGui::MenuItem("Components Refresh"))
+                    pProject->CompileFiles();
+
+                if (ImGui::MenuItem("Run")) 
+                    pProject->CompileAndRunApplication();
+
+                if (ImGui::MenuItem("Update Shaders")) 
+                    Engine::ModelManager::UpdateShaders();
+
+                if (ImGui::MenuItem("Load so file")) 
+                {
+                    nfdchar_t *outPath = NULL;
+                    nfdresult_t result = NFD_OpenDialog(NULL, NULL, &outPath);
+                    if (result == NFD_OKAY) {
+                        if (pProject)
+                            pProject->IncludeFile(outPath);
+                        free(outPath);
+                    } else if (result == NFD_CANCEL) {
+                        std::cout << "err" << std::endl;
+                    } else {
+                        std::cout << "unk err" << std::endl;
+                    }
                 }
             }
 

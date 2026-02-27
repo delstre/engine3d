@@ -18,7 +18,13 @@ static void staticCursorPosCallback(GLFWwindow* pWindow, double xpos, double ypo
     Window* window = static_cast<Window*>(glfwGetWindowUserPointer(pWindow));
     window->SetCursorPos(xpos, ypos);
 }
+  
+Window::Window(int w, int h, const char *t) : width(w), height(h), window_name(t) { }
 
+Window::~Window() 
+{ 
+    glfwTerminate(); 
+}
 
 void Window::Resize(int width, int height) {
     this->width = width;
@@ -28,11 +34,12 @@ void Window::Resize(int width, int height) {
 
 void Window::SetCursorPos(double xpos, double ypos) {}
 
-void Window::Init() {
+void Window::Init(int argc, char *argv[]) {
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW" << std::endl;
         return;
     }
+    
 
     ilInit();
 
@@ -49,9 +56,14 @@ void Window::Init() {
 
     glfwMakeContextCurrent(pWindow);
 
-    if (glewInit() != GLEW_OK) {
-        std::cerr << "GLEW failed" << std::endl;
-        exit(EXIT_FAILURE);
+    GLenum glewErr = glewInit();
+    if (glewErr != GLEW_OK) {
+        if (glewErr == GLEW_ERROR_NO_GLX_DISPLAY) {
+            std::cerr << "glewInit() returned GLEW_ERROR_NO_GLX_DISPLAY" << std::endl;
+        } else {
+            std::cerr << "failed to initialize GLEW:\n" << std::endl; 
+            exit(EXIT_FAILURE);
+        }
     }
 
     glEnable(GL_DEPTH_TEST);
@@ -60,23 +72,24 @@ void Window::Init() {
     glfwSetWindowSizeCallback(pWindow, staticWindowSizeCallback);
 
     ComponentManager::RegisterComponents();
-
-    pProject = new Engine::Project(this);
-    //pProject->Init();
-
+    
     #ifdef INTERFACE_DEBUG
+
     pInterface = new Renderer::Interface(this);
 
-    if (pProject->LoadLast()) {
-        pInterface->SetProject(pProject);
-    } else {
-        pProject->Init();
+    if (argc == 2)
+    {
+        pProject = new Engine::Project(this);
+        pProject->Load(argv[argc-1]);
         pInterface->SetProject(pProject);
     }
 
     #else
-    pProject->Load();
-    pScene = pProject->GetScene();
+
+    // ?
+    //pProject->Load();
+    //pScene = pProject->GetScene();
+
     #endif
 }
 
@@ -109,7 +122,7 @@ void Window::Render() {
         if (pInterface != nullptr)
             pInterface->Render(elapsed_time);
         #else
-        if (pScene != nullptr) {
+        if (pScene != NULL) {
             pScene->Render();
         }
         #endif

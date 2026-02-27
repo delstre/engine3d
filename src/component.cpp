@@ -6,6 +6,11 @@ BOOST_CLASS_EXPORT_IMPLEMENT(Engine::Component)
 
 using namespace Engine;
 
+Component::Component()
+{
+    Init();
+}
+
 void Component::UpdateComponent() {
     if (isEnabled) {
         Update();
@@ -52,6 +57,5 @@ std::string Component::GetTypeName() const {
     char* demangledName = abi::__cxa_demangle(typeid(*this).name(), nullptr, nullptr, nullptr);
     return std::string(demangledName);
 }
-
 
 template Transform* Component::GetComponent<Transform>();

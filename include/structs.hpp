@@ -3,15 +3,27 @@
 #include <glm/glm.hpp>
 
 namespace Renderer {
+    /**
+     * Структура, описывающая вершину меша.
+     * Содержит позицию, нормаль и текстурные координаты.
+     */
     struct Vertex {
-        glm::vec3 position;
-        glm::vec3 normal;
-        glm::vec2 texCoord;
+        glm::vec3 position;  ///< Позиция вершины в локальных координатах.
+        glm::vec3 normal;    ///< Нормаль вершины (обычно нормализованная).
+        glm::vec2 texCoord;  ///< Текстурные координаты (UV).
     };
 
+    /**
+     * Структура, содержащая параметры окружения для рендеринга объекта.
+     * Передаётся в шейдеры и влияет на освещение, выделение и отладку.
+     */
     struct Envy {
-        glm::vec3 viewpos;
-        glm::vec3 viewdir;
-        glm::mat4 mvp;
+        glm::vec3 viewpos;               ///< Позиция камеры в мировых координатах.
+        glm::vec3 viewdir;                ///< Направление взгляда камеры.
+        glm::mat4 mvp;                    ///< Матрица Model-View-Projection.
+        glm::vec3 highlightColor;          ///< Цвет подсветки объекта (режим выделения объектов).
+        glm::vec3 highlightColor_Vertex;   ///< Цвет подсветки вершин (режим выделения вершин).
+        int selectTriangle;                ///< Индекс выделенного треугольника (-1, если нет выделения).
+        std::vector<int> selectedVertexIndices; ///< Вектор индексов выделенных вершин.
     };
 }

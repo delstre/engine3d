@@ -24,6 +24,10 @@ void Model::Update() {
     mesh->Render(GetParent()->env, 0, GetMatrix());
 }
 
+Renderer::Mesh *Model::GetMesh() {
+    return mesh;
+}
+
 void Model::Start() {}
 void Model::End() {}
 

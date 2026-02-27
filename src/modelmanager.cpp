@@ -9,16 +9,22 @@
 #include <fstream>
 #include <sstream>
 
-#include <filesystem>
 #include <vector>
 
 using namespace Engine;
 
-void ModelManager::SetPath(std::string _path) {
-    path = _path;
+void ModelManager::SetPath(const std::string& path)
+{
+    #ifdef INTERFACE_DEBUG
+    modelsPath = ENGINE_PATH "/models";
+    shadersPath = ENGINE_PATH "/shaders";
+    #else
+    modelsPath = path + "/models";
+    shadersPath = path + "/shaders";
+    #endif
 }
 
-void ModelManager::AddModel(std::string name, Renderer::Mesh* model) {
+void ModelManager::AddModel(const std::string& name, Renderer::Mesh* model) {
     models[name] = model;
 }
 
@@ -30,8 +36,19 @@ std::map<std::string, Renderer::Mesh*> ModelManager::GetModels() {
     return models;
 }
 
-bool ModelManager::ImportModel(const std::string& _path) {
-    std::filesystem::path full_path = path + "/" + _path;
+void ModelManager::ImportAllModels()
+{
+    std::cout << "Importing models: " << modelsPath << std::endl;
+    if (!std::filesystem::exists(modelsPath) || !std::filesystem::is_directory(modelsPath)) 
+        return;
+
+    for (const auto& entry : std::filesystem::directory_iterator(modelsPath)) 
+        if (entry.is_regular_file() && entry.path().extension() == ".obj") 
+            ModelManager::ImportModel(entry.path().string());
+}
+
+bool ModelManager::ImportModel(const std::string& modelPath) {
+    std::filesystem::path full_path = modelPath;
 
     std::cout << "Importing model: " << full_path << std::endl;
     std::ifstream file(full_path);
@@ -44,8 +61,8 @@ bool ModelManager::ImportModel(const std::string& _path) {
     std::vector<glm::vec2> tempTexCoords;
     std::vector<glm::vec3> tempNormals;
 
-    std::vector<Renderer::Vertex> vertices;  // Vector to hold vertex data
-    std::vector<GLuint> indices;    // Vector to hold indices
+    std::vector<Renderer::Vertex> vertices;
+    std::vector<GLuint> indices;
 
     GLenum mode = GL_TRIANGLES;
 
@@ -57,17 +74,17 @@ bool ModelManager::ImportModel(const std::string& _path) {
         std::string prefix;
         ss >> prefix;
 
-        if (prefix == "v") {  // Vertex position
+        if (prefix == "v") {
             glm::vec3 vertex;
             ss >> vertex.x >> vertex.y >> vertex.z;
             tempVertices.push_back(vertex);
         }
-        else if (prefix == "vt") {  // Texture coordinate
+        else if (prefix == "vt") {
             glm::vec2 texCoord;
             ss >> texCoord.x >> texCoord.y;
             tempTexCoords.push_back(texCoord);
         }
-        else if (prefix == "vn") {  // Vertex normal
+        else if (prefix == "vn") {
             glm::vec3 normal;
             ss >> normal.x >> normal.y >> normal.z;
             tempNormals.push_back(normal);
@@ -75,37 +92,46 @@ bool ModelManager::ImportModel(const std::string& _path) {
         else if (prefix == "o") {
             ss >> name;
         }
-        else if (prefix == "f") {  // Face
-            unsigned int vertexIndex[4], texCoordIndex[4], normalIndex[4]; // Support for up to 4 indices
+        else if (prefix == "f") {
+            std::vector<unsigned int> vIndices, tIndices, nIndices;
+            unsigned int v, t, n;
             char slash;
 
-            // Count how many vertices are in the face
-            size_t vertexCount = 0;
-
-            while (ss >> vertexIndex[vertexCount] >> slash >> texCoordIndex[vertexCount] >> slash >> normalIndex[vertexCount]) {
-                vertexCount++;
+            while (ss >> v >> slash >> t >> slash >> n) {
+                vIndices.push_back(v - 1);
+                tIndices.push_back(t - 1);
+                nIndices.push_back(n - 1);
             }
 
-            for (size_t i = 0; i < vertexCount; i++) {
-                unsigned int vi = vertexIndex[i] - 1;
-                unsigned int ti = texCoordIndex[i] - 1;
-                unsigned int ni = normalIndex[i] - 1;
-
-                // Создаем вершину
-                Renderer::Vertex vertex;
-                vertex.position = tempVertices[vi];
-                vertex.texCoord = tempTexCoords[ti];
-                vertex.normal = tempNormals[ni];
-
-                // Добавляем вершину в массив
-                vertices.push_back(vertex);
-                indices.push_back(static_cast<GLuint>(vertices.size() - 1));
-            }
+            size_t vertexCount = vIndices.size();
 
             if (vertexCount == 3) {
-                mode = GL_TRIANGLES;
+                for (size_t i = 0; i < 3; ++i) {
+                    Renderer::Vertex vertex;
+                    vertex.position = tempVertices[vIndices[i]];
+                    vertex.texCoord = tempTexCoords[tIndices[i]];
+                    vertex.normal   = tempNormals[nIndices[i]];
+                    vertices.push_back(vertex);
+                    indices.push_back(static_cast<GLuint>(vertices.size() - 1));
+                }
             } else if (vertexCount == 4) {
-                mode = GL_QUADS;
+                for (int tri = 0; tri < 2; ++tri) {
+                    int idx[3];
+                    if (tri == 0) {
+                        idx[0] = 0; idx[1] = 1; idx[2] = 2;
+                    } else {
+                        idx[0] = 0; idx[1] = 2; idx[2] = 3;
+                    }
+                    for (int j = 0; j < 3; ++j) {
+                        int i = idx[j];
+                        Renderer::Vertex vertex;
+                        vertex.position = tempVertices[vIndices[i]];
+                        vertex.texCoord = tempTexCoords[tIndices[i]];
+                        vertex.normal   = tempNormals[nIndices[i]];
+                        vertices.push_back(vertex);
+                        indices.push_back(static_cast<GLuint>(vertices.size() - 1));
+                    }
+                }
             }
         }
     }
@@ -113,10 +139,19 @@ bool ModelManager::ImportModel(const std::string& _path) {
     file.close();
 
     Renderer::Mesh* mesh = new Renderer::Mesh(vertices, indices);
-    mesh->SetShader(new Renderer::ShaderProgram((path + "/shaders/model.vert").c_str(), (path + "/shaders/model.frag").c_str()));
-    mesh->SetRenderType(mode);
+    mesh->SetShader(new Renderer::ShaderProgram((shadersPath + "/model.vert").c_str(), (shadersPath + "/model.frag").c_str()));
     mesh->name = name;
     AddModel(name, mesh);
 
     return true;
+}
+
+void ModelManager::UpdateShaders()
+{
+    for (auto it = models.begin(); it != models.end(); ++it) 
+    {
+        Renderer::Mesh* mesh = it->second;
+        delete mesh->GetShader();
+        mesh->SetShader(new Renderer::ShaderProgram((shadersPath + "/model.vert").c_str(), (shadersPath + "/model.frag").c_str()));
+    }
 }

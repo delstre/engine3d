@@ -6,30 +6,101 @@ namespace Engine {
     class Window;
     class Scene;
 
+    /**
+     * Класс Project управляет всем проектом: содержит сцену, пути к ресурсам,
+     * отвечает за сохранение/загрузку проекта, компиляцию пользовательских компонентов
+     * и интеграцию динамических библиотек.
+     */
     class Project {
         public:
+            /**
+             * Конструктор проекта.
+             * @param pWindow Указатель на главное окно приложения, которому принадлежит проект.
+             */
             Project(Window* pWindow);
-            void Init();
-            void SetPath(std::string path);
+
+            /**
+             * Инициализирует проект по заданному пути.
+             * Устанавливает пути для ModelManager, импортирует все модели,
+             * создаёт новую сцену и связывает её с окном.
+             * @param path Путь к директории проекта.
+             */
+            void Init(const std::string& path);
+
+            /**
+             * Сохраняет текущее состояние сцены в бинарный файл (scene.bin) внутри папки проекта.
+             */
             void Save();
-            void Create(std::string path);
-            void Load();
-            bool Load(std::string path);
-            bool LoadLast();
-            bool IncludeFile(std::string path);
+
+            /**
+             * Создаёт новый проект по указанному пути.
+             * Генерирует стандартные файлы (Makefile, compile_program.cpp, project.json),
+             * копирует необходимые ресурсы движка и вызывает Init().
+             * @param path Путь к новой директории проекта.
+             */
+            void Create(const std::string& path);
+
+            /**
+             * Обновляет файлы проекта, копируя свежие версии библиотеки движка,
+             * заголовочных файлов, шейдеров и моделей из ENGINE_PATH в папку проекта.
+             */
+            void Update();
+
+            /**
+             * Загружает проект из указанной директории.
+             * Вызывает Init(path), затем пытается загрузить сцену из scene.bin.
+             * @param path Путь к директории существующего проекта.
+             * @return true, если загрузка успешна (папка существует и содержит project.json), иначе false.
+             */
+            bool Load(const std::string& path);
+
+            /**
+             * Загружает динамическую библиотеку (.so) с пользовательскими компонентами.
+             * Ищет символ Create(), создаёт временный экземпляр компонента,
+             * регистрирует его конструктор в ComponentManager.
+             * @param path Путь к .so файлу.
+             * @return true, если библиотека успешно загружена и компонент зарегистрирован.
+             */
+            bool IncludeFile(const std::string& path);
+
+            /**
+             * Сканирует папку проекта на наличие .so файлов и загружает каждый из них через IncludeFile().
+             */
             void IncludeFiles();
-            void CompileFiles(bool DeleteFile=false);
+
+            /**
+             * Компилирует все .cpp файлы проекта в .so библиотеки с помощью Makefile.
+             * @param DeleteFile Если true, перед компиляцией выполняется make clean.
+             */
+            void CompileFiles(bool DeleteFile = false);
+
+            /**
+             * Компилирует программу (compile_program.cpp) и запускает её в отдельном потоке.
+             * Используется для запуска собранного приложения.
+             */
             void CompileAndRunApplication();
+
+            /**
+             * Возвращает указатель на текущую сцену проекта.
+             * @return Указатель на объект Scene.
+             */
             Scene* GetScene();
 
-            std::string GetPath();
+            /**
+             * Возвращает путь к директории проекта.
+             * @return Константная ссылка на строку с путём.
+             */
+            const std::string& GetPath();
 
-            bool refresh_files = false;
+            /**
+             * Флаг, указывающий, что файлы проекта изменились и требуется перекомпиляция.
+             * Устанавливается в true при обнаружении изменений в .cpp файлах (в отдельном потоке мониторинга).
+             */
+            bool refresh_files;
 
         private:
-            Window* pWindow;
-            Scene* pScene;
-
-            std::string path;
+            Window* pWindow;   ///< Указатель на главное окно приложения.
+            Scene* pScene;     ///< Указатель на сцену проекта.
+            std::string folder_path; ///< Путь к директории проекта.
     };
 }

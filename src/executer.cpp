@@ -16,21 +16,19 @@ namespace Engine {
         }
 
         std::array<char, 128> buffer;
-        std::lock_guard<std::mutex> guard(log_mutex);  // Блокируем мьютекс на время работы с логами
+        std::lock_guard<std::mutex> guard(log_mutex);
         while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr) {
             logs.emplace_back(buffer.data());
         }
     }
 
-    // Функция для получения всех логов
     std::vector<std::string> GetLogs() {
-        std::lock_guard<std::mutex> guard(log_mutex);  // Защищаем доступ к логам
+        std::lock_guard<std::mutex> guard(log_mutex);
         return logs;
     }
 
-    // Функция для очистки логов
     void ClearLogs() {
-        std::lock_guard<std::mutex> guard(log_mutex);  // Защищаем доступ к логам
+        std::lock_guard<std::mutex> guard(log_mutex);
         logs.clear();
     }
 }
